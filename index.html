@@ -551,17 +551,37 @@ async function loadApps() {
 
 function openApp(url) { window.open(url, '_blank'); }
 
-async function installApp(id, url) {
-  const btn = document.getElementById(`install-${id}`);
-  if (deferredPrompt[url]) {
-    deferredPrompt[url].prompt();
-    const { outcome } = await deferredPrompt[url].userChoice;
-    if (outcome === 'accepted') { btn.textContent = 'Instalado'; btn.disabled = true; }
-    delete deferredPrompt[url];
+function installApp(id, url) {
+  window.open(url, '_blank');
+  document.getElementById('detailModal').classList.remove('open');
+  showInstallTip();
+}
+
+function showInstallTip() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+
+  let msg = '';
+  if (isIOS) {
+    msg = '📱 En Safari, toca el botón de compartir (□↑) en la barra inferior, luego selecciona "Añadir a pantalla de inicio" y pulsa "Añadir".';
+  } else if (isAndroid) {
+    msg = '📱 En Chrome, toca el menú (⋮) en la esquina superior derecha, luego toca "Añadir a pantalla de inicio" o "Instalar app".';
   } else {
-    // open in new tab so beforeinstallprompt can fire there
-    window.open(url, '_blank');
+    msg = '💻 En Chrome o Edge, busca el ícono de instalar (⊕) en la barra de direcciones a la derecha, o abre el menú (⋮) y selecciona "Instalar app" o "Guardar como aplicación".';
   }
+
+  const tip = document.createElement('div');
+  tip.style.cssText = `
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: #202124; color: #fff; padding: 1rem 1.5rem;
+    border-radius: 8px; font-size: 0.85rem; line-height: 1.6;
+    max-width: 340px; text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 999; animation: fadeUp 0.3s ease;
+  `;
+  tip.textContent = msg;
+  document.body.appendChild(tip);
+  setTimeout(() => tip.remove(), 6000);
 }
 
 function openDetail(id) {
