@@ -359,6 +359,35 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
   #logoutBtn:hover { background: var(--surface-hover); }
+
+  /* ── detail modal ── */
+.detail-icon {
+  width: 80px; height: 80px;
+  border-radius: 20%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.8rem;
+  overflow: hidden;
+  margin: 0 auto 1rem;
+}
+.detail-icon img { width: 100%; height: 100%; object-fit: cover; }
+.detail-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.detail-header h2 { font-size: 1.3rem; font-weight: 500; }
+.detail-header .app-company { font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem; }
+.detail-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  min-height: 2em;
+}
+.detail-actions { display: flex; gap: 0.75rem; }
+.detail-actions .btn-open,
+.detail-actions .btn-install { flex: 1; text-align: center; padding: 0.6rem 1rem; font-size: 0.95rem; }
 </style>
 </head>
 <body>
@@ -493,7 +522,7 @@ function renderGrid() {
     const rating = (4.0 + Math.random() * 0.9).toFixed(1);
 
     return `
-    <div class="card" style="animation-delay:${i * 0.05}s" data-id="${a._id}" onclick="openApp('${a.url}')">
+    <div class="card" style="animation-delay:${i * 0.05}s" data-id="${a._id}" onclick="openDetail('${a._id}')">
       <div class="app-icon">${isEmoji ? icon : `<img src="${a.icon}" alt="">`}</div>
       <div class="app-info">
         <div class="app-name">${a.name}</div>
@@ -633,5 +662,22 @@ document.getElementById('loginPass').addEventListener('keydown', e =>
 if (token) document.getElementById('adminBar').classList.add('visible');
 loadApps();
 </script>
+
+  <!-- Detail modal -->
+<div class="modal-bg" id="detailModal">
+  <div class="modal">
+    <div class="detail-icon" id="detailIcon"></div>
+    <div class="detail-header">
+      <h2 id="detailName"></h2>
+      <div class="app-company" id="detailCat"></div>
+    </div>
+    <div class="detail-desc" id="detailDesc"></div>
+    <div class="detail-actions">
+      <button class="btn-open" id="detailOpen">Abrir</button>
+      <button class="btn-install" id="detailInstall">Instalar</button>
+    </div>
+  </div>
+</div>
+  
 </body>
 </html>
