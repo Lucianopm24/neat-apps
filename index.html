@@ -564,6 +564,21 @@ async function installApp(id, url) {
   }
 }
 
+function openDetail(id) {
+  const a = apps.find(x => x._id === id);
+  if (!a) return;
+  const icon = a.icon
+    ? (a.icon.startsWith('http') ? `<img src="${a.icon}" alt="">` : a.icon)
+    : '📦';
+  document.getElementById('detailIcon').innerHTML = icon;
+  document.getElementById('detailName').textContent = a.name;
+  document.getElementById('detailCat').textContent = a.category || 'Aplicación';
+  document.getElementById('detailDesc').textContent = a.description || 'Sin descripción disponible.';
+  document.getElementById('detailOpen').onclick = () => window.open(a.url, '_blank');
+  document.getElementById('detailInstall').onclick = () => installApp(a._id, a.url);
+  document.getElementById('detailModal').classList.add('open');
+}
+  
 // ── auth ─────────────────────────────────────────────────────────────────────
 
 function setAdmin(t) {
