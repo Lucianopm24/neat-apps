@@ -552,12 +552,11 @@ async function loadApps() {
 function openApp(url) { window.open(url, '_blank'); }
 
 function installApp(id, url) {
-  window.open(url, '_blank');
   document.getElementById('detailModal').classList.remove('open');
-  showInstallTip();
+  showInstallTip(url);
 }
 
-function showInstallTip() {
+function showInstallTip(url) {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isAndroid = /android/i.test(navigator.userAgent);
 
@@ -570,18 +569,12 @@ function showInstallTip() {
     msg = '💻 En Chrome o Edge, busca el ícono de instalar (⊕) en la barra de direcciones a la derecha, o abre el menú (⋮) y selecciona "Instalar app" o "Guardar como aplicación".';
   }
 
-  const tip = document.createElement('div');
-  tip.style.cssText = `
-    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-    background: #202124; color: #fff; padding: 1rem 1.5rem;
-    border-radius: 8px; font-size: 0.85rem; line-height: 1.6;
-    max-width: 340px; text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    z-index: 999; animation: fadeUp 0.3s ease;
-  `;
-  tip.textContent = msg;
-  document.body.appendChild(tip);
-  setTimeout(() => tip.remove(), 6000);
+  document.getElementById('installTipMsg').textContent = msg;
+  document.getElementById('installTipOpen').onclick = () => {
+    window.open(url, '_blank');
+    document.getElementById('installTipModal').classList.remove('open');
+  };
+  document.getElementById('installTipModal').classList.add('open');
 }
 
 function openDetail(id) {
@@ -710,6 +703,18 @@ loadApps();
     <div class="detail-actions">
       <button class="btn-open" id="detailOpen">Abrir</button>
       <button class="btn-install" id="detailInstall">Instalar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Install tip modal -->
+<div class="modal-bg" id="installTipModal">
+  <div class="modal">
+    <h2>¿Cómo instalar?</h2>
+    <p id="installTipMsg" style="font-size:0.9rem; color:var(--muted); line-height:1.6; margin-top:1rem;"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('installTipModal').classList.remove('open')">Cerrar</button>
+      <button class="btn-primary" id="installTipOpen">Ok, lo tengo</button>
     </div>
   </div>
 </div>
