@@ -1,2 +1,16 @@
-<p>Redirigiendo a la nueva versión...</p>
-<meta http-equiv="refresh" content="3; url=/play/">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="refresh" content="3; url=/play/">
+</head>
+<body>
+  <p>Redirigiendo a la nueva versión...</p>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(reg => reg.unregister());
+      });
+    }
+  </script>
+</body>
+</html>
