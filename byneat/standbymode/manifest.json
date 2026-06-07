@@ -1,8 +1,9 @@
 {
   "name": "StandBy Mode",
   "short_name": "StandBy",
-  "start_url": "https://neat.qzz.io/byneat/standbymode/index.html",
+  "start_url": "https://neat.qzz.io/byneat/standbymode/",
   "display": "standalone",
+  "scope": "/standbymode/"
   "background_color": "#f6f3ed",
   "theme_color": "#c0471e",
   "icons": [
