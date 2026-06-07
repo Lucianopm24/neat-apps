@@ -1,7 +1,7 @@
 {
   "name": "Neat Play",
   "short_name": "Play",
-  "start_url": "https://neat.qzz.io",
+  "start_url": "https://neat.qzz.io/play",
   "display": "standalone",
   "scope": "/play/",
   "background_color": "#f6f3ed",
