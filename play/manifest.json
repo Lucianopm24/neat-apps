@@ -3,6 +3,7 @@
   "short_name": "Play",
   "start_url": "https://neat.qzz.io",
   "display": "standalone",
+  "scope": "/play/",
   "background_color": "#f6f3ed",
   "theme_color": "#c0471e",
   "icons": [
