@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="manifest" href="/manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0f">
+<title>StandBy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:#ffffff12;--text:#f0f0f8;--muted:#6b6b80;--accent:#7c6af7;--accent2:#4fd1a8;--danger:#f76a6a;--warn:#f7a96a}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden;touch-action:none}
+.bg-layer{position:fixed;inset:0;z-index:0;transition:opacity 1.2s ease}
+.bg-gradient-0{background:radial-gradient(ellipse 80% 60% at 20% 80%,#1a0a2e 0%,#0a0a0f 60%),radial-gradient(ellipse 50% 40% at 80% 20%,#0d1a2e 0%,transparent 60%)}
+.bg-gradient-1{background:radial-gradient(ellipse 70% 70% at 10% 10%,#0a1f12 0%,#0a0a0f 55%),radial-gradient(ellipse 60% 50% at 90% 90%,#0f1a0a 0%,transparent 60%)}
+.bg-gradient-2{background:radial-gradient(ellipse 80% 60% at 80% 20%,#1f0a14 0%,#0a0a0f 55%),radial-gradient(ellipse 50% 60% at 20% 80%,#1a0f0a 0%,transparent 60%)}
+.bg-gradient-3{background:radial-gradient(ellipse 70% 80% at 50% 0%,#0a0f1f 0%,#0a0a0f 60%)}
+.bg-gradient-4{background:radial-gradient(ellipse 90% 60% at 0% 50%,#0a1a1a 0%,#0a0a0f 55%),radial-gradient(ellipse 50% 50% at 100% 50%,#1a1a0a 0%,transparent 60%)}
+#app{position:fixed;inset:0;z-index:1}
+.screens{display:flex;height:100%;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)}
+.screen{min-width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden}
+#dots{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:10}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:all 0.3s ease;cursor:pointer}
+.dot.active{background:var(--text);width:18px;border-radius:3px}
+.clock-bg-text{position:absolute;font-family:'Instrument Serif',serif;font-size:clamp(120px,30vw,280px);color:#ffffff04;font-style:italic;user-select:none;pointer-events:none;line-height:1}
+.clock-time{font-family:'Instrument Serif',serif;font-size:clamp(72px,18vw,160px);font-weight:400;letter-spacing:-3px;line-height:1;font-style:italic}
+.clock-period{font-family:'DM Sans',sans-serif;font-size:clamp(18px,4vw,32px);font-weight:300;color:var(--muted);letter-spacing:0.1em;margin-left:8px;vertical-align:super;font-style:normal}
+.clock-date{font-size:clamp(14px,3vw,20px);font-weight:300;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-top:0.5rem}
+.clock-greeting{font-family:'Instrument Serif',serif;font-size:clamp(16px,3.5vw,28px);font-style:italic;color:var(--accent);margin-bottom:1rem}
+.time-format-btn{position:absolute;top:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all 0.2s}
+.time-format-btn:hover{color:var(--text);border-color:var(--accent)}
+.cal-header{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:360px;margin-bottom:1.5rem}
+.cal-title{font-family:'Instrument Serif',serif;font-size:clamp(22px,5vw,32px);font-style:italic}
+.cal-nav{background:var(--surface);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.cal-nav:hover{background:var(--surface2);border-color:var(--accent)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;width:100%;max-width:360px}
+.cal-day-header{text-align:center;font-size:11px;color:var(--muted);padding:4px;font-family:'JetBrains Mono',monospace}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;cursor:pointer;transition:all 0.2s;position:relative;border:1px solid transparent}
+.cal-day:hover{background:var(--surface2)}
+.cal-day.today{background:var(--accent);color:#fff;font-weight:500}
+.cal-day.has-event::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent2)}
+.cal-day.today.has-event::after{background:#fff}
+.cal-day.other-month{color:var(--muted)}
+.add-event-btn{margin-top:1rem;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.add-event-btn:hover{color:var(--text);border-color:var(--accent)}
+.events-list{width:100%;max-width:360px;margin-top:0.75rem;max-height:80px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.event-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);padding:6px 10px;border-radius:0 6px 6px 0;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.event-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px}
+.event-delete:hover{color:var(--danger)}
+.modal-overlay{display:none;position:fixed;inset:0;background:#00000088;z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;width:min(320px,90vw);display:flex;flex-direction:column;gap:1rem}
+.modal h3{font-family:'Instrument Serif',serif;font-size:20px;font-style:italic}
+.modal input,.modal select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;width:100%;outline:none}
+.modal input:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px}
+.btn-primary{flex:1;background:var(--accent);border:none;color:#fff;padding:10px;border-radius:8px;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;transition:opacity 0.2s}
+.btn-primary:hover{opacity:0.85}
+.btn-secondary{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px;border-radius:8px;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.btn-secondary:hover{color:var(--text)}
+.timer-display{font-family:'JetBrains Mono',monospace;font-size:clamp(52px,12vw,96px);font-weight:300;letter-spacing:-2px;text-align:center}
+.timer-display.running{color:var(--accent2)}
+.timer-display.finished{color:var(--danger)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:1rem 0;max-width:340px}
+.preset-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-family:'JetBrains Mono',monospace;transition:all 0.2s;position:relative}
+.preset-btn:hover{color:var(--text);border-color:var(--accent)}
+.preset-del{display:none;position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;align-items:center;justify-content:center;cursor:pointer}
+.preset-btn:hover .preset-del{display:flex}
+.timer-controls{display:flex;gap:10px;margin-top:0.5rem}
+.ctrl-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:52px;height:52px;border-radius:12px;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.ctrl-btn:hover{background:var(--surface2);border-color:var(--accent)}
+.ctrl-btn.play{background:var(--accent);border-color:var(--accent);width:64px;height:64px;border-radius:16px}
+.ctrl-btn.play:hover{opacity:0.85}
+.sw-display{font-family:'JetBrains Mono',monospace;font-size:clamp(44px,10vw,80px);font-weight:300;letter-spacing:-2px;text-align:center}
+.sw-display.running{color:var(--accent2)}
+.sw-ms{font-size:0.45em;color:var(--muted)}
+.laps-container{width:100%;max-width:320px;max-height:140px;overflow-y:auto;margin-top:1rem;display:flex;flex-direction:column;gap:4px}
+.lap-item{display:flex;justify-content:space-between;background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px}
+.lap-item.fastest{border-color:var(--accent2);color:var(--accent2)}
+.lap-item.slowest{border-color:var(--danger);color:var(--danger)}
+.weather-icon{font-size:64px;margin-bottom:0.5rem}
+.weather-temp{font-family:'Instrument Serif',serif;font-size:clamp(60px,15vw,100px);font-style:italic;line-height:1}
+.weather-unit{font-size:0.4em;color:var(--muted);vertical-align:super}
+.weather-desc{font-size:16px;color:var(--muted);text-transform:capitalize;margin-top:0.25rem;letter-spacing:0.1em}
+.weather-location{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:0.5rem}
+.weather-details{display:flex;gap:1.5rem;margin-top:1.5rem}
+.weather-detail{text-align:center}
+.weather-detail .val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300}
+.weather-detail .lbl{font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px}
+.weather-refresh{margin-top:1rem;background:none;border:1px solid var(--border);color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'JetBrains Mono',monospace;transition:all 0.2s}
+.weather-refresh:hover{color:var(--text);border-color:var(--accent)}
+.weather-error{text-align:center;color:var(--muted);font-size:14px;max-width:260px;line-height:1.6}
+#settings-btn{position:fixed;top:1.5rem;left:1.5rem;background:var(--surface);border:1px solid var(--border);color:var(--muted);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;z-index:10;transition:all 0.2s}
+#settings-btn:hover{color:var(--text);border-color:var(--accent)}
+#settings-panel{position:fixed;top:0;left:0;bottom:0;width:min(300px,85vw);background:var(--surface);border-right:1px solid var(--border);z-index:50;transform:translateX(-100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;padding:2rem 1.5rem}
+#settings-panel.open{transform:translateX(0)}
+#settings-overlay{display:none;position:fixed;inset:0;z-index:49}
+#settings-overlay.open{display:block}
+.settings-title{font-family:'Instrument Serif',serif;font-size:24px;font-style:italic;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between}
+.settings-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px}
+.settings-section{margin-bottom:1.5rem}
+.settings-label{font-size:11px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:0.75rem}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.settings-row label{font-size:14px}
+.settings-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;width:130px;outline:none}
+.settings-input:focus{border-color:var(--accent)}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:11px;transition:0.3s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:0.3s}
+.toggle input:checked+.toggle-slider{background:var(--accent);border-color:var(--accent)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);background:#fff}
+.accent-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:0.5rem}
+.accent-swatch{width:28px;height:28px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s}
+.accent-swatch.selected{border-color:#fff;transform:scale(1.15)}
+#luxer-btn{position:fixed;bottom:3.5rem;right:1.5rem;width:52px;height:52px;background:var(--accent);border:none;border-radius:16px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all 0.3s}
+#luxer-btn:hover{transform:scale(1.08)}
+#luxer-panel{position:fixed;bottom:0;right:0;width:min(380px,100vw);height:60vh;background:var(--surface);border-top:1px solid var(--border);border-left:1px solid var(--border);border-radius:20px 0 0 0;z-index:20;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column}
+#luxer-panel.open{transform:translateY(0)}
+.luxer-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.luxer-title{font-family:'Instrument Serif',serif;font-size:18px;font-style:italic;display:flex;align-items:center;gap:8px}
+.luxer-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.luxer-dot.connected{background:var(--accent2)}
+.luxer-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px}
+.luxer-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:10px}
+.luxer-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5}
+.luxer-msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-radius:12px 12px 2px 12px}
+.luxer-msg.ai{background:var(--surface2);color:var(--text);align-self:flex-start;border-radius:12px 12px 12px 2px;border:1px solid var(--border)}
+.luxer-msg.system{background:transparent;color:var(--muted);font-size:12px;align-self:center;text-align:center;border:none;font-family:'JetBrains Mono',monospace}
+.luxer-input-row{padding:0.75rem 1rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.luxer-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;resize:none}
+.luxer-input:focus{border-color:var(--accent)}
+.luxer-send{background:var(--accent);border:none;color:#fff;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.2s}
+.luxer-send:hover{opacity:0.85}
+.luxer-login{padding:1.5rem;display:flex;flex-direction:column;gap:10px}
+.luxer-login p{font-size:13px;color:var(--muted);text-align:center;margin-bottom:0.5rem}
+.screen-label{position:absolute;top:1.5rem;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;font-family:'JetBrains Mono',monospace}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+@keyframes pulse-danger{0%,100%{opacity:1}50%{opacity:0.6}}
+.timer-display.finished{animation:pulse-danger 0.8s infinite}
+</style>
+</head>
+<body>
+<div class="bg-layer bg-gradient-0" id="bg0"></div>
+<div class="bg-layer bg-gradient-1" id="bg1" style="opacity:0"></div>
+<div class="bg-layer bg-gradient-2" id="bg2" style="opacity:0"></div>
+<div class="bg-layer bg-gradient-3" id="bg3" style="opacity:0"></div>
+<div class="bg-layer bg-gradient-4" id="bg4" style="opacity:0"></div>
+<button id="settings-btn" title="Ajustes">⚙</button>
+<div id="app">
+  <div class="screens" id="screens">
+    <div class="screen" id="s0">
+      <div class="clock-bg-text" id="bg-time"></div>
+      <div class="clock-greeting" id="greeting">Buenas noches</div>
+      <div style="display:flex;align-items:baseline">
+        <div class="clock-time" id="clock-time">00:00</div>
+        <span class="clock-period" id="clock-period"></span>
+      </div>
+      <div class="clock-date" id="clock-date">Lunes, 1 de enero</div>
+      <button class="time-format-btn" id="fmt-btn">12H</button>
+    </div>
+    <div class="screen" id="s1">
+      <div class="screen-label">Calendario</div>
+      <div class="cal-header">
+        <button class="cal-nav" id="cal-prev">&#8249;</button>
+        <div class="cal-title" id="cal-month-title">Enero 2025</div>
+        <button class="cal-nav" id="cal-next">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="events-list" id="events-list"></div>
+      <button class="add-event-btn" id="open-event-modal">+ Agregar evento</button>
+    </div>
+    <div class="screen" id="s2">
+      <div class="screen-label">Temporizador</div>
+      <div class="timer-display" id="timer-display">00:00</div>
+      <div class="presets" id="presets-container"></div>
+      <div class="timer-controls">
+        <button class="ctrl-btn" id="timer-reset" title="Reiniciar">&#8635;</button>
+        <button class="ctrl-btn play" id="timer-play">&#9654;</button>
+        <button class="ctrl-btn" id="timer-add-preset" title="Guardar preset">+</button>
+      </div>
+    </div>
+    <div class="screen" id="s3">
+      <div class="screen-label">Cronómetro</div>
+      <div class="sw-display" id="sw-display">00:00<span class="sw-ms">.00</span></div>
+      <div class="timer-controls" style="margin-top:1.5rem">
+        <button class="ctrl-btn" id="sw-lap" title="Vuelta">◎</button>
+        <button class="ctrl-btn play" id="sw-play">&#9654;</button>
+        <button class="ctrl-btn" id="sw-reset" title="Reiniciar">&#8635;</button>
+      </div>
+      <div class="laps-container" id="laps-container"></div>
+    </div>
+    <div class="screen" id="s4">
+      <div class="screen-label">Clima</div>
+      <div id="weather-content"><div style="text-align:center;color:var(--muted);font-size:14px">Desliza hasta aquí para cargar el clima</div></div>
+    </div>
+  </div>
+</div>
+<div id="dots">
+  <div class="dot active" onclick="goTo(0)"></div>
+  <div class="dot" onclick="goTo(1)"></div>
+  <div class="dot" onclick="goTo(2)"></div>
+  <div class="dot" onclick="goTo(3)"></div>
+  <div class="dot" onclick="goTo(4)"></div>
+</div>
+<div id="settings-overlay" onclick="closeSettings()"></div>
+<div id="settings-panel">
+  <div class="settings-title">Ajustes <button class="settings-close" onclick="closeSettings()">&#10005;</button></div>
+  <div class="settings-section">
+    <div class="settings-label">Perfil</div>
+    <div class="settings-row"><label>Tu nombre</label><input class="settings-input" id="set-name" placeholder="Usuario" maxlength="20"></div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-label">Reloj</div>
+    <div class="settings-row"><label>Formato 24h</label><label class="toggle"><input type="checkbox" id="set-24h"><span class="toggle-slider"></span></label></div>
+    <div class="settings-row"><label>Mostrar segundos</label><label class="toggle"><input type="checkbox" id="set-secs"><span class="toggle-slider"></span></label></div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-label">Color de acento</div>
+    <div class="accent-picker" id="accent-picker"></div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-label">Cuenta InnerNet (Luxer)</div>
+    <div class="settings-row"><label>Usuario</label><input class="settings-input" id="set-user" placeholder="usuario" autocomplete="username"></div>
+    <div class="settings-row"><label>Contraseña</label><input class="settings-input" id="set-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div style="margin-top:0.75rem"><button class="btn-primary" id="set-login-btn">Conectar Luxer</button></div>
+    <div id="set-login-status" style="font-size:12px;color:var(--muted);margin-top:0.5rem;text-align:center"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="event-modal">
+  <div class="modal">
+    <h3>Nuevo evento</h3>
+    <input type="text" id="event-title" placeholder="Nombre del evento" maxlength="40">
+    <input type="date" id="event-date">
+    <input type="time" id="event-time" placeholder="Hora (opcional)">
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeEventModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveEvent()">Guardar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="preset-modal">
+  <div class="modal">
+    <h3>Nuevo predefinido</h3>
+    <input type="text" id="preset-label" placeholder="Ej: Café" maxlength="20">
+    <div style="display:flex;gap:8px">
+      <input type="number" id="preset-min" placeholder="Min" min="0" max="99" style="flex:1">
+      <input type="number" id="preset-sec" placeholder="Seg" min="0" max="59" style="flex:1">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closePresetModal()">Cancelar</button>
+      <button class="btn-primary" onclick="savePreset()">Guardar</button>
+    </div>
+  </div>
+</div>
+<button id="luxer-btn" title="Luxer IA">&#10022;</button>
+<div id="luxer-panel">
+  <div class="luxer-header">
+    <div class="luxer-title">Luxer <div class="luxer-dot" id="luxer-dot"></div></div>
+    <button class="luxer-close" onclick="closeLuxer()">&#10005;</button>
+  </div>
+  <div id="luxer-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="luxer-login" id="luxer-login-form">
+      <p>Inicia sesión con tu cuenta InnerNet para usar Luxer</p>
+      <input class="settings-input" style="width:100%" id="lx-user" placeholder="Usuario" autocomplete="username">
+      <input class="settings-input" style="width:100%" id="lx-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
+      <button class="btn-primary" id="lx-login-btn">Iniciar sesión</button>
+      <div id="lx-login-err" style="font-size:12px;color:var(--danger);text-align:center"></div>
+    </div>
+    <div id="luxer-chat" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="luxer-messages" id="luxer-msgs"></div>
+      <div class="luxer-input-row">
+        <textarea class="luxer-input" id="luxer-input" rows="1" placeholder="Pregunta algo..."></textarea>
+        <button class="luxer-send" id="luxer-send-btn">&#8593;</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const ACCENTS=['#7c6af7','#4fd1a8','#f76a6a','#f7a96a','#6ab4f7','#f76adb','#a8f76a'];
+const DAYS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MONTHS_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const WX_CODES={0:'Despejado',1:'Casi despejado',2:'Parcialmente nublado',3:'Nublado',45:'Niebla',48:'Niebla helada',51:'Llovizna ligera',53:'Llovizna',55:'Llovizna intensa',61:'Lluvia ligera',63:'Lluvia moderada',65:'Lluvia intensa',71:'Nieve ligera',73:'Nieve',75:'Nieve intensa',80:'Aguaceros',81:'Aguaceros moderados',82:'Aguaceros fuertes',95:'Tormenta',96:'Tormenta con granizo',99:'Tormenta fuerte'};
+const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'❄️',75:'❄️',80:'🌧️',81:'⛈️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+let S={screen:0,use24h:false,showSecs:false,userName:'',accent:'#7c6af7',luxerToken:null,luxerUser:null,luxerHistory:[],timerSeconds:0,timerRunning:false,timerInterval:null,timerOriginal:0,swRunning:false,swInterval:null,swMs:0,swLaps:[],weatherLoaded:false,calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),selectedDay:null};
+function loadCfg(){try{const c=JSON.parse(localStorage.getItem('sb_cfg')||'{}');if(c.use24h!==undefined)S.use24h=c.use24h;if(c.showSecs!==undefined)S.showSecs=c.showSecs;if(c.userName)S.userName=c.userName;if(c.accent)S.accent=c.accent;if(c.luxerToken)S.luxerToken=c.luxerToken;if(c.luxerUser)S.luxerUser=c.luxerUser;}catch{}}
+function saveCfg(){localStorage.setItem('sb_cfg',JSON.stringify({use24h:S.use24h,showSecs:S.showSecs,userName:S.userName,accent:S.accent,luxerToken:S.luxerToken,luxerUser:S.luxerUser}))}
+function getEvents(){try{return JSON.parse(localStorage.getItem('sb_events')||'{}')}catch{return{}}}
+function saveEventsData(e){localStorage.setItem('sb_events',JSON.stringify(e))}
+function getPresets(){try{return JSON.parse(localStorage.getItem('sb_presets')||'[]')}catch{return[]}}
+function savePresetsData(p){localStorage.setItem('sb_presets',JSON.stringify(p))}
+let touchX=0,touchY=0;
+document.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;touchY=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){if(dx<0)goTo(Math.min(S.screen+1,4));else goTo(Math.max(S.screen-1,0))}},{passive:true});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.key==='ArrowRight')goTo(Math.min(S.screen+1,4));if(e.key==='ArrowLeft')goTo(Math.max(S.screen-1,0))});
+function goTo(n){S.screen=n;document.getElementById('screens').style.transform=`translateX(-${n*100}%)`;document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));document.querySelectorAll('.bg-layer').forEach((b,i)=>b.style.opacity=i===n?'1':'0');if(n===4&&!S.weatherLoaded)loadWeather()}
+function pad(n){return String(n).padStart(2,'0')}
+function updateClock(){const now=new Date();let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds(),period='';if(!S.use24h){period=h>=12?'PM':'AM';h=h%12||12}const t=S.showSecs?`${pad(h)}:${pad(m)}:${pad(s)}`:`${pad(h)}:${pad(m)}`;document.getElementById('clock-time').textContent=t;document.getElementById('clock-period').textContent=period;document.getElementById('bg-time').textContent=pad(h);document.getElementById('clock-date').textContent=`${DAYS[now.getDay()]}, ${now.getDate()} de ${MONTHS_ES[now.getMonth()]}`;const hr=now.getHours(),name=S.userName?`, ${S.userName}`:'';document.getElementById('greeting').textContent=(hr<12?'Buenos días':hr<18?'Buenas tardes':'Buenas noches')+name;document.getElementById('fmt-btn').textContent=S.use24h?'24H':'12H'}
+document.getElementById('fmt-btn').onclick=()=>{S.use24h=!S.use24h;saveCfg();updateClock()};
+setInterval(updateClock,1000);
+function renderCalendar(){const y=S.calYear,m=S.calMonth;document.getElementById('cal-month-title').textContent=`${MONTHS_ES[m].charAt(0).toUpperCase()+MONTHS_ES[m].slice(1)} ${y}`;const grid=document.getElementById('cal-grid');grid.innerHTML='';['D','L','M','X','J','V','S'].forEach(d=>{const el=document.createElement('div');el.className='cal-day-header';el.textContent=d;grid.appendChild(el)});const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prevD=new Date(y,m,0).getDate(),today=new Date(),ev=getEvents();for(let i=0;i<first;i++){const d=document.createElement('div');d.className='cal-day other-month';d.textContent=prevD-first+1+i;grid.appendChild(d)}for(let d=1;d<=days;d++){const el=document.createElement('div');el.className='cal-day';if(y===today.getFullYear()&&m===today.getMonth()&&d===today.getDate())el.classList.add('today');const key=`${y}-${pad(m+1)}-${pad(d)}`;if(ev[key]&&ev[key].length)el.classList.add('has-event');el.textContent=d;el.onclick=()=>selectDay(y,m,d);grid.appendChild(el)}const rem=42-first-days;for(let i=1;i<=rem;i++){const d=document.createElement('div');d.className='cal-day other-month';d.textContent=i;grid.appendChild(d)}if(S.selectedDay)renderEventsList(S.selectedDay)}
+function selectDay(y,m,d){S.selectedDay=`${y}-${pad(m+1)}-${pad(d)}`;renderEventsList(S.selectedDay)}
+function renderEventsList(key){const ev=getEvents(),list=document.getElementById('events-list');list.innerHTML='';if(!ev[key]||!ev[key].length)return;ev[key].forEach((e,i)=>{const el=document.createElement('div');el.className='event-item';el.innerHTML=`<div><strong style="font-size:13px">${e.title}</strong>${e.time?` <span style="color:var(--muted)">${e.time}</span>`:''}</div><button class="event-delete" onclick="deleteEvent('${key}',${i})">&#10005;</button>`;list.appendChild(el)})}
+function deleteEvent(key,idx){const ev=getEvents();ev[key].splice(idx,1);if(!ev[key].length)delete ev[key];saveEventsData(ev);renderCalendar()}
+document.getElementById('cal-prev').onclick=()=>{S.calMonth--;if(S.calMonth<0){S.calMonth=11;S.calYear--}renderCalendar()};
+document.getElementById('cal-next').onclick=()=>{S.calMonth++;if(S.calMonth>11){S.calMonth=0;S.calYear++}renderCalendar()};
+document.getElementById('open-event-modal').onclick=()=>{const t=new Date(),k=S.selectedDay||`${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;document.getElementById('event-date').value=k;document.getElementById('event-modal').classList.add('open')};
+function closeEventModal(){document.getElementById('event-modal').classList.remove('open')}
+function saveEvent(){const title=document.getElementById('event-title').value.trim(),date=document.getElementById('event-date').value,time=document.getElementById('event-time').value;if(!title||!date)return;const ev=getEvents();if(!ev[date])ev[date]=[];ev[date].push({title,time});saveEventsData(ev);closeEventModal();document.getElementById('event-title').value='';document.getElementById('event-time').value='';renderCalendar()}
+function fmtTimer(s){return`${pad(Math.floor(s/60))}:${pad(s%60)}`}
+function updateTimerDisplay(){const el=document.getElementById('timer-display');el.textContent=fmtTimer(S.timerSeconds);el.className='timer-display'+(S.timerRunning?' running':'')+(S.timerSeconds===0&&S.timerOriginal>0&&!S.timerRunning?' finished':'')}
+document.getElementById('timer-play').onclick=()=>{if(!S.timerRunning){if(S.timerSeconds===0)return;S.timerRunning=true;document.getElementById('timer-play').innerHTML='&#9646;&#9646;';S.timerInterval=setInterval(()=>{S.timerSeconds--;updateTimerDisplay();if(S.timerSeconds<=0){clearInterval(S.timerInterval);S.timerRunning=false;document.getElementById('timer-play').innerHTML='&#9654;';updateTimerDisplay()}},1000)}else{clearInterval(S.timerInterval);S.timerRunning=false;document.getElementById('timer-play').innerHTML='&#9654;';updateTimerDisplay()}};
+document.getElementById('timer-reset').onclick=()=>{clearInterval(S.timerInterval);S.timerRunning=false;S.timerSeconds=S.timerOriginal;document.getElementById('timer-play').innerHTML='&#9654;';updateTimerDisplay()};
+document.getElementById('timer-add-preset').onclick=()=>{document.getElementById('preset-min').value=Math.floor(S.timerOriginal/60)||'';document.getElementById('preset-sec').value=S.timerOriginal%60||'';document.getElementById('preset-modal').classList.add('open')};
+function closePresetModal(){document.getElementById('preset-modal').classList.remove('open')}
+function savePreset(){const label=document.getElementById('preset-label').value.trim(),min=parseInt(document.getElementById('preset-min').value)||0,sec=parseInt(document.getElementById('preset-sec').value)||0;if(!label||(min===0&&sec===0))return;const p=getPresets();p.push({label,seconds:min*60+sec});savePresetsData(p);closePresetModal();document.getElementById('preset-label').value='';renderPresets()}
+function deletePreset(i){const p=getPresets();p.splice(i,1);savePresetsData(p);renderPresets()}
+function setTimer(seconds){clearInterval(S.timerInterval);S.timerRunning=false;S.timerSeconds=seconds;S.timerOriginal=seconds;document.getElementById('timer-play').innerHTML='&#9654;';updateTimerDisplay()}
+function renderPresets(){const c=document.getElementById('presets-container');c.innerHTML='';const p=getPresets();if(!p.length){const h=document.createElement('div');h.style.cssText='font-size:12px;color:var(--muted);font-family:JetBrains Mono,monospace';h.textContent='Toca + para agregar predefinidos';c.appendChild(h);return}p.forEach((pr,i)=>{const btn=document.createElement('button');btn.className='preset-btn';btn.innerHTML=`${pr.label} <span style="font-size:10px;color:var(--muted)">${fmtTimer(pr.seconds)}</span><span class="preset-del" onclick="event.stopPropagation();deletePreset(${i})">&#10005;</span>`;btn.onclick=()=>setTimer(pr.seconds);c.appendChild(btn)})}
+function fmtSW(ms){const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),cs=Math.floor((ms%1000)/10);return`${pad(m)}:${pad(s)}<span class="sw-ms">.${pad(cs)}</span>`}
+function updateSWDisplay(){const el=document.getElementById('sw-display');el.innerHTML=fmtSW(S.swMs);el.className='sw-display'+(S.swRunning?' running':'')}
+document.getElementById('sw-play').onclick=()=>{if(!S.swRunning){S.swRunning=true;const start=Date.now()-S.swMs;document.getElementById('sw-play').innerHTML='&#9646;&#9646;';S.swInterval=setInterval(()=>{S.swMs=Date.now()-start;updateSWDisplay()},50)}else{clearInterval(S.swInterval);S.swRunning=false;document.getElementById('sw-play').innerHTML='&#9654;';updateSWDisplay()}};
+document.getElementById('sw-reset').onclick=()=>{clearInterval(S.swInterval);S.swRunning=false;S.swMs=0;S.swLaps=[];document.getElementById('sw-play').innerHTML='&#9654;';document.getElementById('laps-container').innerHTML='';updateSWDisplay()};
+document.getElementById('sw-lap').onclick=()=>{if(!S.swRunning&&S.swMs===0)return;const prev=S.swLaps.reduce((a,b)=>a+b.split,0);S.swLaps.push({total:S.swMs,split:S.swMs-prev});renderLaps()};
+function renderLaps(){const c=document.getElementById('laps-container');c.innerHTML='';if(!S.swLaps.length)return;const splits=S.swLaps.map(l=>l.split),mn=Math.min(...splits),mx=Math.max(...splits);[...S.swLaps].reverse().forEach((l,ri)=>{const i=S.swLaps.length-1-ri,el=document.createElement('div');el.className='lap-item';if(splits.length>1&&l.split===mn)el.classList.add('fastest');if(splits.length>1&&l.split===mx)el.classList.add('slowest');const fm=ms=>{const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),cs=Math.floor((ms%1000)/10);return`${pad(m)}:${pad(s)}.${pad(cs)}`};el.innerHTML=`<span style="color:var(--muted)">Vuelta ${i+1}</span><span>${fm(l.split)}</span><span style="color:var(--muted)">${fm(l.total)}</span>`;c.appendChild(el)})}
+async function loadWeather(){S.weatherLoaded=true;const wc=document.getElementById('weather-content');if(!navigator.geolocation){wc.innerHTML='<div class="weather-error">Tu navegador no soporta geolocalización</div>';return}wc.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px">Obteniendo ubicación...</div>';navigator.geolocation.getCurrentPosition(async pos=>{try{const{latitude:lat,longitude:lon}=pos.coords;const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=celsius&wind_speed_unit=kmh`);const d=await r.json();const cu=d.current,code=cu.weather_code;wc.innerHTML=`<div style="text-align:center"><div class="weather-icon">${WX_ICONS[code]||'🌡️'}</div><div class="weather-temp">${Math.round(cu.temperature_2m)}<span class="weather-unit">°C</span></div><div class="weather-desc">${WX_CODES[code]||'Desconocido'}</div><div class="weather-location">${lat.toFixed(2)}°, ${lon.toFixed(2)}°</div><div class="weather-details"><div class="weather-detail"><div class="val">${cu.relative_humidity_2m}%</div><div class="lbl">Humedad</div></div><div class="weather-detail"><div class="val">${Math.round(cu.wind_speed_10m)}</div><div class="lbl">km/h</div></div></div><button class="weather-refresh" onclick="S.weatherLoaded=false;loadWeather()">Actualizar</button></div>`}catch{wc.innerHTML='<div class="weather-error">No se pudo cargar el clima</div>'}},()=>{wc.innerHTML='<div class="weather-error">Permiso de ubicación denegado. Actívalo para ver el clima.</div>'})}
+function openSettings(){document.getElementById('settings-panel').classList.add('open');document.getElementById('settings-overlay').classList.add('open');document.getElementById('set-name').value=S.userName;document.getElementById('set-24h').checked=S.use24h;document.getElementById('set-secs').checked=S.showSecs;renderAccentPicker()}
+function closeSettings(){document.getElementById('settings-panel').classList.remove('open');document.getElementById('settings-overlay').classList.remove('open')}
+document.getElementById('settings-btn').onclick=openSettings;
+document.getElementById('set-name').oninput=e=>{S.userName=e.target.value;saveCfg()};
+document.getElementById('set-24h').onchange=e=>{S.use24h=e.target.checked;saveCfg();updateClock()};
+document.getElementById('set-secs').onchange=e=>{S.showSecs=e.target.checked;saveCfg()};
+function renderAccentPicker(){const c=document.getElementById('accent-picker');c.innerHTML='';ACCENTS.forEach(a=>{const s=document.createElement('div');s.className='accent-swatch';if(a===S.accent)s.classList.add('selected');s.style.background=a;s.onclick=()=>{S.accent=a;document.documentElement.style.setProperty('--accent',a);saveCfg();renderAccentPicker()};c.appendChild(s)})}
+document.getElementById('set-login-btn').onclick=async()=>{const u=document.getElementById('set-user').value.trim(),p=document.getElementById('set-pass').value,st=document.getElementById('set-login-status');if(!u||!p)return;st.textContent='Conectando...';st.style.color='var(--muted)';try{const r=await fetch('https://own-net.vercel.app/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const d=await r.json();if(d.token){S.luxerToken=d.token;S.luxerUser=d.username;saveCfg();st.style.color='var(--accent2)';st.textContent=`Conectado como ${d.username}`;document.getElementById('luxer-dot').classList.add('connected')}else{st.style.color='var(--danger)';st.textContent=d.error||'Error'}}catch{st.style.color='var(--danger)';st.textContent='Sin conexión'}};
+document.getElementById('luxer-btn').onclick=()=>{const p=document.getElementById('luxer-panel');if(p.classList.contains('open')){closeLuxer();return}p.classList.add('open');if(S.luxerToken)showLuxerChat()};
+function closeLuxer(){document.getElementById('luxer-panel').classList.remove('open')}
+function showLuxerChat(){document.getElementById('luxer-login-form').style.display='none';const chat=document.getElementById('luxer-chat');chat.style.display='flex';document.getElementById('luxer-dot').classList.add('connected');if(!S.luxerHistory.length){addLuxerMsg('system',`Conectado como ${S.luxerUser}`);addLuxerMsg('ai',`Hola${S.luxerUser?' '+S.luxerUser:''} ✦ Soy Luxer. ¿En qué te ayudo?`)}}
+function addLuxerMsg(role,text){const c=document.getElementById('luxer-msgs'),el=document.createElement('div');el.className=`luxer-msg ${role}`;el.textContent=text;c.appendChild(el);c.scrollTop=c.scrollHeight}
+async function sendLuxerMsg(){const input=document.getElementById('luxer-input'),text=input.value.trim();if(!text)return;input.value='';input.style.height='auto';addLuxerMsg('user',text);S.luxerHistory.push({role:'user',content:text});const typing=document.createElement('div');typing.className='luxer-msg ai';typing.id='lx-typing';typing.textContent='...';document.getElementById('luxer-msgs').appendChild(typing);document.getElementById('luxer-msgs').scrollTop=9999;try{const r=await fetch('https://own-net.vercel.app/luxer/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${S.luxerToken}`},body:JSON.stringify({messages:[{role:'system',content:'Eres Luxer, un asistente conciso integrado en StandBy, una app de reloj y herramientas. Responde en español, de forma breve y útil.'},...S.luxerHistory]})});const d=await r.json();document.getElementById('lx-typing')?.remove();if(d.reply){S.luxerHistory.push({role:'assistant',content:d.reply});addLuxerMsg('ai',d.reply)}else if(d.error==='limit_reached'){addLuxerMsg('system','Alcanzaste el límite de mensajes, obtén más desde innernet.qzz.io/d/luxer.ai')}else{addLuxerMsg('system','Error al conectar con Luxer')}}catch{document.getElementById('lx-typing')?.remove();addLuxerMsg('system','Sin conexión')}}
+document.getElementById('luxer-send-btn').onclick=sendLuxerMsg;
+document.getElementById('luxer-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendLuxerMsg()}});
+document.getElementById('luxer-input').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,96)+'px'});
+document.getElementById('lx-login-btn').onclick=async()=>{const u=document.getElementById('lx-user').value.trim(),p=document.getElementById('lx-pass').value,err=document.getElementById('lx-login-err');if(!u||!p){err.textContent='Completa todos los campos';return}err.textContent='Conectando...';try{const r=await fetch('https://own-net.vercel.app/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const d=await r.json();if(d.token){S.luxerToken=d.token;S.luxerUser=d.username;saveCfg();showLuxerChat()}else{err.style.color='var(--danger)';err.textContent=d.error||'Credenciales inválidas'}}catch{err.style.color='var(--danger)';err.textContent='Sin conexión'}};
+loadCfg();
+document.documentElement.style.setProperty('--accent',S.accent);
+if(S.luxerToken)document.getElementById('luxer-dot').classList.add('connected');
+if(!getPresets().length)savePresetsData([{label:'Café',seconds:240},{label:'Pasta',seconds:600},{label:'Pomodoro',seconds:1500}]);
+renderPresets();
+updateTimerDisplay();
+updateSWDisplay();
+renderCalendar();
+goTo(0);
+</script>
+</body>
+</html>
