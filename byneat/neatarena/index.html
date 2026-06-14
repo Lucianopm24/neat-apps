@@ -6,368 +6,284 @@
 <title>Neat Arena</title>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --card: #1a1a26;
-    --border: #2a2a3a;
-    --accent: #7c3aed;
-    --accent2: #a855f7;
-    --gold: #f59e0b;
-    --green: #10b981;
-    --red: #ef4444;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --font: 'Segoe UI', system-ui, sans-serif;
+    --bg:#0a0a0f; --surface:#12121a; --card:#1a1a26; --border:#2a2a3a;
+    --accent:#7c3aed; --accent2:#a855f7; --gold:#f59e0b;
+    --green:#10b981; --red:#ef4444; --text:#e2e8f0; --muted:#64748b;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:var(--font); overflow:hidden; height:100vh; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;touch-action:none;}
+  .screen{display:none;width:100%;height:100vh;}
+  .screen.active{display:flex;}
 
-  /* ── SCREENS ── */
-  .screen { display:none; width:100%; height:100vh; }
-  .screen.active { display:flex; }
+  /* AUTH */
+  #screen-auth{flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 0%,#3b0764,#0a0a0f 70%);}
+  .auth-logo{font-size:3rem;font-weight:900;letter-spacing:6px;
+    background:linear-gradient(135deg,#a855f7,#7c3aed,#4f46e5);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .auth-sub{color:var(--muted);font-size:.85rem;margin-bottom:2rem;letter-spacing:3px;text-transform:uppercase;}
+  .auth-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.8rem;width:min(360px,90vw);}
+  .auth-tabs{display:flex;gap:.5rem;margin-bottom:1.2rem;}
+  .auth-tab{flex:1;padding:.55rem;border:none;border-radius:8px;cursor:pointer;background:var(--surface);color:var(--muted);font-size:.88rem;transition:.2s;}
+  .auth-tab.active{background:var(--accent);color:#fff;}
+  .auth-form{display:flex;flex-direction:column;gap:.8rem;}
+  .auth-form input{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:.7rem 1rem;color:var(--text);font-size:.95rem;outline:none;transition:.2s;}
+  .auth-form input:focus{border-color:var(--accent2);}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;border:none;
+    border-radius:8px;padding:.75rem;font-size:.95rem;font-weight:700;cursor:pointer;transition:.2s;letter-spacing:1px;}
+  .btn-primary:active{transform:scale(.97);}
+  .auth-error{color:var(--red);font-size:.82rem;text-align:center;min-height:1rem;}
 
-  /* ── AUTH ── */
-  #screen-auth {
-    flex-direction:column; align-items:center; justify-content:center;
-    background: radial-gradient(ellipse at 50% 0%, #3b0764 0%, #0a0a0f 70%);
-  }
-  .auth-logo { font-size:2.8rem; font-weight:900; letter-spacing:4px; margin-bottom:.3rem;
-    background: linear-gradient(135deg, #a855f7, #7c3aed, #4f46e5);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .auth-sub { color:var(--muted); font-size:.9rem; margin-bottom:2.5rem; letter-spacing:2px; text-transform:uppercase; }
-  .auth-box { background:var(--card); border:1px solid var(--border); border-radius:16px;
-    padding:2rem; width:min(380px, 90vw); }
-  .auth-tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; }
-  .auth-tab { flex:1; padding:.6rem; border:none; border-radius:8px; cursor:pointer;
-    background:var(--surface); color:var(--muted); font-size:.9rem; transition:.2s; }
-  .auth-tab.active { background:var(--accent); color:#fff; }
-  .auth-form { display:flex; flex-direction:column; gap:1rem; }
-  .auth-form input { background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    padding:.75rem 1rem; color:var(--text); font-size:.95rem; outline:none; transition:.2s; }
-  .auth-form input:focus { border-color:var(--accent2); }
-  .btn-primary { background:linear-gradient(135deg, var(--accent), #4f46e5); color:#fff;
-    border:none; border-radius:8px; padding:.8rem; font-size:1rem; font-weight:700;
-    cursor:pointer; transition:.2s; letter-spacing:1px; }
-  .btn-primary:hover { opacity:.85; transform:translateY(-1px); }
-  .btn-primary:active { transform:translateY(0); }
-  .auth-error { color:var(--red); font-size:.85rem; text-align:center; }
+  /* HUB */
+  #screen-hub{flex-direction:column;overflow-y:auto;}
+  .hub-header{background:var(--surface);border-bottom:1px solid var(--border);
+    padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .hub-logo{font-size:1.1rem;font-weight:900;letter-spacing:3px;
+    background:linear-gradient(135deg,#a855f7,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .hub-coins{display:flex;align-items:center;gap:.3rem;color:var(--gold);font-weight:700;font-size:.88rem;}
+  .btn-logout{background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:.3rem .6rem;cursor:pointer;font-size:.78rem;}
+  .hub-body{padding:.8rem;display:flex;flex-direction:column;gap:.8rem;max-width:500px;margin:0 auto;width:100%;}
 
-  /* ── MAIN HUB ── */
-  #screen-hub { flex-direction:column; overflow-y:auto; overflow-x:hidden; }
-  .hub-header { background:var(--surface); border-bottom:1px solid var(--border);
-    padding:.75rem 1.2rem; display:flex; align-items:center; justify-content:space-between;
-    position:sticky; top:0; z-index:10; flex-shrink:0; }
-  .hub-logo { font-size:1.2rem; font-weight:900; letter-spacing:3px;
-    background:linear-gradient(135deg,#a855f7,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .hub-user { display:flex; align-items:center; gap:.75rem; }
-  .hub-coins { display:flex; align-items:center; gap:.3rem; color:var(--gold); font-weight:700; font-size:.9rem; }
-  .btn-logout { background:none; border:1px solid var(--border); border-radius:6px;
-    color:var(--muted); padding:.35rem .7rem; cursor:pointer; font-size:.8rem; transition:.2s; }
-  .btn-logout:hover { border-color:var(--red); color:var(--red); }
+  /* Trophy */
+  .trophy-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem;}
+  .trophy-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;}
+  .trophy-left{display:flex;align-items:center;gap:.6rem;}
+  .trophy-num{font-size:2.2rem;font-weight:900;color:var(--gold);line-height:1;}
+  .trophy-sub{font-size:.7rem;color:var(--muted);}
+  .league-badge{padding:.25rem .7rem;border-radius:20px;font-size:.72rem;font-weight:700;}
+  .league-Bronze{background:#78350f22;color:#f59e0b;border:1px solid #78350f;}
+  .league-Silver{background:#1e293b;color:#94a3b8;border:1px solid #475569;}
+  .league-Gold{background:#78350f33;color:#fbbf24;border:1px solid #d97706;}
+  .league-Diamond{background:#1e3a5f33;color:#60a5fa;border:1px solid #3b82f6;}
+  .league-Master{background:#3b076422;color:#c084fc;border:1px solid #7c3aed;}
+  .league-Legend{background:#7c000044;color:#f87171;border:1px solid #ef4444;}
+  .bar-wrap{height:7px;background:var(--surface);border-radius:4px;overflow:hidden;margin-bottom:.4rem;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:4px;transition:width .6s ease;}
+  .bar-labels{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);}
+  .streak-pill{display:inline-flex;align-items:center;gap:.25rem;background:#78350f22;border:1px solid var(--gold);border-radius:20px;padding:.15rem .5rem;font-size:.72rem;color:var(--gold);}
 
-  .hub-body { padding:1rem; display:flex; flex-direction:column; gap:1rem; max-width:600px; margin:0 auto; width:100%; }
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;}
+  .stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.7rem;text-align:center;}
+  .stat-box .v{font-size:1.3rem;font-weight:800;}
+  .stat-box .l{font-size:.68rem;color:var(--muted);margin-top:.1rem;}
 
-  /* trophy card */
-  .trophy-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:1.2rem; }
-  .trophy-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.8rem; }
-  .trophy-count { display:flex; align-items:center; gap:.5rem; }
-  .trophy-icon { font-size:1.6rem; }
-  .trophy-num { font-size:2rem; font-weight:900; color:var(--gold); }
-  .trophy-label { font-size:.75rem; color:var(--muted); }
-  .league-badge { padding:.3rem .8rem; border-radius:20px; font-size:.75rem; font-weight:700; }
-  .league-Bronze  { background:#78350f22; color:#f59e0b; border:1px solid #78350f; }
-  .league-Silver  { background:#1e293b; color:#94a3b8; border:1px solid #475569; }
-  .league-Gold    { background:#78350f33; color:#fbbf24; border:1px solid #d97706; }
-  .league-Diamond { background:#1e3a5f33; color:#60a5fa; border:1px solid #3b82f6; }
-  .league-Master  { background:#3b0764aa; color:#c084fc; border:1px solid #7c3aed; }
-  .league-Legend  { background:#7c000044; color:#f87171; border:1px solid #ef4444; }
-  .trophy-bar-wrap { height:8px; background:var(--surface); border-radius:4px; overflow:hidden; margin-bottom:.5rem; }
-  .trophy-bar { height:100%; background:linear-gradient(90deg,var(--accent),var(--gold)); border-radius:4px; transition:width .6s ease; }
-  .trophy-bar-labels { display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); }
-  .streak-badge { display:inline-flex; align-items:center; gap:.3rem; background:#78350f22;
-    border:1px solid var(--gold); border-radius:20px; padding:.2rem .6rem; font-size:.75rem; color:var(--gold); }
+  /* Best score */
+  .best-card{background:linear-gradient(135deg,#1a1a26,#12121a);border:1px solid var(--gold);border-radius:14px;padding:1rem;text-align:center;}
+  .best-num{font-size:2.5rem;font-weight:900;color:var(--gold);}
+  .best-lbl{font-size:.75rem;color:var(--muted);margin-top:.2rem;}
 
-  /* stat row */
-  .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; }
-  .stat-box { background:var(--card); border:1px solid var(--border); border-radius:12px;
-    padding:.8rem; text-align:center; }
-  .stat-box .val { font-size:1.4rem; font-weight:800; }
-  .stat-box .lbl { font-size:.7rem; color:var(--muted); margin-top:.2rem; }
-  .green { color:var(--green); }
-  .red   { color:var(--red); }
-  .purple{ color:var(--accent2); }
+  /* Milestones */
+  .section-title{font-size:.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+  .milestone-road{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.3rem;}
+  .milestone-node{flex-shrink:0;width:68px;text-align:center;}
+  .milestone-circle{width:46px;height:46px;border-radius:50%;border:2px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+    margin:0 auto .25rem;cursor:pointer;transition:.2s;background:var(--surface);}
+  .milestone-circle.reached{border-color:var(--gold);background:#78350f22;}
+  .milestone-circle.claimed{border-color:var(--green);background:#064e3b22;}
+  .milestone-circle.claimable{border-color:var(--accent2);background:#3b0764;animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #a855f744}50%{box-shadow:0 0 0 6px #a855f700}}
+  .milestone-trophy{font-size:.58rem;color:var(--muted);}
+  .milestone-label{font-size:.58rem;color:var(--text);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-  /* hero selector */
-  .section-title { font-size:.8rem; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:.6rem; }
-  .heroes-row { display:flex; gap:.6rem; overflow-x:auto; padding-bottom:.3rem; }
-  .hero-card { flex-shrink:0; background:var(--card); border:2px solid var(--border); border-radius:12px;
-    padding:.7rem .9rem; cursor:pointer; transition:.2s; text-align:center; min-width:70px; }
-  .hero-card.active { border-color:var(--accent2); background:#3b0764; }
-  .hero-card.locked { opacity:.4; cursor:not-allowed; }
-  .hero-icon { font-size:1.5rem; }
-  .hero-name { font-size:.65rem; margin-top:.2rem; color:var(--muted); }
+  /* Play */
+  .play-area{display:flex;flex-direction:column;align-items:center;gap:.7rem;}
+  .diff-row{display:flex;gap:.4rem;width:100%;max-width:300px;}
+  .diff-btn{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;
+    padding:.45rem;color:var(--muted);font-size:.75rem;cursor:pointer;transition:.2s;text-align:center;}
+  .diff-btn.selected{border-color:var(--accent2);color:var(--accent2);background:#3b076422;}
+  .btn-play{background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:14px;
+    padding:1rem 2.5rem;font-size:1.1rem;font-weight:900;color:#fff;cursor:pointer;
+    letter-spacing:2px;width:100%;max-width:300px;box-shadow:0 0 30px #7c3aed44;transition:.2s;}
+  .btn-play:active{transform:scale(.97);}
+  .daily-btn{background:var(--card);border:1px solid var(--gold);border-radius:10px;
+    padding:.6rem 1rem;color:var(--gold);font-weight:700;cursor:pointer;
+    display:flex;align-items:center;gap:.5rem;font-size:.85rem;}
+  .daily-btn:disabled{opacity:.4;cursor:not-allowed;}
 
-  /* milestones */
-  .milestone-road { display:flex; gap:.5rem; overflow-x:auto; padding:.3rem 0; }
-  .milestone-node { flex-shrink:0; width:72px; text-align:center; position:relative; }
-  .milestone-circle { width:48px; height:48px; border-radius:50%; border:2px solid var(--border);
-    display:flex; align-items:center; justify-content:center; font-size:1.2rem;
-    margin:0 auto .3rem; position:relative; cursor:pointer; transition:.2s; background:var(--surface); }
-  .milestone-circle.reached { border-color:var(--gold); background:#78350f22; }
-  .milestone-circle.claimed { border-color:var(--green); background:#064e3b22; }
-  .milestone-circle.claimable { border-color:var(--accent2); background:#3b0764; animation:pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 #a855f744} 50%{box-shadow:0 0 0 6px #a855f700} }
-  .milestone-trophy { font-size:.6rem; color:var(--muted); }
-  .milestone-label  { font-size:.6rem; color:var(--text); margin-top:.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* Leaderboard */
+  .lb-list{display:flex;flex-direction:column;gap:.35rem;}
+  .lb-row{display:flex;align-items:center;gap:.6rem;background:var(--card);
+    border:1px solid var(--border);border-radius:9px;padding:.5rem .7rem;}
+  .lb-rank{font-size:.85rem;font-weight:800;width:22px;text-align:center;}
+  .lb-name{flex:1;font-size:.85rem;}
+  .lb-trophy{color:var(--gold);font-weight:700;font-size:.82rem;}
+  .lb-me{border-color:var(--accent2);}
 
-  /* play button */
-  .play-area { display:flex; flex-direction:column; align-items:center; gap:.8rem; }
-  .btn-play { background:linear-gradient(135deg,#7c3aed,#4f46e5); border:none; border-radius:16px;
-    padding:1.1rem 3rem; font-size:1.2rem; font-weight:900; color:#fff; cursor:pointer;
-    letter-spacing:2px; transition:.2s; box-shadow:0 0 30px #7c3aed44; width:100%; max-width:320px; }
-  .btn-play:hover { transform:translateY(-2px); box-shadow:0 0 40px #7c3aed66; }
-  .diff-row { display:flex; gap:.5rem; }
-  .diff-btn { flex:1; background:var(--card); border:1px solid var(--border); border-radius:8px;
-    padding:.5rem; color:var(--muted); font-size:.8rem; cursor:pointer; transition:.2s; text-align:center; }
-  .diff-btn.selected { border-color:var(--accent2); color:var(--accent2); background:#3b076422; }
+  /* GAME */
+  #screen-game{flex-direction:column;background:#0a0a0f;position:relative;}
+  .game-hud{display:flex;align-items:center;justify-content:space-between;
+    padding:.4rem .8rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+  .hud-lives{display:flex;gap:3px;align-items:center;}
+  .hud-heart{font-size:1rem;}
+  .hud-score-wrap{text-align:center;}
+  .hud-score{font-size:1.3rem;font-weight:900;color:var(--gold);}
+  .hud-best{font-size:.65rem;color:var(--muted);}
+  .hud-diff{font-size:.75rem;color:var(--accent2);font-weight:700;}
+  #gameCanvas{flex:1;display:block;width:100%;touch-action:none;}
 
-  .daily-btn { background:var(--card); border:1px solid var(--gold); border-radius:10px;
-    padding:.7rem 1.2rem; color:var(--gold); font-weight:700; cursor:pointer;
-    display:flex; align-items:center; gap:.5rem; font-size:.9rem; transition:.2s; }
-  .daily-btn:hover { background:#78350f22; }
-  .daily-btn:disabled { opacity:.4; cursor:not-allowed; }
+  /* RESULT */
+  #screen-result{flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 40%,#1e1030,#0a0a0f 80%);}
+  .result-box{background:var(--card);border:1px solid var(--border);border-radius:20px;
+    padding:1.8rem;width:min(320px,90vw);text-align:center;}
+  .result-icon{font-size:3.5rem;margin-bottom:.3rem;}
+  .result-title{font-size:1.6rem;font-weight:900;margin-bottom:.2rem;}
+  .result-win{color:var(--green);}
+  .result-loss{color:var(--red);}
+  .trophy-change{font-size:1.2rem;font-weight:800;margin:.8rem 0;}
+  .tc-pos{color:var(--gold);}
+  .tc-neg{color:var(--red);}
+  .result-stats{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.8rem 0;}
+  .result-stat{background:var(--surface);border-radius:8px;padding:.5rem;}
+  .result-stat .v{font-size:1rem;font-weight:800;}
+  .result-stat .l{font-size:.68rem;color:var(--muted);}
+  .milestone-unlocked{background:#3b076433;border:1px solid var(--accent2);border-radius:9px;padding:.6rem;margin:.4rem 0;font-size:.82rem;}
+  .btn-continue{width:100%;margin-top:.8rem;}
 
-  /* leaderboard */
-  .lb-list { display:flex; flex-direction:column; gap:.4rem; }
-  .lb-row { display:flex; align-items:center; gap:.75rem; background:var(--card);
-    border:1px solid var(--border); border-radius:10px; padding:.6rem .8rem; }
-  .lb-rank { font-size:.9rem; font-weight:800; width:24px; text-align:center; }
-  .lb-name { flex:1; font-size:.9rem; }
-  .lb-trophy { display:flex; align-items:center; gap:.3rem; color:var(--gold); font-weight:700; font-size:.85rem; }
-  .lb-me { border-color:var(--accent2); }
+  /* COMBO */
+  #combo-display{position:absolute;top:50px;left:50%;transform:translateX(-50%);
+    font-size:1.5rem;font-weight:900;color:var(--gold);pointer-events:none;
+    text-shadow:0 0 20px var(--gold);opacity:0;transition:opacity .3s;}
+  #combo-display.show{opacity:1;}
 
-  /* ── GAME SCREEN ── */
-  #screen-game { flex-direction:column; background:#0a0a0f; }
-  .game-hud { display:flex; align-items:center; justify-content:space-between;
-    padding:.5rem 1rem; background:var(--surface); border-bottom:1px solid var(--border);
-    flex-shrink:0; gap:.5rem; }
-  .hud-hp { display:flex; align-items:center; gap:.4rem; }
-  .hp-bar-wrap { width:100px; height:10px; background:var(--bg); border-radius:5px; overflow:hidden; }
-  .hp-bar { height:100%; background:linear-gradient(90deg,#10b981,#34d399); border-radius:5px; transition:width .3s; }
-  .hud-score { font-size:1rem; font-weight:800; color:var(--gold); }
-  .hud-timer { font-size:1rem; font-weight:700; color:var(--accent2); }
-  #gameCanvas { flex:1; display:block; width:100%; }
-  .game-controls { display:flex; justify-content:space-between; align-items:center;
-    padding:.5rem 1rem; background:var(--surface); border-top:1px solid var(--border);
-    flex-shrink:0; }
-  .joystick-area { position:relative; width:90px; height:90px; }
-  #joystick-base { width:90px; height:90px; border-radius:50%; border:2px solid var(--border);
-    background:var(--card); position:relative; touch-action:none; }
-  #joystick-knob { width:36px; height:36px; border-radius:50%; background:var(--accent);
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none;
-    box-shadow:0 0 12px var(--accent); }
-  .right-controls { display:flex; flex-direction:column; gap:.5rem; align-items:flex-end; }
-  .btn-shoot { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#ef4444,#dc2626);
-    border:none; font-size:1.2rem; cursor:pointer; box-shadow:0 0 16px #ef444466;
-    color:#fff; font-weight:800; touch-action:none; }
-  .btn-skill { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#4f46e5);
-    border:none; font-size:.9rem; cursor:pointer; color:#fff; touch-action:none; }
-  .ammo-row { display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .ammo-dots { display:flex; gap:3px; }
-  .ammo-dot { width:9px; height:9px; border-radius:50%; background:var(--red); transition:.15s; }
-  .ammo-dot.empty { background:var(--border); }
-  .reload-bar-wrap { width:48px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
-  .reload-bar { height:100%; background:var(--green); width:0%; transition:width .1s linear; }
-  .ammo-label { font-size:.6rem; color:var(--muted); }
+  #toast{position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-80px);
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    padding:.6rem 1rem;font-size:.88rem;z-index:999;transition:.3s;pointer-events:none;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
 
-  /* ── RESULT ── */
-  #screen-result { flex-direction:column; align-items:center; justify-content:center;
-    background:radial-gradient(ellipse at 50% 40%, #1e1030 0%, #0a0a0f 80%); }
-  .result-box { background:var(--card); border:1px solid var(--border); border-radius:20px;
-    padding:2rem; width:min(340px,90vw); text-align:center; }
-  .result-icon { font-size:4rem; margin-bottom:.5rem; }
-  .result-title { font-size:1.8rem; font-weight:900; margin-bottom:.3rem; }
-  .result-win  { color:var(--green); }
-  .result-loss { color:var(--red); }
-  .trophy-change { font-size:1.3rem; font-weight:800; margin:1rem 0; }
-  .tc-pos { color:var(--gold); }
-  .tc-neg { color:var(--red); }
-  .result-stats { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin:1rem 0; }
-  .result-stat { background:var(--surface); border-radius:8px; padding:.6rem; }
-  .result-stat .v { font-size:1.1rem; font-weight:800; }
-  .result-stat .l { font-size:.7rem; color:var(--muted); }
-  .milestone-unlocked { background:#3b076433; border:1px solid var(--accent2);
-    border-radius:10px; padding:.7rem; margin:.5rem 0; font-size:.85rem; }
-  .btn-continue { width:100%; margin-top:1rem; }
+  .modal-overlay{display:none;position:fixed;inset:0;background:#000a;z-index:100;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.4rem;width:min(300px,88vw);text-align:center;}
+  .modal h3{font-size:1.1rem;margin-bottom:.4rem;}
+  .modal p{color:var(--muted);font-size:.85rem;margin-bottom:.8rem;}
+  .modal-reward{font-size:2.2rem;margin:.4rem 0;}
+  .btn-close-modal{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:.55rem 1.3rem;cursor:pointer;font-weight:700;}
 
-  /* TOAST */
-  #toast { position:fixed; top:1rem; left:50%; transform:translateX(-50%) translateY(-80px);
-    background:var(--card); border:1px solid var(--border); border-radius:10px;
-    padding:.7rem 1.2rem; font-size:.9rem; z-index:999; transition:.3s; pointer-events:none; }
-  #toast.show { transform:translateX(-50%) translateY(0); }
-
-  /* MODAL */
-  .modal-overlay { display:none; position:fixed; inset:0; background:#000a; z-index:100;
-    align-items:center; justify-content:center; }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--card); border:1px solid var(--border); border-radius:16px;
-    padding:1.5rem; width:min(320px,90vw); text-align:center; }
-  .modal h3 { font-size:1.2rem; margin-bottom:.5rem; }
-  .modal p  { color:var(--muted); font-size:.9rem; margin-bottom:1rem; }
-  .modal-reward { font-size:2.5rem; margin:.5rem 0; }
-  .btn-close-modal { background:var(--accent); color:#fff; border:none; border-radius:8px;
-    padding:.6rem 1.5rem; cursor:pointer; font-weight:700; }
-
-  @media(max-width:480px) {
-    .hub-body { padding:.7rem; }
-    .stat-row { gap:.4rem; }
-    .btn-play { font-size:1rem; padding:1rem 2rem; }
-  }
+  @media(max-width:400px){.hub-body{padding:.6rem;}.trophy-num{font-size:1.8rem;}}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════ AUTH ═══════════════════ -->
+<!-- AUTH -->
 <div id="screen-auth" class="screen active">
   <div class="auth-logo">NEAT</div>
-  <div class="auth-sub">⚔ Arena ⚔</div>
+  <div class="auth-sub">⚡ Arena ⚡</div>
   <div class="auth-box">
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login')">Entrar</button>
-      <button class="auth-tab" onclick="switchTab('register')">Registrarse</button>
+      <button class="auth-tab" onclick="switchTab('register')">Registro</button>
     </div>
     <div id="form-login" class="auth-form">
-      <input type="email" id="login-email" placeholder="Correo electrónico">
+      <input type="email" id="login-email" placeholder="Correo">
       <input type="password" id="login-pass" placeholder="Contraseña">
-      <button class="btn-primary" onclick="doLogin()">ENTRAR AL ARENA</button>
+      <button class="btn-primary" onclick="doLogin()">ENTRAR</button>
       <div id="login-error" class="auth-error"></div>
     </div>
     <div id="form-register" class="auth-form" style="display:none">
       <input type="text" id="reg-user" placeholder="Nombre de jugador">
-      <input type="email" id="reg-email" placeholder="Correo electrónico">
-      <input type="password" id="reg-pass" placeholder="Contraseña (mín. 6 chars)">
+      <input type="email" id="reg-email" placeholder="Correo">
+      <input type="password" id="reg-pass" placeholder="Contraseña (mín. 6)">
       <button class="btn-primary" onclick="doRegister()">CREAR CUENTA</button>
       <div id="reg-error" class="auth-error"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════ HUB ═══════════════════ -->
+<!-- HUB -->
 <div id="screen-hub" class="screen">
   <div class="hub-header">
     <div class="hub-logo">NEAT</div>
-    <div class="hub-user">
+    <div style="display:flex;align-items:center;gap:.6rem;">
       <div class="hub-coins">🪙 <span id="hub-coins">0</span></div>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </div>
   <div class="hub-body">
 
-    <!-- Trophy card -->
     <div class="trophy-card">
       <div class="trophy-top">
-        <div class="trophy-count">
-          <div class="trophy-icon">🏆</div>
+        <div class="trophy-left">
           <div>
-            <div class="trophy-num" id="hub-trophies">0</div>
-            <div class="trophy-label">Trofeos</div>
+            <div style="display:flex;align-items:center;gap:.4rem;">
+              <span style="font-size:1.4rem">🏆</span>
+              <div class="trophy-num" id="hub-trophies">0</div>
+            </div>
+            <div class="trophy-sub">Trofeos</div>
           </div>
         </div>
-        <div>
+        <div style="text-align:right;display:flex;flex-direction:column;gap:.3rem;align-items:flex-end;">
           <div class="league-badge" id="hub-league-badge">Bronze</div>
-          <div id="hub-streak" style="margin-top:.4rem;display:none" class="streak-badge">🔥 <span id="hub-streak-num">0</span> racha</div>
+          <div id="hub-streak" style="display:none" class="streak-pill">🔥 <span id="hub-streak-num">0</span></div>
         </div>
       </div>
-      <div class="trophy-bar-wrap">
-        <div class="trophy-bar" id="hub-trophy-bar" style="width:0%"></div>
-      </div>
-      <div class="trophy-bar-labels">
-        <span id="hub-bar-min">0</span>
-        <span id="hub-bar-next">Siguiente: — trofeos</span>
-        <span id="hub-bar-max">200</span>
+      <div class="bar-wrap"><div class="bar-fill" id="hub-bar" style="width:0%"></div></div>
+      <div class="bar-labels">
+        <span id="bar-min">0</span>
+        <span id="bar-next"></span>
+        <span id="bar-max">200</span>
       </div>
     </div>
 
-    <!-- Stats -->
+    <div class="best-card">
+      <div class="best-num" id="hub-best">0</div>
+      <div class="best-lbl">🎯 Mejor puntuación</div>
+    </div>
+
     <div class="stat-row">
-      <div class="stat-box"><div class="val green" id="stat-wins">0</div><div class="lbl">Victorias</div></div>
-      <div class="stat-box"><div class="val red"   id="stat-losses">0</div><div class="lbl">Derrotas</div></div>
-      <div class="stat-box"><div class="val purple" id="stat-best">0</div><div class="lbl">Mejor racha</div></div>
+      <div class="stat-box"><div class="v" style="color:var(--green)" id="stat-wins">0</div><div class="l">Victorias</div></div>
+      <div class="stat-box"><div class="v" style="color:var(--red)"   id="stat-losses">0</div><div class="l">Derrotas</div></div>
+      <div class="stat-box"><div class="v" style="color:var(--accent2)" id="stat-streak">0</div><div class="l">Mejor racha</div></div>
     </div>
 
-    <!-- Camino de trofeos -->
     <div>
       <div class="section-title">🗺 Camino de trofeos</div>
       <div class="milestone-road" id="milestone-road"></div>
     </div>
 
-    <!-- Héroes -->
-    <div>
-      <div class="section-title">⚔ Héroes</div>
-      <div class="heroes-row" id="heroes-row"></div>
-    </div>
-
-    <!-- Play -->
     <div class="play-area">
-      <div class="diff-row" style="width:100%;max-width:320px">
+      <div class="diff-row">
         <div class="diff-btn selected" onclick="selectDiff('easy',this)">😌 Fácil<br><small>+8/-4</small></div>
-        <div class="diff-btn" onclick="selectDiff('normal',this)">⚔ Normal<br><small>+10/-6</small></div>
+        <div class="diff-btn" onclick="selectDiff('normal',this)">⚡ Normal<br><small>+10/-6</small></div>
         <div class="diff-btn" onclick="selectDiff('hard',this)">💀 Difícil<br><small>+15/-5</small></div>
       </div>
       <button class="btn-play" onclick="startGame()">▶ JUGAR</button>
       <button class="daily-btn" id="btn-daily" onclick="claimDaily()">🎁 Recompensa diaria</button>
     </div>
 
-    <!-- Leaderboard -->
     <div>
       <div class="section-title">🏅 Top Jugadores</div>
-      <div class="lb-list" id="lb-list"><div style="color:var(--muted);font-size:.85rem">Cargando...</div></div>
+      <div class="lb-list" id="lb-list"><div style="color:var(--muted);font-size:.82rem">Cargando...</div></div>
     </div>
-
-    <div style="height:1.5rem"></div>
+    <div style="height:1rem"></div>
   </div>
 </div>
 
-<!-- ═══════════════════ GAME ═══════════════════ -->
+<!-- GAME -->
 <div id="screen-game" class="screen">
   <div class="game-hud">
-    <div class="hud-hp">
-      ❤️
-      <div class="hp-bar-wrap"><div class="hp-bar" id="hp-bar"></div></div>
-      <span id="hp-text">100</span>
+    <div class="hud-lives" id="hud-lives"></div>
+    <div class="hud-score-wrap">
+      <div class="hud-score" id="hud-score">0</div>
+      <div class="hud-best">Mejor: <span id="hud-best-inline">0</span></div>
     </div>
-    <div class="hud-score">⭐ <span id="hud-score">0</span></div>
-    <div class="hud-timer">⏱ <span id="hud-timer">120</span>s</div>
+    <div class="hud-diff" id="hud-diff">NORMAL</div>
   </div>
   <canvas id="gameCanvas"></canvas>
-  <div class="game-controls">
-    <div class="joystick-area">
-      <div id="joystick-base">
-        <div id="joystick-knob"></div>
-      </div>
-    </div>
-    <div class="right-controls">
-      <div class="ammo-row">
-        <div class="ammo-dots" id="ammo-dots"></div>
-        <div class="reload-bar-wrap"><div class="reload-bar" id="reload-bar"></div></div>
-        <div class="ammo-label" id="ammo-label">5/5</div>
-      </div>
-      <button class="btn-shoot" id="btn-shoot" onpointerdown="shootPressed()" onpointerup="shootReleased()">💥</button>
-      <button class="btn-skill" id="btn-skill" onclick="useSkill()">⚡</button>
-    </div>
-  </div>
+  <div id="combo-display"></div>
 </div>
 
-<!-- ═══════════════════ RESULT ═══════════════════ -->
+<!-- RESULT -->
 <div id="screen-result" class="screen">
   <div class="result-box">
-    <div class="result-icon" id="result-icon">🏆</div>
-    <div class="result-title" id="result-title">VICTORIA</div>
+    <div class="result-icon" id="result-icon">💀</div>
+    <div class="result-title result-loss" id="result-title">GAME OVER</div>
     <div class="trophy-change" id="result-trophy-change"></div>
     <div class="result-stats">
-      <div class="result-stat"><div class="v" id="rs-before">0</div><div class="l">Antes</div></div>
-      <div class="result-stat"><div class="v" id="rs-after">0</div><div class="l">Después</div></div>
-      <div class="result-stat"><div class="v" id="rs-streak">0</div><div class="l">Racha</div></div>
+      <div class="result-stat"><div class="v" id="rs-score">0</div><div class="l">Puntuación</div></div>
+      <div class="result-stat"><div class="v" id="rs-best">0</div><div class="l">Mejor</div></div>
+      <div class="result-stat"><div class="v" id="rs-after">0</div><div class="l">Trofeos</div></div>
       <div class="result-stat"><div class="v" id="rs-league">—</div><div class="l">Liga</div></div>
     </div>
     <div id="result-milestones"></div>
@@ -375,433 +291,400 @@
   </div>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
-
-<!-- Modal recompensa -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-reward" id="modal-icon">🎁</div>
-    <h3 id="modal-title">¡Hito desbloqueado!</h3>
+    <h3 id="modal-title">¡Recompensa!</h3>
     <p id="modal-desc"></p>
     <button class="btn-close-modal" onclick="closeModal()">¡Genial!</button>
   </div>
 </div>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────────────
-const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? 'http://localhost:3001'
-  : 'https://neat-arena.vercel.app';
+const API = (window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')
+  ? 'http://localhost:3001' : 'https://neat-arena.vercel.app';
 
-// ─── STATE ────────────────────────────────────────────────
 let token = localStorage.getItem('nx_token');
-let user  = JSON.parse(localStorage.getItem('nx_user') || 'null');
+let user  = JSON.parse(localStorage.getItem('nx_user')||'null');
 let milestones = [];
 let selectedDiff = 'easy';
-let gameResult = null;
+let localBest = parseInt(localStorage.getItem('nx_best')||'0');
 
-// ─── HEROES CONFIG ────────────────────────────────────────
-const HERO_DEFS = {
-  Default: { icon:'🧙', name:'Mago', speed:3,   hp:100, damage:15, skill:'Bola de fuego' },
-  Ninja:   { icon:'🥷', name:'Ninja', speed:4.5, hp:80,  damage:20, skill:'Teletransporte' },
-  Mage:    { icon:'🔮', name:'Arcano', speed:2.5, hp:120, damage:25, skill:'Rayo arcano' },
-  Titan:   { icon:'⚡', name:'Titán', speed:2,   hp:200, damage:30, skill:'Terremoto' },
-  Legend:  { icon:'🌟', name:'Leyenda', speed:4, hp:150, damage:35, skill:'Nova estelar' },
-};
-
-// ─── UTILS ────────────────────────────────────────────────
-function toast(msg, color='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.borderColor = color || 'var(--border)';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+// ── UTILS ────────────────────────────────────
+function toast(msg,color=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.borderColor=color||'var(--border)';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500);
 }
-function show(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
 }
-async function api(path, method='GET', body=null) {
-  const opts = { method, headers: { 'Content-Type':'application/json' } };
-  if (token) opts.headers['Authorization'] = 'Bearer '+token;
-  if (body)  opts.body = JSON.stringify(body);
-  const r = await fetch(API+path, opts);
-  return r.json();
+async function api(path,method='GET',body=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(token) opts.headers['Authorization']='Bearer '+token;
+  if(body)  opts.body=JSON.stringify(body);
+  try{
+    const r=await fetch(API+path,opts);
+    return r.json();
+  }catch(e){ return {error:e.message}; }
 }
+function openModal(icon,title,desc){
+  document.getElementById('modal-icon').textContent=icon;
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-desc').textContent=desc;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 
-// ─── AUTH ──────────────────────────────────────────────────
-function switchTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'?0:1)===i));
-  document.getElementById('form-login').style.display    = tab==='login'    ? 'flex' : 'none';
-  document.getElementById('form-register').style.display = tab==='register' ? 'flex' : 'none';
+// ── AUTH ─────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(tab==='login'?0:1)===i));
+  document.getElementById('form-login').style.display=tab==='login'?'flex':'none';
+  document.getElementById('form-register').style.display=tab==='register'?'flex':'none';
 }
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const r = await api('/api/auth/login','POST',{email,password});
-  if (r.error) { document.getElementById('login-error').textContent = r.error; return; }
-  saveSession(r);
-  initHub();
+async function doLogin(){
+  document.getElementById('login-error').textContent='';
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-pass').value;
+  const r=await api('/api/auth/login','POST',{email,password});
+  if(r.error){document.getElementById('login-error').textContent=r.error;return;}
+  saveSession(r); initHub();
 }
-async function doRegister() {
-  const username = document.getElementById('reg-user').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-pass').value;
-  const r = await api('/api/auth/register','POST',{username,email,password});
-  if (r.error) { document.getElementById('reg-error').textContent = r.error; return; }
-  saveSession(r);
-  initHub();
+async function doRegister(){
+  document.getElementById('reg-error').textContent='';
+  const username=document.getElementById('reg-user').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const password=document.getElementById('reg-pass').value;
+  const r=await api('/api/auth/register','POST',{username,email,password});
+  if(r.error){document.getElementById('reg-error').textContent=r.error;return;}
+  saveSession(r); initHub();
 }
-function saveSession(r) {
-  token = r.token; user = r.user;
-  localStorage.setItem('nx_token', token);
-  localStorage.setItem('nx_user',  JSON.stringify(user));
+function saveSession(r){
+  token=r.token; user=r.user;
+  localStorage.setItem('nx_token',token);
+  localStorage.setItem('nx_user',JSON.stringify(user));
 }
-function doLogout() {
-  localStorage.clear(); token=null; user=null; show('auth');
-}
+function doLogout(){localStorage.clear();token=null;user=null;show('auth');}
 
-// ─── HUB ───────────────────────────────────────────────────
-async function initHub() {
+// ── HUB ──────────────────────────────────────
+const LEAGUES=[
+  {name:'Bronze',min:0,max:200},{name:'Silver',min:200,max:500},
+  {name:'Gold',min:500,max:1000},{name:'Diamond',min:1000,max:2000},
+  {name:'Master',min:2000,max:3500},{name:'Legend',min:3500,max:5000},
+];
+
+async function initHub(){
   show('hub');
-  const r = await api('/api/player/me');
-  if (r.user) { user = r.user; localStorage.setItem('nx_user', JSON.stringify(user)); }
-  milestones = (await api('/api/milestones')).milestones || [];
+  const r=await api('/api/player/me');
+  if(r.user){user=r.user;localStorage.setItem('nx_user',JSON.stringify(user));}
+  milestones=(await api('/api/milestones')).milestones||[];
   renderHub();
   loadLeaderboard();
 }
 
-const LEAGUES = [
-  {name:'Bronze', min:0,   max:200},
-  {name:'Silver', min:200, max:500},
-  {name:'Gold',   min:500, max:1000},
-  {name:'Diamond',min:1000,max:2000},
-  {name:'Master', min:2000,max:3500},
-  {name:'Legend', min:3500,max:5000},
-];
+function renderHub(){
+  document.getElementById('hub-trophies').textContent=user.trophies;
+  document.getElementById('hub-coins').textContent=user.coins||0;
+  document.getElementById('stat-wins').textContent=user.wins||0;
+  document.getElementById('stat-losses').textContent=user.losses||0;
+  document.getElementById('stat-streak').textContent=user.bestStreak||0;
+  document.getElementById('hub-best').textContent=localBest;
+  document.getElementById('hud-best-inline').textContent=localBest;
 
-function renderHub() {
-  document.getElementById('hub-trophies').textContent = user.trophies;
-  document.getElementById('hub-coins').textContent    = user.coins;
-  document.getElementById('stat-wins').textContent    = user.wins;
-  document.getElementById('stat-losses').textContent  = user.losses;
-  document.getElementById('stat-best').textContent    = user.bestStreak;
+  const badge=document.getElementById('hub-league-badge');
+  badge.textContent=user.league||'Bronze';
+  badge.className='league-badge league-'+(user.league||'Bronze');
 
-  // League badge
-  const badge = document.getElementById('hub-league-badge');
-  badge.textContent = user.league;
-  badge.className = 'league-badge league-'+user.league;
+  const strEl=document.getElementById('hub-streak');
+  strEl.style.display=(user.streak>=2)?'inline-flex':'none';
+  document.getElementById('hub-streak-num').textContent=user.streak||0;
 
-  // Streak
-  const strEl = document.getElementById('hub-streak');
-  strEl.style.display = user.streak >= 2 ? 'inline-flex' : 'none';
-  document.getElementById('hub-streak-num').textContent = user.streak;
-
-  // Progress bar
-  const lg = LEAGUES.find(l => l.name === user.league) || LEAGUES[0];
-  const pct = Math.min(100, ((user.trophies - lg.min) / (lg.max - lg.min)) * 100);
-  document.getElementById('hub-trophy-bar').style.width = pct+'%';
-  document.getElementById('hub-bar-min').textContent  = lg.min;
-  document.getElementById('hub-bar-max').textContent  = lg.max;
-  const next = milestones.find(m => m.trophyTarget > user.trophies);
-  document.getElementById('hub-bar-next').textContent = next ? `Próxima recompensa: ${next.trophyTarget} 🏆` : '¡Leyenda!';
+  const lg=LEAGUES.find(l=>l.name===user.league)||LEAGUES[0];
+  const pct=Math.min(100,((user.trophies-lg.min)/(lg.max-lg.min))*100);
+  document.getElementById('hub-bar').style.width=pct+'%';
+  document.getElementById('bar-min').textContent=lg.min;
+  document.getElementById('bar-max').textContent=lg.max;
+  const next=milestones.find(m=>m.trophyTarget>user.trophies);
+  document.getElementById('bar-next').textContent=next?`🎁 ${next.trophyTarget}`:'';
 
   renderMilestones();
-  renderHeroes();
 }
 
-function renderMilestones() {
-  const road = document.getElementById('milestone-road');
-  road.innerHTML = '';
-  milestones.forEach(m => {
-    const claimed   = user.claimedMilestones?.includes(m.trophyTarget);
-    const reached   = user.trophies >= m.trophyTarget;
-    const claimable = reached && !claimed;
-    const node = document.createElement('div');
-    node.className = 'milestone-node';
-    node.innerHTML = `
-      <div class="milestone-circle ${claimed?'claimed':claimable?'claimable':reached?'reached':''}"
-           title="${m.label}" onclick="${claimable?`claimMilestone(${m.trophyTarget})`:''}">
-        ${m.icon}${claimable?'<div style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:var(--accent2);border-radius:50%"></div>':''}
-      </div>
-      <div class="milestone-trophy">🏆${m.trophyTarget}</div>
-      <div class="milestone-label">${m.label}</div>`;
+function renderMilestones(){
+  const road=document.getElementById('milestone-road');
+  road.innerHTML='';
+  milestones.forEach(m=>{
+    const claimed=(user.claimedMilestones||[]).includes(m.trophyTarget);
+    const reached=user.trophies>=m.trophyTarget;
+    const claimable=reached&&!claimed;
+    const node=document.createElement('div');
+    node.className='milestone-node';
+    node.innerHTML=`<div class="milestone-circle ${claimed?'claimed':claimable?'claimable':reached?'reached':''}"
+      onclick="${claimable?`claimMilestone(${m.trophyTarget})`:''}">${m.icon}
+      ${claimable?'<div style="position:absolute;top:-3px;right:-3px;width:9px;height:9px;background:var(--accent2);border-radius:50%;"></div>':''}
+    </div>
+    <div class="milestone-trophy">🏆${m.trophyTarget}</div>
+    <div class="milestone-label">${m.label}</div>`;
     road.appendChild(node);
   });
 }
 
-function renderHeroes() {
-  const row = document.getElementById('heroes-row');
-  row.innerHTML = '';
-  Object.entries(HERO_DEFS).forEach(([key, h]) => {
-    const unlocked = user.unlockedHeroes?.includes(key);
-    const active   = user.activeHero === key;
-    const div = document.createElement('div');
-    div.className = `hero-card ${active?'active':''} ${!unlocked?'locked':''}`;
-    div.innerHTML = `<div class="hero-icon">${h.icon}</div><div class="hero-name">${h.name}</div>`;
-    if (unlocked && !active) div.onclick = () => equipHero(key);
-    row.appendChild(div);
-  });
-}
-
-async function equipHero(key) {
-  const r = await api('/api/player/equip-hero','POST',{hero:key});
-  if (r.success) { user.activeHero = key; renderHeroes(); toast('Héroe equipado: '+HERO_DEFS[key].name); }
-}
-
-async function claimMilestone(trophyTarget) {
-  const r = await api('/api/player/claim-milestone','POST',{trophyTarget});
-  if (r.error) { toast(r.error,'var(--red)'); return; }
+async function claimMilestone(trophyTarget){
+  const r=await api('/api/player/claim-milestone','POST',{trophyTarget});
+  if(r.error){toast(r.error,'var(--red)');return;}
+  user.claimedMilestones=user.claimedMilestones||[];
   user.claimedMilestones.push(trophyTarget);
-  if (r.rewardApplied.type === 'coins') user.coins += r.rewardApplied.amount;
-  if (r.rewardApplied.type === 'hero')  user.unlockedHeroes.push(r.rewardApplied.hero);
-  localStorage.setItem('nx_user', JSON.stringify(user));
-  const m = milestones.find(x => x.trophyTarget === trophyTarget);
-  openModal(m.icon, '¡Recompensa reclamada!', m.label + ' — ' + (r.rewardApplied.amount||r.rewardApplied.hero||r.rewardApplied.value));
+  if(r.rewardApplied?.type==='coins') user.coins=(user.coins||0)+r.rewardApplied.amount;
+  localStorage.setItem('nx_user',JSON.stringify(user));
+  const m=milestones.find(x=>x.trophyTarget===trophyTarget);
+  openModal(m.icon,'¡Recompensa reclamada!',m.label);
   renderHub();
 }
 
-async function claimDaily() {
-  const r = await api('/api/player/daily','POST');
-  if (r.error) { toast(r.error,'var(--gold)'); return; }
-  user.coins += r.coinsEarned;
-  localStorage.setItem('nx_user', JSON.stringify(user));
-  document.getElementById('hub-coins').textContent = user.coins;
-  toast('🎁 +'+r.coinsEarned+' monedas diarias!');
+async function claimDaily(){
+  const r=await api('/api/player/daily','POST');
+  if(r.error){toast(r.error,'var(--gold)');return;}
+  user.coins=(user.coins||0)+r.coinsEarned;
+  localStorage.setItem('nx_user',JSON.stringify(user));
+  document.getElementById('hub-coins').textContent=user.coins;
+  toast('🎁 +'+r.coinsEarned+' monedas!','var(--gold)');
 }
 
-async function loadLeaderboard() {
-  const r = await api('/api/leaderboard');
-  const list = document.getElementById('lb-list');
-  list.innerHTML = '';
-  const medals = ['🥇','🥈','🥉'];
-  (r.leaderboard||[]).slice(0,10).forEach((p,i) => {
-    const me = p._id === user?.id || p.username === user?.username;
-    const row = document.createElement('div');
-    row.className = 'lb-row'+(me?' lb-me':'');
-    row.innerHTML = `<div class="lb-rank">${medals[i]||('#'+(i+1))}</div>
-      <div>${p.activeHero&&HERO_DEFS[p.activeHero]?HERO_DEFS[p.activeHero].icon:''} ${p.username}${me?' (tú)':''}</div>
+async function loadLeaderboard(){
+  const r=await api('/api/leaderboard');
+  const list=document.getElementById('lb-list');
+  list.innerHTML='';
+  const medals=['🥇','🥈','🥉'];
+  (r.leaderboard||[]).slice(0,8).forEach((p,i)=>{
+    const me=p.username===user?.username;
+    const row=document.createElement('div');
+    row.className='lb-row'+(me?' lb-me':'');
+    row.innerHTML=`<div class="lb-rank">${medals[i]||('#'+(i+1))}</div>
+      <div class="lb-name">${p.username}${me?' 👈':''}</div>
       <div class="lb-trophy">🏆 ${p.trophies}</div>
-      <div class="league-badge league-${p.league}" style="font-size:.65rem">${p.league}</div>`;
+      <div class="league-badge league-${p.league||'Bronze'}" style="font-size:.62rem">${p.league||'Bronze'}</div>`;
     list.appendChild(row);
   });
 }
 
-function selectDiff(d, el) {
-  selectedDiff = d;
-  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+function selectDiff(d,el){
+  selectedDiff=d;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('selected'));
   el.classList.add('selected');
 }
 
-function openModal(icon, title, desc) {
-  document.getElementById('modal-icon').textContent  = icon;
-  document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-desc').textContent  = desc;
-  document.getElementById('modal-overlay').classList.add('open');
-}
-function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+// ── GAME ENGINE ──────────────────────────────
+let G={};
+let animId=null;
 
-// ─── GAME ENGINE ──────────────────────────────────────────
-let G = {};  // game state
-
-const HERO_SKILLS = {
-  Default: (g) => { for(let a=0;a<8;a++) spawnBullet(g,g.px,g.py,a*(Math.PI/4),g.heroData.damage*0.7,'#a855f7',8); },
-  Ninja:   (g) => { g.px += g.vx*120; g.py += g.vy*120; },
-  Mage:    (g) => { g.enemies.forEach(e => e.hp -= g.heroData.damage*2); toast('⚡ Rayo arcano!'); },
-  Titan:   (g) => { g.enemies.forEach(e => { e.stunned=120; e.hp-=20; }); toast('🌍 Terremoto!'); },
-  Legend:  (g) => { spawnBullet(g,g.px,g.py,0,999,'#fbbf24',20); toast('🌟 Nova estelar!'); },
+const DIFF_CONFIG={
+  easy:  {lives:5, speedBase:3,   speedInc:0.0008, obstacleRate:90,  label:'FÁCIL',   winScore:300},
+  normal:{lives:3, speedBase:4,   speedInc:0.0012, obstacleRate:65,  label:'NORMAL',  winScore:500},
+  hard:  {lives:1, speedBase:5.5, speedInc:0.0018, obstacleRate:45,  label:'DIFÍCIL', winScore:800},
 };
 
-function startGame() {
-  const heroKey  = user?.activeHero || 'Default';
-  const heroData = HERO_DEFS[heroKey];
-  const diff = selectedDiff;
-  const timeLimit = diff==='easy'?120 : diff==='normal'?90 : 60;
-  const enemySpeed = diff==='easy'?1.2 : diff==='normal'?1.8 : 2.6;
-  const enemyDmg   = diff==='easy'?5   : diff==='normal'?10  : 18;
-  const enemyHp    = diff==='easy'?40  : diff==='normal'?60  : 90;
+// Obstacle patterns
+const PATTERNS=[
+  // single gap
+  (w,h,s)=>{
+    const gapW=100+Math.random()*60, gapX=Math.random()*(w-gapW-40)+20;
+    return[
+      {x:0,y:h,w:gapX,h:30,vx:0,vy:-s},
+      {x:gapX+gapW,y:h,w:w-(gapX+gapW),h:30,vx:0,vy:-s}
+    ];
+  },
+  // two gaps
+  (w,h,s)=>{
+    const g1x=20,g1w=80,g2x=w/2+20,g2w=80;
+    return[
+      {x:0,y:h,w:g1x,h:28,vx:0,vy:-s},
+      {x:g1x+g1w,y:h,w:g2x-(g1x+g1w),h:28,vx:0,vy:-s},
+      {x:g2x+g2w,y:h,w:w-(g2x+g2w),h:28,vx:0,vy:-s}
+    ];
+  },
+  // moving obstacle
+  (w,h,s)=>{
+    const bw=60;
+    return[{x:w/2-bw/2,y:h,w:bw,h:28,vx:(Math.random()>0.5?1:-1)*2,vy:-s,bounces:true}];
+  },
+  // diagonal spread
+  (w,h,s)=>{
+    const bw=40,gap=w/3;
+    return[
+      {x:gap*0-bw/2,y:h,w:bw,h:24,vx:0,vy:-s},
+      {x:gap*1-bw/2,y:h+30,w:bw,h:24,vx:0,vy:-s},
+      {x:gap*2-bw/2,y:h+60,w:bw,h:24,vx:0,vy:-s},
+    ];
+  },
+];
 
-  const canvas = document.getElementById('gameCanvas');
-  canvas.width  = canvas.offsetWidth  || window.innerWidth;
-  canvas.height = canvas.offsetHeight || (window.innerHeight - 160);
-  const ctx = canvas.getContext('2d');
+function startGame(){
+  if(animId) cancelAnimationFrame(animId);
+  const cfg=DIFF_CONFIG[selectedDiff];
+  const canvas=document.getElementById('gameCanvas');
+  canvas.width=canvas.offsetWidth||window.innerWidth;
+  canvas.height=canvas.offsetHeight||(window.innerHeight-100);
+  const ctx=canvas.getContext('2d');
 
-  G = {
-    ctx, canvas, heroKey, heroData, diff,
-    px: canvas.width/2, py: canvas.height/2,
-    vx:0, vy:0, speed: heroData.speed,
-    hp: heroData.hp, maxHp: heroData.hp,
-    bullets:[], eBullets:[], enemies:[],
-    score:0, kills:0, wave:1,
-    timeLeft: timeLimit,
-    skillCd:0,
-    shootCd:0, autoShoot:false,
-    ammo:5, maxAmmo:5, reloading:false, reloadProgress:0, reloadTime:300, // 300 frames = 5 segs @ 60fps
-    aimAngle:0, aimActive:false,
-    enemySpeed, enemyDmg, enemyHp,
-    running:true, startTime: Date.now(),
+  G={
+    ctx,canvas,cfg,
+    px:canvas.width/2, py:canvas.height-80,
+    pr:20, // player radius
+    vx:0, targetX:canvas.width/2,
+    lives:cfg.lives, maxLives:cfg.lives,
+    score:0, frame:0,
+    speed:cfg.speedBase,
+    obstacles:[],
     particles:[],
+    combo:0, comboTimer:0,
+    invincible:0,
+    running:true,
+    startTime:Date.now(),
+    nextObstacle:cfg.obstacleRate,
+    flashing:false,
   };
 
-  // spawn initial wave
-  spawnWave();
-
-  // timer countdown
-  G.timerInterval = setInterval(() => {
-    if (!G.running) return;
-    G.timeLeft--;
-    document.getElementById('hud-timer').textContent = G.timeLeft;
-    if (G.timeLeft <= 0) endGame('win');
-  },1000);
+  document.getElementById('hud-diff').textContent=cfg.label;
+  renderLives();
 
   show('game');
-  requestAnimationFrame(gameLoop);
+  canvas.addEventListener('touchmove',onTouchMove,{passive:false});
+  canvas.addEventListener('touchstart',onTouchStart,{passive:false});
+  canvas.addEventListener('mousemove',onMouseMove);
+
+  animId=requestAnimationFrame(gameLoop);
 }
 
-function updateAmmoHUD() {
-  const dots = document.getElementById('ammo-dots');
-  const lbl  = document.getElementById('ammo-label');
-  if (!dots) return;
-  dots.innerHTML = '';
-  for (let i=0;i<G.maxAmmo;i++) {
-    const d = document.createElement('div');
-    d.className = 'ammo-dot' + (i >= G.ammo ? ' empty' : '');
-    dots.appendChild(d);
-  }
-  if (lbl) lbl.textContent = G.reloading ? '⏳ Recargando...' : G.ammo+'/'+G.maxAmmo;
-}
+function onTouchStart(e){e.preventDefault();if(!G.running)return;const t=e.touches[0];const r=G.canvas.getBoundingClientRect();G.targetX=t.clientX-r.left;}
+function onTouchMove(e){e.preventDefault();if(!G.running)return;const t=e.touches[0];const r=G.canvas.getBoundingClientRect();G.targetX=t.clientX-r.left;}
+function onMouseMove(e){if(!G.running)return;const r=G.canvas.getBoundingClientRect();G.targetX=e.clientX-r.left;}
 
-function spawnWave() {
-  const count = 2 + G.wave;
-  for (let i=0;i<count;i++) {
-    const side = Math.floor(Math.random()*4);
-    let ex,ey;
-    if(side===0){ex=Math.random()*G.canvas.width; ey=-30;}
-    else if(side===1){ex=G.canvas.width+30; ey=Math.random()*G.canvas.height;}
-    else if(side===2){ex=Math.random()*G.canvas.width; ey=G.canvas.height+30;}
-    else{ex=-30; ey=Math.random()*G.canvas.height;}
-    const types=['basic','tank','ranged','fast'];
-    const type=types[Math.floor(Math.random()*types.length)];
-    const hpMult = type==='tank'?2.5:1;
-    const spMult = type==='fast'?1.8:type==='ranged'?0.8:1;
-    G.enemies.push({
-      x:ex,y:ey,
-      hp: G.enemyHp*hpMult*(1+G.wave*0.15),
-      maxHp: G.enemyHp*hpMult*(1+G.wave*0.15),
-      speed: G.enemySpeed*spMult,
-      type,
-      shootCd: type==='ranged'?Math.random()*120:9999,
-      stunned:0, id: Math.random(),
-    });
+function renderLives(){
+  const el=document.getElementById('hud-lives');
+  el.innerHTML='';
+  for(let i=0;i<G.maxLives;i++){
+    const h=document.createElement('div');
+    h.className='hud-heart';
+    h.textContent=i<G.lives?'❤️':'🖤';
+    el.appendChild(h);
   }
 }
 
-function spawnBullet(g,x,y,angle,dmg,color,r=6) {
-  g.bullets.push({ x,y, vx:Math.cos(angle)*9, vy:Math.sin(angle)*9, dmg, color, r, life:80 });
+function spawnObstacle(){
+  const pat=PATTERNS[Math.floor(Math.random()*PATTERNS.length)];
+  const obs=pat(G.canvas.width,G.canvas.height,G.speed);
+  obs.forEach(o=>G.obstacles.push(o));
 }
 
-function gameLoop() {
-  if (!G.running) return;
-  const {ctx,canvas} = G;
+function spawnParticle(x,y,color){
+  for(let i=0;i<8;i++){
+    const ang=Math.random()*Math.PI*2;
+    const spd=2+Math.random()*4;
+    G.particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:30,maxLife:30,color,r:3+Math.random()*3});
+  }
+}
 
-  // move player
-  const len = Math.sqrt(G.vx*G.vx+G.vy*G.vy);
-  if (len>0) { G.px += (G.vx/len)*G.speed; G.py += (G.vy/len)*G.speed; }
-  G.px = Math.max(16,Math.min(canvas.width-16,G.px));
-  G.py = Math.max(16,Math.min(canvas.height-16,G.py));
+function showCombo(){
+  const el=document.getElementById('combo-display');
+  if(G.combo>=3){
+    el.textContent=`x${G.combo} COMBO! +${G.combo*2}`;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),600);
+  }
+}
 
-  // ammo reload system
-  if (G.reloading) {
-    G.reloadProgress++;
-    const pct = (G.reloadProgress / G.reloadTime) * 100;
-    const rb = document.getElementById('reload-bar');
-    if (rb) rb.style.width = pct + '%';
-    if (G.reloadProgress >= G.reloadTime) {
-      G.ammo = G.maxAmmo;
-      G.reloading = false;
-      G.reloadProgress = 0;
-      const rb2 = document.getElementById('reload-bar');
-      if (rb2) rb2.style.width = '0%';
-      toast('🔄 ¡Recargado!');
+function gameLoop(){
+  if(!G.running) return;
+  const {ctx,canvas,cfg}=G;
+  G.frame++;
+  G.score=Math.floor(G.frame/3);
+  document.getElementById('hud-score').textContent=G.score;
+
+  // move player toward target
+  const dx=G.targetX-G.px;
+  G.px+=dx*0.15;
+  G.px=Math.max(G.pr,Math.min(canvas.width-G.pr,G.px));
+
+  // increase speed
+  G.speed=cfg.speedBase+G.frame*cfg.speedInc;
+
+  // spawn obstacles
+  G.nextObstacle--;
+  if(G.nextObstacle<=0){
+    spawnObstacle();
+    G.nextObstacle=Math.max(30,cfg.obstacleRate-G.frame*0.05);
+  }
+
+  // move obstacles
+  G.obstacles=G.obstacles.filter(o=>{
+    o.x+=o.vx; o.y+=o.vy;
+    if(o.bounces){
+      if(o.x<0||o.x+o.w>canvas.width) o.vx*=-1;
     }
-  }
-
-  // shoot toward aim angle
-  if (G.autoShoot && !G.reloading && G.shootCd<=0 && G.ammo>0) {
-    spawnBullet(G, G.px, G.py, G.aimAngle, G.heroData.damage, '#a855f7');
-    G.ammo--;
-    G.shootCd = 18;
-    if (G.ammo <= 0) { G.reloading = true; G.reloadProgress = 0; }
-    updateAmmoHUD();
-  }
-  if (G.shootCd>0) G.shootCd--;
-  if (G.skillCd>0) G.skillCd--;
-
-  // move enemies
-  G.enemies.forEach(e => {
-    if (e.stunned>0){e.stunned--;return;}
-    const ang = Math.atan2(G.py-e.y, G.px-e.x);
-    if (e.type!=='ranged' || Math.hypot(e.x-G.px,e.y-G.py)>120) {
-      e.x += Math.cos(ang)*e.speed;
-      e.y += Math.sin(ang)*e.speed;
-    }
-    // ranged enemy shoots
-    if (e.type==='ranged') {
-      e.shootCd--;
-      if (e.shootCd<=0) {
-        G.eBullets.push({x:e.x,y:e.y,vx:Math.cos(ang)*5,vy:Math.sin(ang)*5,dmg:G.enemyDmg,life:80,r:5});
-        e.shootCd=90+Math.random()*60;
+    // check collision
+    if(G.invincible<=0){
+      const px=G.px,py=G.py,pr=G.pr;
+      if(px+pr>o.x&&px-pr<o.x+o.w&&py+pr>o.y&&py-pr<o.y+o.h){
+        G.lives--;
+        G.invincible=90;
+        G.combo=0;
+        spawnParticle(px,py,'#ef4444');
+        renderLives();
+        if(G.lives<=0){endGame();return false;}
+        return false; // remove hit obstacle
       }
     }
-    // melee damage
-    if (Math.hypot(e.x-G.px,e.y-G.py)<24) {
-      G.hp -= G.enemyDmg*0.08;
-      if (G.hp<=0) endGame('loss');
+    // combo: passed an obstacle
+    if(o.y+o.h<G.py-G.pr&&!o.passed){
+      o.passed=true;
+      G.combo++;
+      G.comboTimer=120;
+      G.score+=G.combo*2;
+      showCombo();
     }
+    return o.y+o.h>-50;
   });
 
-  // move bullets
-  G.bullets = G.bullets.filter(b=>{
-    b.x+=b.vx; b.y+=b.vy; b.life--;
-    let hit=false;
-    G.enemies = G.enemies.filter(e=>{
-      if (!hit && Math.hypot(b.x-e.x,b.y-e.y)<18) {
-        e.hp-=b.dmg; hit=true;
-        spawnParticles(e.x,e.y,'#a855f7');
-        if(e.hp<=0){ G.score+=10; G.kills++; spawnParticles(e.x,e.y,'#f59e0b'); return false; }
-      }
-      return true;
-    });
-    return b.life>0&&!hit;
-  });
-
-  G.eBullets = G.eBullets.filter(b=>{
-    b.x+=b.vx; b.y+=b.vy; b.life--;
-    if(Math.hypot(b.x-G.px,b.y-G.py)<16){ G.hp-=b.dmg; if(G.hp<=0)endGame('loss'); return false; }
-    return b.life>0;
-  });
+  if(G.invincible>0) G.invincible--;
+  if(G.comboTimer>0){G.comboTimer--;if(G.comboTimer<=0)G.combo=0;}
 
   // particles
-  G.particles = G.particles.filter(p=>{
-    p.x+=p.vx; p.y+=p.vy; p.life--; p.vy+=0.1; return p.life>0;
-  });
+  G.particles=G.particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.life--;return p.life>0;});
 
-  // new wave if all dead
-  if(G.enemies.length===0){ G.wave++; spawnWave(); }
-
-  // HUD
-  document.getElementById('hud-score').textContent = G.score;
-  document.getElementById('hp-text').textContent   = Math.max(0,Math.round(G.hp));
-  document.getElementById('hp-bar').style.width    = Math.max(0,(G.hp/G.maxHp)*100)+'%';
+  // check win
+  if(G.score>=cfg.winScore){endGame(true);return;}
 
   // ── RENDER ──
-  ctx.fillStyle='#0a0a0f'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#0a0a0f';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // grid
-  ctx.strokeStyle='#1a1a26'; ctx.lineWidth=1;
-  for(let x=0;x<canvas.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
-  for(let y=0;y<canvas.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+  // scrolling grid background
+  const gridOff=(G.frame*G.speed*0.3)%40;
+  ctx.strokeStyle='#1a1a26';ctx.lineWidth=1;
+  for(let y=-40+gridOff;y<canvas.height;y+=40){
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();
+  }
+  for(let x=0;x<canvas.width;x+=40){
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();
+  }
+
+  // obstacles
+  G.obstacles.forEach(o=>{
+    const grad=ctx.createLinearGradient(o.x,o.y,o.x,o.y+o.h);
+    grad.addColorStop(0,'#7c3aed');
+    grad.addColorStop(1,'#4f46e5');
+    ctx.fillStyle=grad;
+    ctx.shadowColor='#7c3aed';ctx.shadowBlur=15;
+    ctx.beginPath();
+    ctx.roundRect(o.x,o.y,o.w,o.h,6);
+    ctx.fill();
+    ctx.shadowBlur=0;
+    // warning stripes
+    ctx.strokeStyle='rgba(168,85,247,0.3)';ctx.lineWidth=2;
+    ctx.strokeRect(o.x+2,o.y+2,o.w-4,o.h-4);
+  });
 
   // particles
   G.particles.forEach(p=>{
@@ -811,112 +694,84 @@ function gameLoop() {
   });
   ctx.globalAlpha=1;
 
-  // enemy bullets
-  G.eBullets.forEach(b=>{
-    ctx.fillStyle='#ef4444';
-    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
-    ctx.shadowColor='#ef4444';ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;
-  });
-
-  // enemies
-  G.enemies.forEach(e=>{
-    const colors={basic:'#ef4444',tank:'#f97316',ranged:'#8b5cf6',fast:'#06b6d4'};
-    const sizes ={basic:16,tank:22,ranged:14,fast:12};
-    const sz=sizes[e.type]||16;
-    ctx.fillStyle=colors[e.type]||'#ef4444';
-    ctx.shadowColor=colors[e.type]; ctx.shadowBlur=12;
-    ctx.beginPath();ctx.arc(e.x,e.y,sz,0,Math.PI*2);ctx.fill();
-    ctx.shadowBlur=0;
-    // hp bar
-    const bw=sz*2.5, bh=4, bx=e.x-bw/2, by=e.y-sz-8;
-    ctx.fillStyle='#333'; ctx.fillRect(bx,by,bw,bh);
-    ctx.fillStyle='#10b981'; ctx.fillRect(bx,by,bw*(e.hp/e.maxHp),bh);
-    // icon
-    ctx.font=`${sz}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(e.type==='basic'?'👾':e.type==='tank'?'🛡':e.type==='ranged'?'🏹':'💨',e.x,e.y);
-  });
-
-  // player bullets
-  G.bullets.forEach(b=>{
-    ctx.fillStyle=b.color;
-    ctx.shadowColor=b.color; ctx.shadowBlur=10;
-    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
-    ctx.shadowBlur=0;
-  });
-
-  // aim line
-  if (G.aimActive) {
-    ctx.strokeStyle='rgba(168,85,247,0.5)';
-    ctx.lineWidth=2;
-    ctx.setLineDash([6,4]);
-    ctx.beginPath();
-    ctx.moveTo(G.px, G.py);
-    ctx.lineTo(G.px + Math.cos(G.aimAngle)*60, G.py + Math.sin(G.aimAngle)*60);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
   // player
-  const hIcon = G.heroData.icon;
-  ctx.font='28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.shadowColor='#a855f7'; ctx.shadowBlur=20;
-  ctx.fillText(hIcon, G.px, G.py);
-  ctx.shadowBlur=0;
-
-  // wave label
-  ctx.fillStyle='rgba(255,255,255,0.2)';
-  ctx.font='bold 12px sans-serif'; ctx.textAlign='left';
-  ctx.fillText('Oleada '+G.wave, 8, 14);
-
-  requestAnimationFrame(gameLoop);
-}
-
-function spawnParticles(x,y,color) {
-  for(let i=0;i<6;i++){
-    G.particles.push({
-      x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-2)*3,
-      color,r:3,life:25,maxLife:25
-    });
+  const blink=G.invincible>0&&Math.floor(G.frame/5)%2===0;
+  if(!blink){
+    // glow
+    ctx.shadowColor=G.combo>=3?'#f59e0b':'#a855f7';
+    ctx.shadowBlur=G.combo>=3?25:15;
+    ctx.fillStyle=G.combo>=3?'#f59e0b':'#a855f7';
+    ctx.beginPath();ctx.arc(G.px,G.py,G.pr,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    // inner
+    ctx.fillStyle='#fff';
+    ctx.font='20px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('🚀',G.px,G.py);
   }
+
+  // score on canvas
+  ctx.fillStyle='rgba(255,255,255,0.06)';
+  ctx.font='bold 11px sans-serif';ctx.textAlign='left';
+  ctx.fillText(`Oleada: velocidad x${G.speed.toFixed(1)}`,8,14);
+
+  // win progress bar
+  const prog=Math.min(1,G.score/cfg.winScore);
+  ctx.fillStyle='#1a1a26';
+  ctx.fillRect(0,canvas.height-4,canvas.width,4);
+  ctx.fillStyle=G.combo>=3?'#f59e0b':'#7c3aed';
+  ctx.fillRect(0,canvas.height-4,canvas.width*prog,4);
+
+  animId=requestAnimationFrame(gameLoop);
 }
 
-async function endGame(result) {
-  if (!G.running) return;
-  G.running = false;
-  clearInterval(G.timerInterval);
-  const duration = Math.round((Date.now()-G.startTime)/1000);
+async function endGame(won=false){
+  if(!G.running)return;
+  G.running=false;
+  cancelAnimationFrame(animId);
+  const canvas=document.getElementById('gameCanvas');
+  canvas.removeEventListener('touchmove',onTouchMove);
+  canvas.removeEventListener('touchstart',onTouchStart);
+  canvas.removeEventListener('mousemove',onMouseMove);
 
-  const r = await api('/api/player/match','POST',{result, difficulty:G.diff, duration});
+  const score=G.score;
+  const isNewBest=score>localBest;
+  if(isNewBest){localBest=score;localStorage.setItem('nx_best',score);}
 
-  // show result screen
-  const win = result==='win';
-  document.getElementById('result-icon').textContent   = win?'🏆':'💀';
-  document.getElementById('result-title').textContent  = win?'VICTORIA':'DERROTA';
-  document.getElementById('result-title').className    = 'result-title result-'+(win?'win':'loss');
-  const tc = r.trophyChange||0;
-  document.getElementById('result-trophy-change').innerHTML =
-    `<span class="${tc>=0?'tc-pos':'tc-neg'}">${tc>=0?'+':''}${tc} 🏆</span>`;
-  document.getElementById('rs-before').textContent = r.trophiesBefore||user.trophies;
-  document.getElementById('rs-after').textContent  = r.trophiesAfter||user.trophies;
-  document.getElementById('rs-streak').textContent = r.streak||0;
-  document.getElementById('rs-league').textContent = r.league||user.league;
-  if (r.streakBonus) toast('🔥 Bonus de racha +3 trofeos!','var(--gold)');
+  const result=won?'win':'loss';
+  const duration=Math.round((Date.now()-G.startTime)/1000);
+  const r=await api('/api/player/match','POST',{result,difficulty:selectedDiff,duration});
 
-  // milestones
-  const rmEl = document.getElementById('result-milestones');
-  rmEl.innerHTML = '';
+  // result screen
+  document.getElementById('result-icon').textContent=won?'🏆':'💀';
+  document.getElementById('result-title').textContent=won?'¡VICTORIA!':'GAME OVER';
+  document.getElementById('result-title').className='result-title result-'+(won?'win':'loss');
+
+  const tc=r.trophyChange||0;
+  document.getElementById('result-trophy-change').innerHTML=
+    `<span class="${tc>=0?'tc-pos':'tc-neg'}">${tc>=0?'+':''}${tc} 🏆</span>`+
+    (isNewBest?' <span style="color:var(--gold)">⭐ ¡Nuevo récord!</span>':'');
+
+  document.getElementById('rs-score').textContent=score;
+  document.getElementById('rs-best').textContent=localBest;
+  document.getElementById('rs-after').textContent=r.trophiesAfter??user?.trophies??0;
+  document.getElementById('rs-league').textContent=r.league??user?.league??'—';
+
+  if(r.streakBonus) toast('🔥 Bonus de racha +3!','var(--gold)');
+
+  const rmEl=document.getElementById('result-milestones');
+  rmEl.innerHTML='';
   (r.newClaimableMilestones||[]).forEach(m=>{
     const div=document.createElement('div');
     div.className='milestone-unlocked';
-    div.innerHTML=`${m.icon} <strong>¡Nuevo hito!</strong> ${m.label} — Toca para reclamar`;
+    div.innerHTML=`${m.icon} <strong>¡Hito desbloqueado!</strong> ${m.label}`;
     rmEl.appendChild(div);
   });
 
-  // update local user
-  if (r.trophiesAfter!==undefined) {
-    user.trophies = r.trophiesAfter;
-    user.league   = r.league||user.league;
-    user.streak   = r.streak||0;
-    if (result==='win') user.wins=(user.wins||0)+1;
+  if(r.trophiesAfter!==undefined){
+    user.trophies=r.trophiesAfter;
+    user.league=r.league||user.league;
+    user.streak=r.streak||0;
+    if(won) user.wins=(user.wins||0)+1;
     else user.losses=(user.losses||0)+1;
     localStorage.setItem('nx_user',JSON.stringify(user));
   }
@@ -924,103 +779,16 @@ async function endGame(result) {
   show('result');
 }
 
-function useSkill() {
-  if (!G.running || G.skillCd>0) return;
-  const fn = HERO_SKILLS[G.heroKey];
-  if (fn) { fn(G); G.skillCd=180; }
-}
-
-function goHub() { initHub(); }
-
-// ─── JOYSTICK ─────────────────────────────────────────────
-const jBase = document.getElementById('joystick-base');
-const jKnob = document.getElementById('joystick-knob');
-let jActive=false, jId=null, jOx=0, jOy=0;
-const JR=35;
-
-function jStart(e) {
-  e.preventDefault();
-  const t = e.touches?e.touches[0]:e;
-  jActive=true; jId=t.identifier||0;
-  const rect=jBase.getBoundingClientRect();
-  jOx=rect.left+rect.width/2; jOy=rect.top+rect.height/2;
-}
-function jMove(e) {
-  if(!jActive)return; e.preventDefault();
-  const t=e.touches?Array.from(e.touches).find(x=>x.identifier===jId)||e.touches[0]:e;
-  const dx=t.clientX-jOx, dy=t.clientY-jOy;
-  const dist=Math.min(JR,Math.hypot(dx,dy));
-  const ang=Math.atan2(dy,dx);
-  jKnob.style.transform=`translate(calc(-50% + ${Math.cos(ang)*dist}px), calc(-50% + ${Math.sin(ang)*dist}px))`;
-  G.vx=Math.cos(ang)*(dist/JR); G.vy=Math.sin(ang)*(dist/JR);
-}
-function jEnd(e) {
-  e.preventDefault(); jActive=false;
-  jKnob.style.transform='translate(-50%,-50%)';
-  if(G) { G.vx=0; G.vy=0; }
-}
-
-// Aim with touch on canvas
-const canvas = document.getElementById('gameCanvas');
-canvas.addEventListener('touchstart', (e)=>{
-  e.preventDefault();
-  if(!G||!G.running) return;
-  const t=e.touches[0];
-  const rect=canvas.getBoundingClientRect();
-  G.aimAngle = Math.atan2(t.clientY-rect.top-G.py, t.clientX-rect.left-G.px);
-  G.autoShoot=true; G.aimActive=true;
-},{passive:false});
-canvas.addEventListener('touchmove',(e)=>{
-  e.preventDefault();
-  if(!G||!G.running) return;
-  const t=e.touches[0];
-  const rect=canvas.getBoundingClientRect();
-  G.aimAngle = Math.atan2(t.clientY-rect.top-G.py, t.clientX-rect.left-G.px);
-},{passive:false});
-canvas.addEventListener('touchend',(e)=>{
-  e.preventDefault();
-  if(G){ G.autoShoot=false; G.aimActive=false; }
-},{passive:false});
-canvas.addEventListener('mousemove',(e)=>{
-  if(!G||!G.running) return;
-  const rect=canvas.getBoundingClientRect();
-  G.aimAngle = Math.atan2(e.clientY-rect.top-G.py, e.clientX-rect.left-G.px);
-  G.aimActive=true;
-});
-
-jBase.addEventListener('touchstart',jStart,{passive:false});
-jBase.addEventListener('touchmove',jMove,{passive:false});
-jBase.addEventListener('touchend',jEnd,{passive:false});
-jBase.addEventListener('mousedown',jStart);
-document.addEventListener('mousemove',(e)=>{ if(jActive)jMove(e); });
-document.addEventListener('mouseup',(e)=>{ if(jActive)jEnd(e); });
+function goHub(){initHub();}
 
 // keyboard
-const keys={};
 document.addEventListener('keydown',e=>{
-  keys[e.key]=true;
-  if(e.key===' '&&G.running&&!G.reloading&&G.ammo>0&&!G.shootCd){
-    spawnBullet(G,G.px,G.py,G.aimAngle,G.heroData.damage,'#a855f7'); G.ammo--; G.shootCd=18;
-    if(G.ammo<=0){G.reloading=true;G.reloadProgress=0;} updateAmmoHUD();
-  }
-  if(e.key==='q') useSkill();
-});
-document.addEventListener('keyup',e=>{ keys[e.key]=false; });
-setInterval(()=>{
   if(!G.running)return;
-  let x=0,y=0;
-  if(keys['ArrowLeft']||keys['a'])x=-1;
-  if(keys['ArrowRight']||keys['d'])x=1;
-  if(keys['ArrowUp']||keys['w'])y=-1;
-  if(keys['ArrowDown']||keys['s'])y=1;
-  G.vx=x; G.vy=y;
-},16);
+  if(e.key==='ArrowLeft'||e.key==='a') G.targetX=Math.max(G.pr,G.targetX-40);
+  if(e.key==='ArrowRight'||e.key==='d') G.targetX=Math.min(G.canvas?.width-G.pr,G.targetX+40);
+});
 
-function shootPressed() { if(G){ G.autoShoot=true; G.aimActive=true; } }
-function shootReleased(){ if(G){ G.autoShoot=false; G.aimActive=false; } }
-
-// ─── INIT ─────────────────────────────────────────────────
-if (token && user) initHub();
+if(token&&user) initHub();
 </script>
 </body>
 </html>
