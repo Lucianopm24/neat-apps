@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Arena — Admin</title>
+<style>
+  :root {
+    --bg:#0a0a0f; --surface:#12121a; --card:#1a1a26; --border:#2a2a3a;
+    --accent:#7c3aed; --accent2:#a855f7; --gold:#f59e0b;
+    --green:#10b981; --red:#ef4444; --text:#e2e8f0; --muted:#64748b;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; }
+
+  /* LOGIN */
+  #login-screen { display:flex; flex-direction:column; align-items:center;
+    justify-content:center; height:100vh;
+    background:radial-gradient(ellipse at 50% 0%,#3b0764,#0a0a0f 70%); }
+  .login-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:2rem; width:320px; }
+  .login-box h2 { text-align:center; margin-bottom:1.5rem; font-size:1.3rem; color:var(--accent2); }
+  .login-box input { width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:.7rem 1rem; color:var(--text); font-size:.95rem; outline:none;
+    margin-bottom:.8rem; transition:.2s; }
+  .login-box input:focus{ border-color:var(--accent2); }
+  .login-err { color:var(--red); font-size:.85rem; text-align:center; margin-bottom:.5rem; }
+
+  /* LAYOUT */
+  #admin-screen { display:none; }
+  .admin-header { background:var(--surface); border-bottom:1px solid var(--border);
+    padding:.75rem 1.5rem; display:flex; align-items:center; justify-content:space-between; }
+  .admin-logo { font-weight:900; font-size:1.2rem; letter-spacing:3px;
+    background:linear-gradient(135deg,#a855f7,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .admin-meta { color:var(--muted); font-size:.8rem; }
+  .admin-body { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 53px); }
+  .sidebar { background:var(--surface); border-right:1px solid var(--border); padding:1rem 0; }
+  .nav-item { padding:.7rem 1.2rem; cursor:pointer; font-size:.9rem; color:var(--muted);
+    border-left:3px solid transparent; transition:.2s; }
+  .nav-item:hover { color:var(--text); background:var(--card); }
+  .nav-item.active { color:var(--accent2); border-left-color:var(--accent2); background:var(--card); }
+  .nav-section { font-size:.65rem; text-transform:uppercase; letter-spacing:2px;
+    color:var(--muted); padding:.5rem 1.2rem .3rem; margin-top:.5rem; }
+  .main { padding:1.5rem; overflow-y:auto; }
+  .tab { display:none; }
+  .tab.active { display:block; }
+  .page-title { font-size:1.3rem; font-weight:800; margin-bottom:1.2rem; }
+
+  /* CARDS */
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.2rem; }
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:.8rem; margin-bottom:1.5rem; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:1rem; text-align:center; }
+  .stat-card .val { font-size:1.8rem; font-weight:900; }
+  .stat-card .lbl { font-size:.75rem; color:var(--muted); margin-top:.2rem; }
+
+  /* BUTTONS */
+  .btn { border:none; border-radius:8px; padding:.55rem 1rem; cursor:pointer;
+    font-size:.85rem; font-weight:600; transition:.2s; }
+  .btn-purple { background:var(--accent); color:#fff; }
+  .btn-purple:hover { opacity:.85; }
+  .btn-green  { background:var(--green); color:#fff; }
+  .btn-green:hover  { opacity:.85; }
+  .btn-red    { background:var(--red); color:#fff; }
+  .btn-red:hover    { opacity:.85; }
+  .btn-ghost  { background:transparent; border:1px solid var(--border); color:var(--muted); }
+  .btn-ghost:hover  { border-color:var(--accent2); color:var(--accent2); }
+
+  /* FORM */
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.8rem; }
+  .form-group { display:flex; flex-direction:column; gap:.3rem; }
+  .form-group label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .form-group input, .form-group select {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:.6rem .9rem; color:var(--text); font-size:.9rem; outline:none; transition:.2s; }
+  .form-group input:focus, .form-group select:focus { border-color:var(--accent2); }
+  .form-group select option { background:var(--surface); }
+  .form-actions { display:flex; gap:.6rem; margin-top:1rem; }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  thead th { background:var(--surface); padding:.6rem .8rem; text-align:left;
+    color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:1px;
+    border-bottom:1px solid var(--border); }
+  tbody tr { border-bottom:1px solid var(--border); transition:.15s; }
+  tbody tr:hover { background:#ffffff06; }
+  tbody td { padding:.6rem .8rem; }
+  .badge { display:inline-block; padding:.15rem .5rem; border-radius:20px; font-size:.72rem; font-weight:700; }
+  .badge-bronze  { background:#78350f22; color:#f59e0b; border:1px solid #78350f; }
+  .badge-silver  { background:#1e293b; color:#94a3b8; border:1px solid #475569; }
+  .badge-gold    { background:#78350f33; color:#fbbf24; border:1px solid #d97706; }
+  .badge-diamond { background:#1e3a5f33; color:#60a5fa; border:1px solid #3b82f6; }
+  .badge-master  { background:#3b0764aa; color:#c084fc; border:1px solid #7c3aed; }
+  .badge-legend  { background:#7c000044; color:#f87171; border:1px solid #ef4444; }
+
+  /* MILESTONES */
+  .milestone-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:.8rem; }
+  .milestone-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem; }
+  .milestone-card.inactive { opacity:.45; }
+  .milestone-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.5rem; }
+  .milestone-icon { font-size:1.8rem; }
+  .milestone-trophy { font-size:.75rem; color:var(--gold); font-weight:800; }
+  .milestone-label { font-size:.85rem; margin-bottom:.3rem; }
+  .milestone-reward { font-size:.75rem; color:var(--muted); }
+  .milestone-actions { display:flex; gap:.4rem; margin-top:.7rem; }
+
+  /* TOAST */
+  #toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:.7rem 1.2rem; font-size:.9rem; z-index:999; transition:.3s; }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* CONFIRM */
+  .confirm-overlay { display:none; position:fixed; inset:0; background:#000a; z-index:200;
+    align-items:center; justify-content:center; }
+  .confirm-overlay.open { display:flex; }
+  .confirm-box { background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:1.5rem; width:280px; text-align:center; }
+  .confirm-box h4 { margin-bottom:.5rem; }
+  .confirm-box p  { color:var(--muted); font-size:.85rem; margin-bottom:1rem; }
+  .confirm-btns { display:flex; gap:.6rem; justify-content:center; }
+
+  @media(max-width:640px) {
+    .admin-body { grid-template-columns:1fr; }
+    .sidebar { border-right:none; border-bottom:1px solid var(--border);
+      display:flex; overflow-x:auto; padding:.3rem 0; }
+    .nav-section { display:none; }
+    .nav-item { white-space:nowrap; border-left:none; border-bottom:3px solid transparent; }
+    .nav-item.active { border-bottom-color:var(--accent2); border-left-color:transparent; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <h2>👑 Neat Arena<br>Panel Admin</h2>
+    <div id="login-err" class="login-err"></div>
+    <input type="password" id="admin-key-input" placeholder="Clave de administrador" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <button class="btn btn-purple" style="width:100%;padding:.75rem" onclick="doAdminLogin()">ENTRAR</button>
+  </div>
+</div>
+
+<!-- ═══ ADMIN ═══ -->
+<div id="admin-screen">
+  <div class="admin-header">
+    <div class="admin-logo">Neat Admin</div>
+    <div class="admin-meta" id="admin-refresh-info">— Actualizando...</div>
+  </div>
+  <div class="admin-body">
+    <div class="sidebar">
+      <div class="nav-section">General</div>
+      <div class="nav-item active" onclick="showTab('tab-stats',this)">📊 Estadísticas</div>
+      <div class="nav-item"        onclick="showTab('tab-users',this)">👥 Jugadores</div>
+      <div class="nav-section">Contenido</div>
+      <div class="nav-item"        onclick="showTab('tab-milestones',this)">🗺 Hitos</div>
+      <div class="nav-item"        onclick="showTab('tab-new-milestone',this)">➕ Nuevo hito</div>
+    </div>
+    <div class="main">
+
+      <!-- STATS -->
+      <div id="tab-stats" class="tab active">
+        <div class="page-title">📊 Resumen global</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="val" id="s-users" style="color:var(--accent2)">—</div><div class="lbl">Jugadores</div></div>
+          <div class="stat-card"><div class="val" id="s-matches" style="color:var(--gold)">—</div><div class="lbl">Partidas totales</div></div>
+          <div class="stat-card"><div class="val" id="s-wins" style="color:var(--green)">—</div><div class="lbl">Victorias</div></div>
+          <div class="stat-card"><div class="val" id="s-losses" style="color:var(--red)">—</div><div class="lbl">Derrotas</div></div>
+          <div class="stat-card"><div class="val" id="s-winrate" style="color:var(--accent2)">—%</div><div class="lbl">Win rate</div></div>
+        </div>
+        <div class="card">
+          <div style="font-size:.85rem;color:var(--muted);margin-bottom:.5rem">👑 Jugador líder</div>
+          <div id="s-top" style="font-size:1.1rem;font-weight:700">—</div>
+        </div>
+        <div style="margin-top:1rem">
+          <button class="btn btn-ghost" onclick="loadStats()">🔄 Refrescar datos</button>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div id="tab-users" class="tab">
+        <div class="page-title">👥 Jugadores</div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Usuario</th><th>Trofeos</th><th>Liga</th>
+                  <th>V/D</th><th>Racha</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="7" style="color:var(--muted);text-align:center;padding:2rem">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MILESTONES -->
+      <div id="tab-milestones" class="tab">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
+          <div class="page-title" style="margin:0">🗺 Camino de trofeos</div>
+          <button class="btn btn-purple" onclick="seedMilestones()">🌱 Sembrar hitos default</button>
+        </div>
+        <div class="milestone-grid" id="milestone-grid">
+          <div style="color:var(--muted);font-size:.85rem">Cargando hitos...</div>
+        </div>
+      </div>
+
+      <!-- NEW MILESTONE -->
+      <div id="tab-new-milestone" class="tab">
+        <div class="page-title">➕ Crear nuevo hito</div>
+        <div class="card">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Trofeos necesarios</label>
+              <input type="number" id="nm-trophy" placeholder="ej: 450" min="1">
+            </div>
+            <div class="form-group">
+              <label>Tipo de recompensa</label>
+              <select id="nm-type" onchange="updateRewardHint()">
+                <option value="coins">💰 Monedas</option>
+                <option value="hero">⚔ Héroe</option>
+                <option value="skin">🎨 Skin</option>
+                <option value="title">📛 Título</option>
+                <option value="chest">🎁 Cofre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label id="nm-value-label">Cantidad de monedas</label>
+              <input type="text" id="nm-value" placeholder="ej: 300">
+            </div>
+            <div class="form-group">
+              <label>Etiqueta (texto al jugador)</label>
+              <input type="text" id="nm-label" placeholder="ej: ¡Primera centena!">
+            </div>
+            <div class="form-group">
+              <label>Icono emoji</label>
+              <input type="text" id="nm-icon" placeholder="ej: 🏆" maxlength="4" value="🏆">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-purple" onclick="createMilestone()">✅ Crear hito</button>
+            <button class="btn btn-ghost" onclick="clearMilestoneForm()">Limpiar</button>
+          </div>
+          <div id="nm-error" style="color:var(--red);font-size:.85rem;margin-top:.5rem"></div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Confirm -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h4 id="confirm-title">¿Confirmar?</h4>
+    <p  id="confirm-msg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost"  onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-red" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = (window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')
+  ? 'http://localhost:3001' : 'https://neat-arena-b.vercel.app';
+
+let ADMIN_KEY = '';
+
+function toast(msg, color='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.borderColor=color||'var(--border)';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+async function aapi(path, method='GET', body=null) {
+  const opts = { method, headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY} };
+  if (body) opts.body=JSON.stringify(body);
+  const r = await fetch(API+path, opts);
+  return r.json();
+}
+
+// ── LOGIN ────────────────────────────────────
+async function doAdminLogin() {
+  const key = document.getElementById('admin-key-input').value.trim();
+  if (!key) return;
+  ADMIN_KEY = key;
+  const r = await aapi('/api/admin/stats');
+  if (r.error) {
+    document.getElementById('login-err').textContent = 'Clave incorrecta';
+    ADMIN_KEY=''; return;
+  }
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('admin-screen').style.display='block';
+  document.getElementById('admin-refresh-info').textContent = 'Actualizado: '+new Date().toLocaleTimeString();
+  renderStats(r);
+  loadUsers();
+  loadMilestones();
+}
+
+// ── STATS ────────────────────────────────────
+async function loadStats() {
+  const r = await aapi('/api/admin/stats');
+  renderStats(r);
+  document.getElementById('admin-refresh-info').textContent = 'Actualizado: '+new Date().toLocaleTimeString();
+}
+function renderStats(r) {
+  document.getElementById('s-users').textContent   = r.totalUsers??'—';
+  document.getElementById('s-matches').textContent = r.totalMatches??'—';
+  document.getElementById('s-wins').textContent    = r.wins??'—';
+  document.getElementById('s-losses').textContent  = r.losses??'—';
+  document.getElementById('s-winrate').textContent = (r.winRate??'—')+'%';
+  if (r.topPlayer) {
+    document.getElementById('s-top').textContent = `${r.topPlayer.username} — 🏆 ${r.topPlayer.trophies} (${r.topPlayer.league})`;
+  }
+}
+
+// ── USERS ────────────────────────────────────
+async function loadUsers() {
+  const r = await aapi('/api/admin/users');
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML='';
+  (r.users||[]).forEach((u,i)=>{
+    const tr=document.createElement('tr');
+    const lg=u.league?.toLowerCase()||'bronze';
+    tr.innerHTML=`
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><strong>${u.username}</strong></td>
+      <td style="color:var(--gold);font-weight:700">🏆 ${u.trophies}</td>
+      <td><span class="badge badge-${lg}">${u.league}</span></td>
+      <td><span style="color:var(--green)">${u.wins}W</span> / <span style="color:var(--red)">${u.losses}L</span></td>
+      <td>🔥 ${u.streak}</td>
+      <td>
+        <button class="btn btn-ghost" style="font-size:.75rem;padding:.3rem .6rem" onclick="openGiveTrophies('${u._id}','${u.username}')">+/- 🏆</button>
+        <button class="btn btn-red"   style="font-size:.75rem;padding:.3rem .6rem;margin-left:.3rem" onclick="confirmReset('${u._id}','${u.username}')">Reset</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// dar trofeos
+let giveUserId='', giveUsername='';
+function openGiveTrophies(id,name) {
+  giveUserId=id; giveUsername=name;
+  const amt=prompt(`¿Cuántos trofeos dar/quitar a ${name}?\n(Usa número negativo para quitar)`);
+  if(amt===null||amt==='')return;
+  const n=parseInt(amt);
+  if(isNaN(n)){toast('Número inválido','var(--red)');return;}
+  confirmAction(`${n>=0?'+':''}${n} trofeos a ${name}`,`Esto cambiará los trofeos de ${name} en ${n}.`, async ()=>{
+    const r=await aapi(`/api/admin/give-trophies/${id}`,'POST',{amount:n});
+    if(r.success){ toast(`✅ ${name}: ahora tiene ${r.newTrophies} trofeos`,'var(--green)'); loadUsers(); }
+    else toast(r.error,'var(--red)');
+  });
+}
+
+// reset usuario
+function confirmReset(id,name) {
+  confirmAction(`Resetear a ${name}`,`Esto pondrá sus trofeos, victorias y derrotas a 0.`,async()=>{
+    const r=await aapi(`/api/admin/reset-user/${id}`,'POST');
+    if(r.success){ toast(`✅ ${name} reseteado`,'var(--green)'); loadUsers(); }
+    else toast(r.error,'var(--red)');
+  });
+}
+
+// ── MILESTONES ───────────────────────────────
+async function loadMilestones() {
+  const r = await aapi('/api/milestones');
+  const grid = document.getElementById('milestone-grid');
+  grid.innerHTML='';
+  const all = (r.milestones||[]);
+  if(!all.length){ grid.innerHTML='<div style="color:var(--muted)">No hay hitos. Usa "Sembrar hitos default" para empezar.</div>'; return; }
+  all.forEach(m=>{
+    const typeLabels={coins:'💰 Monedas',hero:'⚔ Héroe',skin:'🎨 Skin',title:'📛 Título',chest:'🎁 Cofre'};
+    const div=document.createElement('div');
+    div.className='milestone-card'+(m.active?'':' inactive');
+    div.innerHTML=`
+      <div class="milestone-top">
+        <div class="milestone-icon">${m.icon||'🏆'}</div>
+        <div class="milestone-trophy">🏆 ${m.trophyTarget}</div>
+      </div>
+      <div class="milestone-label">${m.label}</div>
+      <div class="milestone-reward">${typeLabels[m.rewardType]||m.rewardType}: ${m.rewardValue}</div>
+      <div class="milestone-actions">
+        <button class="btn btn-ghost" style="font-size:.72rem;padding:.25rem .5rem" onclick="editMilestone('${m._id}','${m.trophyTarget}','${m.rewardType}','${m.rewardValue}','${m.label}','${m.icon}')">✏️ Editar</button>
+        <button class="btn btn-red"   style="font-size:.72rem;padding:.25rem .5rem" onclick="deleteMilestone('${m._id}','${m.trophyTarget}')">🗑</button>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+async function seedMilestones() {
+  confirmAction('Sembrar hitos por defecto','Creará 11 hitos predefinidos (solo los que no existan).', async()=>{
+    const r=await aapi('/api/admin/milestone/seed','POST');
+    toast(r.message||'Hitos creados','var(--green)');
+    loadMilestones();
+  });
+}
+
+function editMilestone(id,trophy,type,value,label,icon) {
+  document.getElementById('nm-trophy').value = trophy;
+  document.getElementById('nm-type').value   = type;
+  document.getElementById('nm-value').value  = value;
+  document.getElementById('nm-label').value  = label;
+  document.getElementById('nm-icon').value   = icon;
+  updateRewardHint();
+  showTab('tab-new-milestone', document.querySelectorAll('.nav-item')[3]);
+  // Change create button to update
+  const btn=document.querySelector('[onclick="createMilestone()"]');
+  btn.textContent='💾 Actualizar hito';
+  btn.onclick=()=>updateMilestone(id);
+}
+
+async function updateMilestone(id) {
+  const body={
+    trophyTarget: parseInt(document.getElementById('nm-trophy').value),
+    rewardType:   document.getElementById('nm-type').value,
+    rewardValue:  document.getElementById('nm-value').value.trim(),
+    label:        document.getElementById('nm-label').value.trim(),
+    icon:         document.getElementById('nm-icon').value.trim()||'🏆',
+  };
+  if(!body.trophyTarget||!body.rewardValue||!body.label){ document.getElementById('nm-error').textContent='Completa todos los campos.'; return; }
+  const r=await aapi(`/api/admin/milestone/${id}`,'PUT',body);
+  if(r.success){ toast('✅ Hito actualizado','var(--green)'); clearMilestoneForm(); loadMilestones(); }
+  else document.getElementById('nm-error').textContent=r.error;
+}
+
+async function createMilestone() {
+  const body={
+    trophyTarget: parseInt(document.getElementById('nm-trophy').value),
+    rewardType:   document.getElementById('nm-type').value,
+    rewardValue:  document.getElementById('nm-value').value.trim(),
+    label:        document.getElementById('nm-label').value.trim(),
+    icon:         document.getElementById('nm-icon').value.trim()||'🏆',
+  };
+  document.getElementById('nm-error').textContent='';
+  if(!body.trophyTarget||!body.rewardValue||!body.label){ document.getElementById('nm-error').textContent='Completa todos los campos.'; return; }
+  const r=await aapi('/api/admin/milestone','POST',body);
+  if(r.success){ toast('✅ Hito creado','var(--green)'); clearMilestoneForm(); loadMilestones(); }
+  else document.getElementById('nm-error').textContent=r.error;
+}
+
+async function deleteMilestone(id,trophy) {
+  confirmAction(`Desactivar hito de 🏆${trophy}`,'El hito ya no será visible para los jugadores.', async()=>{
+    const r=await aapi(`/api/admin/milestone/${id}`,'DELETE');
+    if(r.success){ toast('Hito desactivado'); loadMilestones(); }
+    else toast(r.error,'var(--red)');
+  });
+}
+
+function clearMilestoneForm() {
+  ['nm-trophy','nm-value','nm-label'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nm-icon').value='🏆';
+  document.getElementById('nm-type').value='coins';
+  document.getElementById('nm-error').textContent='';
+  updateRewardHint();
+  // restore create button
+  const btn=document.querySelector('.form-actions .btn-purple');
+  btn.textContent='✅ Crear hito'; btn.onclick=createMilestone;
+}
+
+function updateRewardHint() {
+  const t=document.getElementById('nm-type').value;
+  const hints={coins:'Cantidad de monedas (ej: 300)',hero:'Nombre del héroe (ej: Ninja)',skin:'Nombre del skin',title:'Nombre del título',chest:'Tipo: bronze/silver/gold'};
+  document.getElementById('nm-value-label').textContent=hints[t]||'Valor';
+  document.getElementById('nm-value').placeholder=hints[t]||'';
+}
+
+// ── NAV ──────────────────────────────────────
+function showTab(id,el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='tab-stats')loadStats();
+  if(id==='tab-users')loadUsers();
+  if(id==='tab-milestones')loadMilestones();
+}
+
+// ── CONFIRM ──────────────────────────────────
+let confirmCb=null;
+function confirmAction(title,msg,cb) {
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  confirmCb=cb;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+document.getElementById('confirm-ok').onclick=()=>{ closeConfirm(); if(confirmCb)confirmCb(); };
+function closeConfirm(){ document.getElementById('confirm-overlay').classList.remove('open'); }
+</script>
+</body>
+</html>
