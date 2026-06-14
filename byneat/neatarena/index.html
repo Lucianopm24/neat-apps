@@ -172,6 +172,13 @@
     color:#fff; font-weight:800; touch-action:none; }
   .btn-skill { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#4f46e5);
     border:none; font-size:.9rem; cursor:pointer; color:#fff; touch-action:none; }
+  .ammo-row { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .ammo-dots { display:flex; gap:3px; }
+  .ammo-dot { width:9px; height:9px; border-radius:50%; background:var(--red); transition:.15s; }
+  .ammo-dot.empty { background:var(--border); }
+  .reload-bar-wrap { width:48px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .reload-bar { height:100%; background:var(--green); width:0%; transition:width .1s linear; }
+  .ammo-label { font-size:.6rem; color:var(--muted); }
 
   /* ── RESULT ── */
   #screen-result { flex-direction:column; align-items:center; justify-content:center;
@@ -340,6 +347,11 @@
       </div>
     </div>
     <div class="right-controls">
+      <div class="ammo-row">
+        <div class="ammo-dots" id="ammo-dots"></div>
+        <div class="reload-bar-wrap"><div class="reload-bar" id="reload-bar"></div></div>
+        <div class="ammo-label" id="ammo-label">5/5</div>
+      </div>
       <button class="btn-shoot" id="btn-shoot" onpointerdown="shootPressed()" onpointerup="shootReleased()">💥</button>
       <button class="btn-skill" id="btn-skill" onclick="useSkill()">⚡</button>
     </div>
@@ -625,6 +637,8 @@ function startGame() {
     timeLeft: timeLimit,
     skillCd:0,
     shootCd:0, autoShoot:false,
+    ammo:5, maxAmmo:5, reloading:false, reloadProgress:0, reloadTime:300, // 300 frames = 5 segs @ 60fps
+    aimAngle:0, aimActive:false,
     enemySpeed, enemyDmg, enemyHp,
     running:true, startTime: Date.now(),
     particles:[],
@@ -643,6 +657,19 @@ function startGame() {
 
   show('game');
   requestAnimationFrame(gameLoop);
+}
+
+function updateAmmoHUD() {
+  const dots = document.getElementById('ammo-dots');
+  const lbl  = document.getElementById('ammo-label');
+  if (!dots) return;
+  dots.innerHTML = '';
+  for (let i=0;i<G.maxAmmo;i++) {
+    const d = document.createElement('div');
+    d.className = 'ammo-dot' + (i >= G.ammo ? ' empty' : '');
+    dots.appendChild(d);
+  }
+  if (lbl) lbl.textContent = G.reloading ? '⏳ Recargando...' : G.ammo+'/'+G.maxAmmo;
 }
 
 function spawnWave() {
@@ -684,15 +711,29 @@ function gameLoop() {
   G.px = Math.max(16,Math.min(canvas.width-16,G.px));
   G.py = Math.max(16,Math.min(canvas.height-16,G.py));
 
-  // auto-shoot nearest
-  if (G.autoShoot && G.shootCd<=0 && G.enemies.length>0) {
-    let nearest=null, nd=99999;
-    G.enemies.forEach(e=>{const d=Math.hypot(e.x-G.px,e.y-G.py); if(d<nd){nd=d;nearest=e;}});
-    if (nearest) {
-      const ang = Math.atan2(nearest.y-G.py, nearest.x-G.px);
-      spawnBullet(G,G.px,G.py,ang,G.heroData.damage,'#a855f7');
-      G.shootCd = 12;
+  // ammo reload system
+  if (G.reloading) {
+    G.reloadProgress++;
+    const pct = (G.reloadProgress / G.reloadTime) * 100;
+    const rb = document.getElementById('reload-bar');
+    if (rb) rb.style.width = pct + '%';
+    if (G.reloadProgress >= G.reloadTime) {
+      G.ammo = G.maxAmmo;
+      G.reloading = false;
+      G.reloadProgress = 0;
+      const rb2 = document.getElementById('reload-bar');
+      if (rb2) rb2.style.width = '0%';
+      toast('🔄 ¡Recargado!');
     }
+  }
+
+  // shoot toward aim angle
+  if (G.autoShoot && !G.reloading && G.shootCd<=0 && G.ammo>0) {
+    spawnBullet(G, G.px, G.py, G.aimAngle, G.heroData.damage, '#a855f7');
+    G.ammo--;
+    G.shootCd = 18;
+    if (G.ammo <= 0) { G.reloading = true; G.reloadProgress = 0; }
+    updateAmmoHUD();
   }
   if (G.shootCd>0) G.shootCd--;
   if (G.skillCd>0) G.skillCd--;
@@ -803,6 +844,17 @@ function gameLoop() {
     ctx.shadowBlur=0;
   });
 
+  // aim line
+  if (G.aimActive) {
+    ctx.strokeStyle='rgba(168,85,247,0.5)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    ctx.moveTo(G.px, G.py);
+    ctx.lineTo(G.px + Math.cos(G.aimAngle)*60, G.py + Math.sin(G.aimAngle)*60);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
   // player
   const hIcon = G.heroData.icon;
   ctx.font='28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -908,6 +960,34 @@ function jEnd(e) {
   if(G) { G.vx=0; G.vy=0; }
 }
 
+// Aim with touch on canvas
+const canvas = document.getElementById('gameCanvas');
+canvas.addEventListener('touchstart', (e)=>{
+  e.preventDefault();
+  if(!G||!G.running) return;
+  const t=e.touches[0];
+  const rect=canvas.getBoundingClientRect();
+  G.aimAngle = Math.atan2(t.clientY-rect.top-G.py, t.clientX-rect.left-G.px);
+  G.autoShoot=true; G.aimActive=true;
+},{passive:false});
+canvas.addEventListener('touchmove',(e)=>{
+  e.preventDefault();
+  if(!G||!G.running) return;
+  const t=e.touches[0];
+  const rect=canvas.getBoundingClientRect();
+  G.aimAngle = Math.atan2(t.clientY-rect.top-G.py, t.clientX-rect.left-G.px);
+},{passive:false});
+canvas.addEventListener('touchend',(e)=>{
+  e.preventDefault();
+  if(G){ G.autoShoot=false; G.aimActive=false; }
+},{passive:false});
+canvas.addEventListener('mousemove',(e)=>{
+  if(!G||!G.running) return;
+  const rect=canvas.getBoundingClientRect();
+  G.aimAngle = Math.atan2(e.clientY-rect.top-G.py, e.clientX-rect.left-G.px);
+  G.aimActive=true;
+});
+
 jBase.addEventListener('touchstart',jStart,{passive:false});
 jBase.addEventListener('touchmove',jMove,{passive:false});
 jBase.addEventListener('touchend',jEnd,{passive:false});
@@ -919,9 +999,9 @@ document.addEventListener('mouseup',(e)=>{ if(jActive)jEnd(e); });
 const keys={};
 document.addEventListener('keydown',e=>{
   keys[e.key]=true;
-  if(e.key===' '&&G.running&&!G.shootCd){
-    const ne=G.enemies[0];
-    if(ne){ const ang=Math.atan2(ne.y-G.py,ne.x-G.px); spawnBullet(G,G.px,G.py,ang,G.heroData.damage,'#a855f7'); G.shootCd=12; }
+  if(e.key===' '&&G.running&&!G.reloading&&G.ammo>0&&!G.shootCd){
+    spawnBullet(G,G.px,G.py,G.aimAngle,G.heroData.damage,'#a855f7'); G.ammo--; G.shootCd=18;
+    if(G.ammo<=0){G.reloading=true;G.reloadProgress=0;} updateAmmoHUD();
   }
   if(e.key==='q') useSkill();
 });
@@ -936,8 +1016,8 @@ setInterval(()=>{
   G.vx=x; G.vy=y;
 },16);
 
-function shootPressed() { if(G) G.autoShoot=true; }
-function shootReleased(){ if(G) G.autoShoot=false; }
+function shootPressed() { if(G){ G.autoShoot=true; G.aimActive=true; } }
+function shootReleased(){ if(G){ G.autoShoot=false; G.aimActive=false; } }
 
 // ─── INIT ─────────────────────────────────────────────────
 if (token && user) initHub();
