@@ -47,6 +47,10 @@
   #toast.show { transform:translateX(-50%) translateY(0); }
   #toast.error { border-color:#e05252; color:#e05252; }
 
+/* Agrega esto junto a los otros estilos de vistas */
+#home-view { display:none; }
+#home-view.active { display:block; }
+  
   /* ── Auth Screen ── */
   #auth-screen {
     display:none; align-items:center; justify-content:center;
@@ -369,6 +373,36 @@
   }
   @keyframes spin { to { transform:rotate(360deg); } }
 
+  /* ── DM Panel ── */
+#home-view { display:none; }
+#home-view.active { display:block; }
+.dm-panel {
+  position:fixed; bottom:0; right:20px; width:320px; z-index:300;
+  display:flex; flex-direction:column;
+  background:var(--bg2); border:1px solid var(--bg3);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow:0 -4px 24px rgba(0,0,0,.4);
+  transform:translateY(calc(100% - 44px));
+  transition:transform .3s ease; max-height:480px;
+}
+.dm-msg-mine {
+  display:flex; justify-content:flex-end;
+}
+.dm-msg-mine div {
+  max-width:75%; padding:8px 12px; border-radius:14px 14px 4px 14px;
+  background:var(--yellow); color:#000; font-size:13px; line-height:1.4; word-break:break-word;
+}
+.dm-msg-other {
+  display:flex; justify-content:flex-start;
+}
+.dm-msg-other div {
+  max-width:75%; padding:8px 12px; border-radius:14px 14px 14px 4px;
+  background:var(--bg4); color:var(--text); font-size:13px; line-height:1.4; word-break:break-word;
+}
+@media (max-width:600px) {
+  .dm-panel { display:none; }
+}
+
   /* ── Back btn ── */
   .back-btn {
     display:flex; align-items:center; gap:6px; padding:12px 16px;
@@ -576,6 +610,38 @@
     </div>
 
   </div><!-- /main -->
+
+<!-- DM Panel -->
+<div class="dm-panel" id="dm-panel">
+  <div id="dm-header" onclick="toggleDM()" style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;cursor:pointer;flex-shrink:0;border-bottom:1px solid var(--bg3)">
+    <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px">
+      💬 Mensajes
+      <span id="dm-unread" style="display:none;background:var(--yellow);color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px"></span>
+    </span>
+    <span id="dm-chevron" style="color:var(--text2);font-size:12px">▲</span>
+  </div>
+  <div id="dm-list-view" style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column">
+    <div id="dm-conversations" style="padding:8px;flex:1"></div>
+    <div style="padding:8px;border-top:1px solid var(--bg3)">
+      <div style="display:flex;gap:8px">
+        <input id="dm-new-user" placeholder="Usuario para DM..." style="flex:1;background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')startDM()">
+        <button onclick="startDM()" style="background:var(--yellow);color:#000;border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px;font-family:'Space Grotesk',sans-serif">Ir</button>
+      </div>
+    </div>
+  </div>
+  <div id="dm-chat-view" style="display:none;flex-direction:column;flex:1;min-height:0">
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bg3);flex-shrink:0">
+      <button onclick="closeDMChat()" style="color:var(--text2);font-size:16px">←</button>
+      <span id="dm-chat-title" style="font-weight:600;font-size:14px"></span>
+    </div>
+    <div id="dm-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+    <div style="display:flex;gap:8px;padding:10px;border-top:1px solid var(--bg3);flex-shrink:0">
+      <input id="dm-input" placeholder="Mensaje..." style="flex:1;background:var(--bg3);border:1px solid var(--bg4);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')sendDM()">
+      <button onclick="sendDM()" style="background:var(--yellow);color:#000;border-radius:50%;width:36px;height:36px;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">↑</button>
+    </div>
+  </div>
+</div>
+  
 </div><!-- /app -->
 
 <script>
@@ -679,6 +745,7 @@ async function init() {
 function showApp() {
   document.getElementById("auth-screen").classList.remove("active");
   document.getElementById("app").classList.add("active");
+  showView("home", false); // ← agrega esta línea
   loadHome();
 }
 
@@ -1220,6 +1287,114 @@ async function checkDeepLink() {
   }
 }
 
+// ── DM / Mini Chatter ─────────────────────────────────────────────────────────
+let dmOpen = false;
+let dmCurrentChat = null;
+let dmPollingInterval = null;
+
+function toggleDM() {
+  dmOpen = !dmOpen;
+  document.getElementById("dm-panel").style.transform = dmOpen ? "translateY(0)" : "translateY(calc(100% - 44px))";
+  document.getElementById("dm-chevron").textContent = dmOpen ? "▼" : "▲";
+  if (dmOpen && !dmCurrentChat) loadDMConversations();
+}
+
+async function loadDMConversations() {
+  if (!token) return;
+  const box = document.getElementById("dm-conversations");
+  box.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/chat/chats`, { headers:{"Authorization":"Bearer "+token} });
+    const chats = await r.json();
+    const dms = chats.filter(c => !c.isGroup);
+    if (!dms.length) {
+      box.innerHTML = `<div style="text-align:center;color:var(--text3);font-size:13px;padding:20px 0">Sin mensajes todavía</div>`;
+      return;
+    }
+    box.innerHTML = dms.map(c => {
+      const other = c.participants?.find(p => p !== currentUser?.username) || "?";
+      const last = c.lastMessage?.content || "";
+      return `<div onclick="openDMChat('${c._id}','${esc(other)}')" style="display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--yellow);font-size:14px;flex-shrink:0">${other[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${esc(other)}</div>
+          <div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(last)}</div>
+        </div>
+      </div>`;
+    }).join("");
+  } catch {
+    box.innerHTML = `<div style="text-align:center;color:var(--text3);font-size:13px;padding:20px 0">Error al cargar</div>`;
+  }
+}
+
+async function startDM() {
+  const username = document.getElementById("dm-new-user").value.trim();
+  if (!username || !token) return;
+  try {
+    const r = await fetch(`${API}/chat/chats`, {
+      method:"POST",
+      headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+      body: JSON.stringify({ participantUsername: username })
+    });
+    const chat = await r.json();
+    if (!chat._id) return toast("Usuario no encontrado", true);
+    document.getElementById("dm-new-user").value = "";
+    openDMChat(chat._id, username);
+  } catch { toast("Error", true); }
+}
+
+async function openDMChat(chatId, username) {
+  dmCurrentChat = { id: chatId, username };
+  document.getElementById("dm-list-view").style.display = "none";
+  const chatView = document.getElementById("dm-chat-view");
+  chatView.style.display = "flex";
+  document.getElementById("dm-chat-title").textContent = username;
+  await loadDMMessages();
+  clearInterval(dmPollingInterval);
+  dmPollingInterval = setInterval(loadDMMessages, 5000);
+}
+
+function closeDMChat() {
+  dmCurrentChat = null;
+  clearInterval(dmPollingInterval);
+  document.getElementById("dm-chat-view").style.display = "none";
+  document.getElementById("dm-list-view").style.display = "flex";
+  loadDMConversations();
+}
+
+async function loadDMMessages() {
+  if (!dmCurrentChat || !token) return;
+  try {
+    const r = await fetch(`${API}/chat/messages/${dmCurrentChat.id}`, {
+      headers:{"Authorization":"Bearer "+token}
+    });
+    const msgs = await r.json();
+    const box = document.getElementById("dm-messages");
+    const wasAtBottom = box.scrollHeight - box.scrollTop <= box.clientHeight + 40;
+    box.innerHTML = msgs.map(m => {
+      const mine = m.sender === currentUser?.username;
+      return `<div class="${mine?'dm-msg-mine':'dm-msg-other'}"><div>${esc(m.content)}</div></div>`;
+    }).join("");
+    if (wasAtBottom) box.scrollTop = box.scrollHeight;
+  } catch {}
+}
+
+async function sendDM() {
+  if (!dmCurrentChat || !token) return;
+  const input = document.getElementById("dm-input");
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = "";
+  try {
+    await fetch(`${API}/chat/messages/${dmCurrentChat.id}`, {
+      method:"POST",
+      headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+      body: JSON.stringify({ content })
+    });
+    await loadDMMessages();
+  } catch { toast("Error al enviar", true); }
+}
+  
 init().then(checkDeepLink);
 </script>
 </body>
