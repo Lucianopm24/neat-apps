@@ -1140,60 +1140,79 @@ async function doUpload() {
 
   const btn = document.getElementById("upload-btn");
   btn.disabled = true;
-  btn.textContent = "Subiendo...";
 
-  try {
-    // Duration
-    const duration = await getVideoDuration(selectedVideo);
+  // Lanzar compresión en background — usuario puede seguir usando la app
+  toast("⚙️ Comprimiendo video... puedes seguir navegando");
+  btn.textContent = "Comprimiendo...";
 
-    // Upload video
-    toast("Subiendo video...");
-    const videoRes = await uploadToCDN(selectedVideo,
-      document.getElementById("video-progress"),
-      document.getElementById("video-bar")
-    );
-    if (!videoRes.success) throw new Error(videoRes.error || "Error subiendo video");
+  // Guardamos los valores del form ahora por si el usuario los cambia
+  const formData = {
+    title,
+    description: document.getElementById("up-desc").value.trim(),
+    category: document.getElementById("up-cat").value,
+  };
+  const thumbFile = selectedThumb;
+  const videoFile = selectedVideo;
 
-    // Upload thumbnail (optional)
-    let thumbnailFileId = null;
-    if (selectedThumb) {
-      toast("Subiendo thumbnail...");
-      const thumbRes = await uploadToCDN(selectedThumb);
-      if (thumbRes.success) thumbnailFileId = thumbRes.fileId;
+  // Limpiar form inmediatamente para que el usuario pueda seguir
+  selectedVideo = null; selectedThumb = null;
+  document.getElementById("up-title").value = "";
+  document.getElementById("up-desc").value = "";
+  document.getElementById("video-name").textContent = "";
+  document.getElementById("thumb-name").textContent = "";
+  btn.disabled = false;
+  btn.textContent = "Publicar video";
+  showHome();
+
+  // Procesar en background
+  (async () => {
+    try {
+      // Comprimir
+      let compressed;
+      try {
+        compressed = await compressVideo(videoFile);
+      } catch(e) {
+        toast("⚠️ No se pudo comprimir, subiendo original...");
+        compressed = videoFile;
+      }
+
+      // Verificar tamaño
+      if (compressed.size > 20 * 1024 * 1024) {
+        return toast("❌ Video demasiado grande incluso comprimido (" + (compressed.size/1024/1024).toFixed(1) + "MB)", true);
+      }
+
+      toast("📤 Subiendo video comprimido...");
+      const duration = await getVideoDuration(compressed);
+
+      const progressEl = document.getElementById("video-progress");
+      const barEl = document.getElementById("video-bar");
+      const videoRes = await uploadToCDN(compressed, progressEl, barEl);
+      if (!videoRes.success) throw new Error(videoRes.error || "Error subiendo video");
+
+      // Thumbnail opcional
+      let thumbnailFileId = null;
+      if (thumbFile) {
+        const thumbRes = await uploadToCDN(thumbFile);
+        if (thumbRes.success) thumbnailFileId = thumbRes.fileId;
+      }
+
+      // Guardar en backend
+      const r = await fetch(`${API}/watch/videos`, {
+        method:"POST",
+        headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+        body: JSON.stringify({ ...formData, fileId: videoRes.fileId, thumbnailFileId, duration })
+      });
+      if (!r.ok) throw new Error("Error guardando video");
+
+      progressEl.classList.remove("show");
+      toast("🎉 ¡Video publicado!");
+      loadHome();
+    } catch(err) {
+      toast("❌ " + (err.message || "Error al publicar"), true);
     }
-
-    // Save to backend
-    const r = await fetch(`${API}/watch/videos`, {
-      method:"POST",
-      headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-      body: JSON.stringify({
-        title,
-        description: document.getElementById("up-desc").value.trim(),
-        category: document.getElementById("up-cat").value,
-        fileId: videoRes.fileId,
-        thumbnailFileId,
-        duration
-      })
-    });
-    if (!r.ok) throw new Error("Error guardando video");
-
-    toast("¡Video publicado! 🎉");
-    selectedVideo = null; selectedThumb = null;
-    document.getElementById("up-title").value = "";
-    document.getElementById("up-desc").value = "";
-    document.getElementById("video-name").textContent = "";
-    document.getElementById("thumb-name").textContent = "";
-    document.getElementById("video-progress").classList.remove("show");
-    btn.disabled = false;
-    btn.textContent = "Publicar video";
-    showHome();
-  } catch(err) {
-    toast(err.message || "Error al publicar", true);
-    btn.disabled = false;
-    btn.textContent = "Publicar video";
-  }
+  })();
 }
-
+  
 // ── Search ────────────────────────────────────────────────────────────────────
 let searchTimeout;
 async function handleSearch(q) {
@@ -1393,6 +1412,40 @@ async function sendDM() {
     });
     await loadDMMessages();
   } catch { toast("Error al enviar", true); }
+}
+
+// ── FFmpeg compresión background ──────────────────────────────────────────────
+let ffmpegReady = false;
+let ffmpegInstance = null;
+
+async function loadFFmpeg() {
+  if (ffmpegReady) return ffmpegInstance;
+  const { createFFmpeg, fetchFile } = await import("https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.esm.js");
+  ffmpegInstance = createFFmpeg({ log: false });
+  await ffmpegInstance.load();
+  ffmpegReady = true;
+  return ffmpegInstance;
+}
+
+async function compressVideo(file) {
+  const ffmpeg = await loadFFmpeg();
+  const inputName = "input." + file.name.split(".").pop();
+  ffmpeg.FS("writeFile", inputName, await fetchFile(file));
+  await ffmpeg.run(
+    "-i", inputName,
+    "-vf", "scale=-2:720",
+    "-c:v", "libx264",
+    "-crf", "28",
+    "-preset", "fast",
+    "-c:a", "aac",
+    "-b:a", "96k",
+    "-movflags", "+faststart",
+    "output.mp4"
+  );
+  const data = ffmpeg.FS("readFile", "output.mp4");
+  ffmpeg.FS("unlink", inputName);
+  ffmpeg.FS("unlink", "output.mp4");
+  return new File([data.buffer], "video.mp4", { type: "video/mp4" });
 }
   
 init().then(checkDeepLink);
