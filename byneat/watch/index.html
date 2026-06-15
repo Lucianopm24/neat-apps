@@ -516,8 +516,11 @@
             <span class="icon">♥</span> <span id="like-count">0</span>
           </button>
           <button class="action-btn" onclick="shareVideo()">
-            <span class="icon">↗</span> Compartir
-          </button>
+  <span class="icon">↗</span> Compartir
+</button>
+<button class="action-btn" id="delete-btn" onclick="deleteVideo()" style="display:none;color:#e05252">
+  <span class="icon">🗑</span> Eliminar
+</button>
         </div>
         <div class="channel-row" id="channel-row" onclick="openChannel()">
           <div class="channel-avatar" id="vd-avatar"></div>
@@ -922,8 +925,12 @@ async function openVideo(v) {
   // Likes
   updateLikeBtn(v);
 
-  // Load channel info
-  loadChannelInfo(v.uploadedBy, v.uploaderUsername);
+  // Delete button
+const deleteBtn = document.getElementById("delete-btn");
+deleteBtn.style.display = (currentUser?.username === v.uploaderUsername || currentUser?.role === "admin") ? "" : "none";
+
+// Load channel info
+loadChannelInfo(v.uploadedBy, v.uploaderUsername);
 
   // Comments
   loadComments();
@@ -1077,6 +1084,19 @@ async function sendComment() {
   } catch { toast("Error al comentar", true); }
 }
 
+async function deleteVideo() {
+  if (!confirm("¿Eliminar este video?")) return;
+  try {
+    const r = await fetch(`${API}/watch/videos/${currentVideo._id}`, {
+      method:"DELETE", headers:{"Authorization":"Bearer "+token}
+    });
+    if (!r.ok) throw new Error();
+    toast("Video eliminado");
+    goBack();
+    loadHome();
+  } catch { toast("Error al eliminar", true); }
+}
+  
 async function deleteComment(id) {
   try {
     await fetch(`${API}/watch/comments/${id}`, {
