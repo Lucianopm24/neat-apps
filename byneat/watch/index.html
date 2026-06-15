@@ -1372,7 +1372,7 @@ async function loadDMMessages() {
     const box = document.getElementById("dm-messages");
     const wasAtBottom = box.scrollHeight - box.scrollTop <= box.clientHeight + 40;
     box.innerHTML = msgs.map(m => {
-      const mine = m.sender === currentUser?.username;
+      const mine = m.senderUsername === currentUser?.username;
       return `<div class="${mine?'dm-msg-mine':'dm-msg-other'}"><div>${esc(m.content)}</div></div>`;
     }).join("");
     if (wasAtBottom) box.scrollTop = box.scrollHeight;
