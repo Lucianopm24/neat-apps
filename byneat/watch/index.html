@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5c518">
+<title>Neat Watch</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #f5c518;
+    --yellow-dim: #c9a014;
+    --yellow-glow: rgba(245,197,24,0.15);
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --bg4: #222222;
+    --text: #f0f0f0;
+    --text2: #999;
+    --text3: #555;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
+  a { color:inherit; text-decoration:none; }
+  button { cursor:pointer; border:none; background:none; font-family:inherit; }
+  input, textarea, select { font-family:inherit; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:2px; }
+
+  /* ── Toast ── */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--bg3); border:1px solid var(--bg4); color:var(--text);
+    padding:10px 20px; border-radius:30px; font-size:14px; z-index:9999;
+    transition:transform .3s ease; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+  #toast.error { border-color:#e05252; color:#e05252; }
+
+  /* ── Auth Screen ── */
+  #auth-screen {
+    display:none; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px;
+  }
+  #auth-screen.active { display:flex; }
+  .auth-box {
+    width:100%; max-width:380px;
+    background:var(--bg2); border:1px solid var(--bg3);
+    border-radius:var(--radius-lg); padding:36px 32px;
+  }
+  .auth-logo {
+    display:flex; align-items:center; gap:10px; margin-bottom:28px;
+  }
+  .auth-logo .logo-icon {
+    width:36px; height:36px; background:var(--yellow);
+    border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:18px;
+  }
+  .auth-logo span {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;
+  }
+  .auth-logo span em { color:var(--yellow); font-style:normal; }
+  .auth-tabs { display:flex; gap:4px; background:var(--bg3); border-radius:8px; padding:4px; margin-bottom:24px; }
+  .auth-tab {
+    flex:1; padding:8px; border-radius:6px; font-size:14px; font-weight:500;
+    color:var(--text2); transition:.2s;
+  }
+  .auth-tab.active { background:var(--bg4); color:var(--text); }
+  .auth-field { margin-bottom:14px; }
+  .auth-field label { display:block; font-size:12px; color:var(--text2); margin-bottom:6px; font-weight:500; letter-spacing:.5px; text-transform:uppercase; }
+  .auth-field input {
+    width:100%; background:var(--bg3); border:1px solid var(--bg4);
+    border-radius:var(--radius); padding:11px 14px; color:var(--text); font-size:14px;
+    transition:.2s; outline:none;
+  }
+  .auth-field input:focus { border-color:var(--yellow); }
+  .auth-email-preview { font-size:12px; color:var(--text3); margin-bottom:16px; }
+  .auth-email-preview span { color:var(--yellow); }
+  .btn-primary {
+    width:100%; background:var(--yellow); color:#000; font-weight:700;
+    font-size:15px; padding:12px; border-radius:var(--radius);
+    font-family:'Space Grotesk',sans-serif; transition:.15s;
+  }
+  .btn-primary:hover { background:var(--yellow-dim); }
+  .btn-primary:disabled { opacity:.5; pointer-events:none; }
+
+  /* ── App Shell ── */
+  #app { display:none; flex-direction:column; height:100vh; }
+  #app.active { display:flex; }
+
+  /* ── Header ── */
+  .header {
+    height:56px; background:var(--bg); border-bottom:1px solid var(--bg3);
+    display:flex; align-items:center; padding:0 16px; gap:12px;
+    position:sticky; top:0; z-index:100; flex-shrink:0;
+  }
+  .header-logo {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .header-logo .dot { color:var(--yellow); }
+  .header-search {
+    flex:1; background:var(--bg3); border:1px solid var(--bg4);
+    border-radius:20px; padding:7px 14px; color:var(--text); font-size:14px;
+    outline:none; transition:.2s; max-width:400px;
+  }
+  .header-search:focus { border-color:var(--yellow); }
+  .header-actions { display:flex; gap:8px; margin-left:auto; }
+  .header-btn {
+    width:36px; height:36px; border-radius:50%; background:var(--bg3);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    transition:.15s; color:var(--text2);
+  }
+  .header-btn:hover { background:var(--bg4); color:var(--text); }
+  .header-btn.active { background:var(--yellow-glow); color:var(--yellow); }
+
+  /* ── Nav tabs ── */
+  .nav-tabs {
+    display:flex; gap:0; border-bottom:1px solid var(--bg3);
+    padding:0 16px; flex-shrink:0; overflow-x:auto;
+  }
+  .nav-tab {
+    padding:12px 16px; font-size:14px; font-weight:500; color:var(--text2);
+    border-bottom:2px solid transparent; white-space:nowrap; transition:.2s;
+  }
+  .nav-tab.active { color:var(--yellow); border-bottom-color:var(--yellow); }
+  .nav-tab:hover { color:var(--text); }
+
+  /* ── Main content ── */
+  .main { flex:1; overflow-y:auto; }
+
+  /* ── Video Grid ── */
+  .section { padding:20px 16px; }
+  .section-title {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px;
+    margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  }
+  .section-title .badge {
+    background:var(--yellow); color:#000; font-size:11px; font-weight:700;
+    padding:2px 7px; border-radius:4px; letter-spacing:.5px;
+  }
+  .video-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;
+  }
+  .video-card {
+    background:var(--bg2); border-radius:var(--radius-lg); overflow:hidden;
+    cursor:pointer; transition:.2s; border:1px solid transparent;
+  }
+  .video-card:hover { border-color:var(--bg4); transform:translateY(-2px); }
+  .video-thumb {
+    aspect-ratio:16/9; background:var(--bg3); position:relative; overflow:hidden;
+  }
+  .video-thumb img { width:100%; height:100%; object-fit:cover; }
+  .video-thumb .thumb-placeholder {
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-size:32px; color:var(--text3);
+  }
+  .video-thumb .duration-badge {
+    position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,.8);
+    color:#fff; font-size:11px; font-weight:600; padding:2px 6px; border-radius:4px;
+  }
+  .duration-badge.quick { background:var(--yellow); color:#000; }
+  .video-info { padding:12px; }
+  .video-title {
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px;
+    line-height:1.4; margin-bottom:6px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .video-meta { font-size:12px; color:var(--text2); display:flex; gap:8px; align-items:center; }
+  .video-meta .uploader { color:var(--text2); }
+  .video-meta .uploader:hover { color:var(--yellow); }
+  .dot-sep { color:var(--text3); }
+
+  /* ── Quicks (TikTok) ── */
+  #quicks-view {
+    display:none; height:100%; position:relative;
+  }
+  #quicks-view.active { display:block; }
+  .quicks-container { height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; }
+  .quick-item {
+    height:100%; scroll-snap-align:start; position:relative;
+    display:flex; align-items:center; justify-content:center; background:#000;
+  }
+  .quick-item video {
+    width:100%; height:100%; object-fit:contain; max-height:100%;
+  }
+  .quick-overlay {
+    position:absolute; bottom:0; left:0; right:0; padding:20px 16px 32px;
+    background:linear-gradient(transparent, rgba(0,0,0,.8));
+  }
+  .quick-title {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;
+    margin-bottom:4px;
+  }
+  .quick-uploader { font-size:13px; color:rgba(255,255,255,.7); margin-bottom:12px; }
+  .quick-actions {
+    position:absolute; right:16px; bottom:80px;
+    display:flex; flex-direction:column; gap:20px; align-items:center;
+  }
+  .quick-action-btn { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .quick-action-btn span { font-size:22px; }
+  .quick-action-btn small { font-size:11px; color:rgba(255,255,255,.8); font-weight:500; }
+  .quick-action-btn.liked span { filter:drop-shadow(0 0 6px var(--yellow)); }
+
+  /* ── Video View ── */
+  #video-view { display:none; padding-bottom:40px; }
+  #video-view.active { display:block; }
+  .video-player-wrap {
+    background:#000; position:relative;
+  }
+  .video-player-wrap video {
+    width:100%; max-height:60vh; display:block;
+  }
+  .video-detail { padding:16px; }
+  .video-detail-title {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;
+    line-height:1.3; margin-bottom:10px;
+  }
+  .video-detail-meta {
+    display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .video-detail-meta span { font-size:13px; color:var(--text2); }
+  .video-actions { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .action-btn {
+    display:flex; align-items:center; gap:6px; padding:8px 16px;
+    background:var(--bg3); border-radius:20px; font-size:14px; font-weight:500;
+    color:var(--text2); transition:.2s;
+  }
+  .action-btn:hover { background:var(--bg4); color:var(--text); }
+  .action-btn.active { background:var(--yellow-glow); color:var(--yellow); }
+  .action-btn .icon { font-size:16px; }
+  .channel-row {
+    display:flex; align-items:center; gap:12px; padding:14px;
+    background:var(--bg2); border-radius:var(--radius-lg); margin-bottom:20px;
+    cursor:pointer;
+  }
+  .channel-avatar {
+    width:44px; height:44px; border-radius:50%; background:var(--bg4);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;
+    color:var(--yellow); flex-shrink:0;
+  }
+  .channel-info { flex:1; }
+  .channel-name { font-weight:600; font-size:15px; margin-bottom:2px; }
+  .channel-subs { font-size:12px; color:var(--text2); }
+  .sub-btn {
+    padding:8px 18px; border-radius:20px; font-size:13px; font-weight:600;
+    background:var(--yellow); color:#000; transition:.2s;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .sub-btn.subscribed { background:var(--bg4); color:var(--text2); }
+  .video-description {
+    font-size:14px; color:var(--text2); line-height:1.6;
+    padding:14px; background:var(--bg2); border-radius:var(--radius); margin-bottom:20px;
+  }
+
+  /* ── Comments ── */
+  .comments-section { padding:0 16px; }
+  .comments-header {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+  }
+  .comments-title {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;
+  }
+  .reload-btn {
+    display:flex; align-items:center; gap:6px; padding:6px 12px;
+    background:var(--bg3); border-radius:20px; font-size:13px; color:var(--text2);
+    transition:.2s;
+  }
+  .reload-btn:hover { background:var(--bg4); color:var(--text); }
+  .comment-input-wrap { display:flex; gap:10px; margin-bottom:20px; }
+  .comment-input {
+    flex:1; background:var(--bg3); border:1px solid var(--bg4);
+    border-radius:var(--radius); padding:10px 14px; color:var(--text); font-size:14px;
+    outline:none; resize:none; transition:.2s; min-height:42px; max-height:120px;
+  }
+  .comment-input:focus { border-color:var(--yellow); }
+  .comment-send {
+    padding:10px 16px; background:var(--yellow); color:#000; border-radius:var(--radius);
+    font-weight:700; font-size:13px; font-family:'Space Grotesk',sans-serif;
+    align-self:flex-end; transition:.15s;
+  }
+  .comment-send:hover { background:var(--yellow-dim); }
+  .comment {
+    display:flex; gap:10px; margin-bottom:16px;
+  }
+  .comment-avatar {
+    width:32px; height:32px; border-radius:50%; background:var(--bg4);
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:var(--yellow); flex-shrink:0;
+  }
+  .comment-body { flex:1; }
+  .comment-author { font-size:13px; font-weight:600; margin-bottom:3px; }
+  .comment-author span { color:var(--text2); font-weight:400; font-size:11px; margin-left:6px; }
+  .comment-text { font-size:14px; color:var(--text2); line-height:1.5; }
+  .comment-delete { font-size:11px; color:var(--text3); margin-top:4px; cursor:pointer; }
+  .comment-delete:hover { color:#e05252; }
+  .no-comments { text-align:center; color:var(--text3); font-size:14px; padding:32px 0; }
+
+  /* ── Channel View ── */
+  #channel-view { display:none; padding-bottom:40px; }
+  #channel-view.active { display:block; }
+  .channel-header {
+    background:var(--bg2); padding:28px 16px 20px; border-bottom:1px solid var(--bg3);
+    display:flex; gap:16px; align-items:center;
+  }
+  .channel-header-avatar {
+    width:64px; height:64px; border-radius:50%; background:var(--bg4);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:28px;
+    color:var(--yellow); flex-shrink:0; border:2px solid var(--yellow);
+  }
+  .channel-header-info { flex:1; }
+  .channel-header-name { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; margin-bottom:4px; }
+  .channel-header-stats { font-size:13px; color:var(--text2); margin-bottom:12px; }
+  .channel-videos-grid { padding:16px; }
+
+  /* ── Upload View ── */
+  #upload-view { display:none; padding:20px 16px; max-width:600px; margin:0 auto; }
+  #upload-view.active { display:block; }
+  .upload-title { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; margin-bottom:24px; }
+  .upload-field { margin-bottom:18px; }
+  .upload-field label { display:block; font-size:12px; color:var(--text2); margin-bottom:8px; font-weight:500; letter-spacing:.5px; text-transform:uppercase; }
+  .upload-field input, .upload-field textarea, .upload-field select {
+    width:100%; background:var(--bg3); border:1px solid var(--bg4);
+    border-radius:var(--radius); padding:11px 14px; color:var(--text); font-size:14px;
+    outline:none; transition:.2s;
+  }
+  .upload-field input:focus, .upload-field textarea:focus, .upload-field select:focus { border-color:var(--yellow); }
+  .upload-field textarea { resize:vertical; min-height:80px; }
+  .upload-field select option { background:var(--bg3); }
+  .file-drop {
+    border:2px dashed var(--bg4); border-radius:var(--radius-lg); padding:36px;
+    text-align:center; cursor:pointer; transition:.2s; position:relative;
+  }
+  .file-drop:hover, .file-drop.drag { border-color:var(--yellow); background:var(--yellow-glow); }
+  .file-drop input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .file-drop .drop-icon { font-size:36px; margin-bottom:10px; }
+  .file-drop .drop-text { font-size:14px; color:var(--text2); }
+  .file-drop .drop-text strong { color:var(--yellow); }
+  .file-selected { font-size:13px; color:var(--yellow); margin-top:8px; font-weight:500; }
+  .upload-progress {
+    display:none; background:var(--bg3); border-radius:20px; height:6px; margin-top:12px; overflow:hidden;
+  }
+  .upload-progress.show { display:block; }
+  .upload-progress-bar { height:100%; background:var(--yellow); width:0; transition:width .3s; border-radius:20px; }
+  .upload-submit { margin-top:8px; }
+
+  /* ── Empty states ── */
+  .empty { text-align:center; padding:60px 20px; color:var(--text3); }
+  .empty .empty-icon { font-size:48px; margin-bottom:12px; }
+  .empty p { font-size:15px; }
+
+  /* ── Loading ── */
+  .spinner {
+    width:32px; height:32px; border:3px solid var(--bg4);
+    border-top-color:var(--yellow); border-radius:50%;
+    animation:spin .7s linear infinite; margin:40px auto;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ── Back btn ── */
+  .back-btn {
+    display:flex; align-items:center; gap:6px; padding:12px 16px;
+    font-size:14px; color:var(--text2); transition:.2s;
+  }
+  .back-btn:hover { color:var(--yellow); }
+
+  /* ── Responsive ── */
+  @media (max-width:600px) {
+    .video-grid { grid-template-columns:1fr 1fr; gap:10px; }
+    .header-search { display:none; }
+  }
+  @media (max-width:400px) {
+    .video-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Auth -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon">▶</div>
+      <span>Neat <em>Watch</em></span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchTab('register')">Registro</button>
+    </div>
+    <div id="login-form">
+      <div class="auth-field">
+        <label>Usuario</label>
+        <input id="login-user" type="text" placeholder="tu usuario" autocomplete="username">
+      </div>
+      <div class="auth-field">
+        <label>Contraseña</label>
+        <input id="login-pass" type="password" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Entrar</button>
+    </div>
+    <div id="register-form" style="display:none">
+      <div class="auth-field">
+        <label>Usuario</label>
+        <input id="reg-user" type="text" placeholder="tu usuario" oninput="updateEmailPreview()" autocomplete="username">
+      </div>
+      <div class="auth-email-preview">Tu email: <span id="email-preview">usuario@neat.qzz.io</span></div>
+      <div class="auth-field">
+        <label>Contraseña</label>
+        <input id="reg-pass" type="password" placeholder="mín. 6 caracteres" autocomplete="new-password">
+      </div>
+      <button class="btn-primary" onclick="doRegister()">Crear cuenta</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo">neat<span class="dot">▶</span></div>
+    <input class="header-search" type="search" placeholder="Buscar videos..." oninput="handleSearch(this.value)">
+    <div class="header-actions">
+      <button class="header-btn" onclick="showView('upload')" title="Subir video">＋</button>
+      <button class="header-btn" id="profile-btn" onclick="toggleProfile()" title="Perfil">👤</button>
+    </div>
+  </header>
+
+  <!-- Nav tabs -->
+  <nav class="nav-tabs" id="main-nav">
+    <button class="nav-tab active" onclick="showHome()">Inicio</button>
+    <button class="nav-tab" onclick="showQuicks()">⚡ Quicks</button>
+  </nav>
+
+  <!-- Main -->
+  <div class="main" id="main-content">
+
+    <!-- Home view -->
+    <div id="home-view">
+      <div class="section">
+        <div id="quicks-preview"></div>
+        <div id="home-videos">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quicks view -->
+    <div id="quicks-view">
+      <div class="quicks-container" id="quicks-container"></div>
+    </div>
+
+    <!-- Video view -->
+    <div id="video-view">
+      <button class="back-btn" onclick="goBack()">← Volver</button>
+      <div class="video-player-wrap">
+        <video id="main-video" controls playsinline></video>
+      </div>
+      <div class="video-detail">
+        <div class="video-detail-title" id="vd-title"></div>
+        <div class="video-detail-meta">
+          <span id="vd-views"></span>
+          <span class="dot-sep">·</span>
+          <span id="vd-date"></span>
+        </div>
+        <div class="video-actions">
+          <button class="action-btn" id="like-btn" onclick="toggleLike()">
+            <span class="icon">♥</span> <span id="like-count">0</span>
+          </button>
+          <button class="action-btn" onclick="shareVideo()">
+            <span class="icon">↗</span> Compartir
+          </button>
+        </div>
+        <div class="channel-row" id="channel-row" onclick="openChannel()">
+          <div class="channel-avatar" id="vd-avatar"></div>
+          <div class="channel-info">
+            <div class="channel-name" id="vd-uploader"></div>
+            <div class="channel-subs" id="vd-subs"></div>
+          </div>
+          <button class="sub-btn" id="sub-btn" onclick="event.stopPropagation(); toggleSub()">Suscribirse</button>
+        </div>
+        <div class="video-description" id="vd-desc"></div>
+      </div>
+      <!-- Comments -->
+      <div class="comments-section">
+        <div class="comments-header">
+          <div class="comments-title">Comentarios <span id="comment-count" style="color:var(--text2);font-weight:400;font-size:14px"></span></div>
+          <button class="reload-btn" onclick="loadComments()">↻ Recargar</button>
+        </div>
+        <div class="comment-input-wrap">
+          <textarea class="comment-input" id="comment-input" placeholder="Escribe un comentario..." rows="1"></textarea>
+          <button class="comment-send" onclick="sendComment()">Enviar</button>
+        </div>
+        <div id="comments-list"></div>
+      </div>
+    </div>
+
+    <!-- Channel view -->
+    <div id="channel-view">
+      <button class="back-btn" onclick="goBack()">← Volver</button>
+      <div class="channel-header">
+        <div class="channel-header-avatar" id="ch-avatar"></div>
+        <div class="channel-header-info">
+          <div class="channel-header-name" id="ch-name"></div>
+          <div class="channel-header-stats" id="ch-stats"></div>
+          <button class="sub-btn" id="ch-sub-btn" onclick="toggleSubChannel()">Suscribirse</button>
+        </div>
+      </div>
+      <div class="channel-videos-grid">
+        <div class="video-grid" id="channel-videos-grid"></div>
+      </div>
+    </div>
+
+    <!-- Upload view -->
+    <div id="upload-view">
+      <div class="upload-title">Subir video</div>
+      <div class="upload-field">
+        <label>Título</label>
+        <input id="up-title" type="text" placeholder="Título del video">
+      </div>
+      <div class="upload-field">
+        <label>Descripción</label>
+        <textarea id="up-desc" placeholder="Describe tu video..."></textarea>
+      </div>
+      <div class="upload-field">
+        <label>Categoría</label>
+        <select id="up-cat">
+          <option value="">Sin categoría</option>
+          <option value="entretenimiento">Entretenimiento</option>
+          <option value="musica">Música</option>
+          <option value="gaming">Gaming</option>
+          <option value="tecnologia">Tecnología</option>
+          <option value="educacion">Educación</option>
+          <option value="vlog">Vlog</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="upload-field">
+        <label>Video</label>
+        <div class="file-drop" id="video-drop">
+          <input type="file" id="up-video" accept="video/*" onchange="fileSelected(this,'video')">
+          <div class="drop-icon">🎬</div>
+          <div class="drop-text">Arrastra tu video o <strong>haz clic</strong></div>
+          <div class="file-selected" id="video-name"></div>
+        </div>
+        <div class="upload-progress" id="video-progress">
+          <div class="upload-progress-bar" id="video-bar"></div>
+        </div>
+      </div>
+      <div class="upload-field">
+        <label>Thumbnail (opcional)</label>
+        <div class="file-drop" id="thumb-drop">
+          <input type="file" id="up-thumb" accept="image/*" onchange="fileSelected(this,'thumb')">
+          <div class="drop-icon">🖼️</div>
+          <div class="drop-text">Imagen de portada o <strong>haz clic</strong></div>
+          <div class="file-selected" id="thumb-name"></div>
+        </div>
+      </div>
+      <div class="upload-submit">
+        <button class="btn-primary" id="upload-btn" onclick="doUpload()">Publicar video</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+const API = "https://neat-apps-b.vercel.app";
+const CDN = "https://cdn.neat.qzz.io";
+
+let token = localStorage.getItem("nw_token");
+let currentUser = null;
+let currentVideo = null;
+let currentChannel = null;
+let viewHistory = [];
+let quicksLoaded = false;
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "show" + (isError ? " error" : "");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = "", 3000);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".auth-tab").forEach((el,i) => el.classList.toggle("active", (i===0) === (tab==="login")));
+  document.getElementById("login-form").style.display = tab === "login" ? "" : "none";
+  document.getElementById("register-form").style.display = tab === "register" ? "" : "none";
+}
+
+function updateEmailPreview() {
+  const u = document.getElementById("reg-user").value || "usuario";
+  document.getElementById("email-preview").textContent = `${u.toLowerCase()}@neat.qzz.io`;
+}
+
+async function doLogin() {
+  const username = document.getElementById("login-user").value.trim();
+  const password = document.getElementById("login-pass").value;
+  if (!username || !password) return toast("Completa todos los campos", true);
+  try {
+    const r = await fetch(`${API}/chat/login`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({username, password})
+    });
+    const d = await r.json();
+    if (!r.ok) return toast(d.error || "Error", true);
+    saveSession(d);
+  } catch { toast("Error de conexión", true); }
+}
+
+async function doRegister() {
+  const username = document.getElementById("reg-user").value.trim();
+  const password = document.getElementById("reg-pass").value;
+  if (!username || !password) return toast("Completa todos los campos", true);
+  try {
+    const r = await fetch(`${API}/chat/register`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({username, password})
+    });
+    const d = await r.json();
+    if (!r.ok) return toast(d.error || "Error", true);
+    saveSession(d);
+  } catch { toast("Error de conexión", true); }
+}
+
+function saveSession(d) {
+  token = d.token;
+  currentUser = { username: d.username, role: d.role, email: d.email };
+  localStorage.setItem("nw_token", token);
+  localStorage.setItem("nw_user", JSON.stringify(currentUser));
+  showApp();
+}
+
+function logout() {
+  localStorage.removeItem("nw_token");
+  localStorage.removeItem("nw_user");
+  token = null; currentUser = null;
+  document.getElementById("app").classList.remove("active");
+  document.getElementById("auth-screen").classList.add("active");
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+
+  const saved = localStorage.getItem("nw_user");
+  if (saved) currentUser = JSON.parse(saved);
+
+  if (token) {
+    try {
+      const r = await fetch(`${API}/chat/me`, { headers:{"Authorization":"Bearer "+token} });
+      if (!r.ok) throw new Error();
+      currentUser = await r.json();
+      localStorage.setItem("nw_user", JSON.stringify(currentUser));
+      showApp();
+    } catch { logout(); }
+  } else {
+    document.getElementById("auth-screen").classList.add("active");
+  }
+}
+
+function showApp() {
+  document.getElementById("auth-screen").classList.remove("active");
+  document.getElementById("app").classList.add("active");
+  loadHome();
+}
+
+// ── Views ─────────────────────────────────────────────────────────────────────
+const views = ["home-view","quicks-view","video-view","channel-view","upload-view"];
+
+function showView(name, pushHistory = true) {
+  if (pushHistory && name !== "home") {
+    const active = views.find(v => document.getElementById(v)?.classList.contains("active"));
+    if (active) viewHistory.push(active);
+  }
+  views.forEach(v => document.getElementById(v)?.classList.remove("active"));
+  document.getElementById(name+"-view")?.classList.add("active");
+  document.getElementById("main-content").scrollTop = 0;
+
+  // Update nav
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  if (name === "home") document.querySelectorAll(".nav-tab")[0]?.classList.add("active");
+  if (name === "quicks") document.querySelectorAll(".nav-tab")[1]?.classList.add("active");
+
+  // Hide nav for video/channel/upload
+  document.getElementById("main-nav").style.display = ["video","channel","upload"].includes(name) ? "none" : "";
+}
+
+function goBack() {
+  const prev = viewHistory.pop();
+  if (prev) {
+    views.forEach(v => document.getElementById(v)?.classList.remove("active"));
+    document.getElementById(prev)?.classList.add("active");
+    document.getElementById("main-nav").style.display = "";
+  } else {
+    showHome();
+  }
+}
+
+// ── Home ──────────────────────────────────────────────────────────────────────
+async function showHome() {
+  showView("home", false);
+  loadHome();
+}
+
+async function loadHome() {
+  const grid = document.getElementById("home-videos");
+  grid.innerHTML = '<div class="spinner"></div>';
+  try {
+    const [allR, quicksR] = await Promise.all([
+      fetch(`${API}/watch/videos?limit=24`),
+      fetch(`${API}/watch/videos?quick=true&limit=4`)
+    ]);
+    const all = await allR.json();
+    const quicks = await quicksR.json();
+
+    // Quicks preview
+    const qp = document.getElementById("quicks-preview");
+    if (quicks.length) {
+      qp.innerHTML = `
+        <div class="section-title">⚡ Quicks <span class="badge">NUEVO</span></div>
+        <div class="video-grid" style="margin-bottom:28px">${quicks.map(videoCard).join("")}</div>
+      `;
+    } else qp.innerHTML = "";
+
+    // All videos (excluding quicks already shown)
+    const rest = all.filter(v => !quicks.find(q => q._id === v._id));
+    if (rest.length || quicks.length) {
+      grid.innerHTML = rest.length
+        ? `<div class="section-title">Todos los videos</div><div class="video-grid">${rest.map(videoCard).join("")}</div>`
+        : "";
+    } else {
+      grid.innerHTML = `<div class="empty"><div class="empty-icon">📺</div><p>No hay videos todavía.<br>¡Sé el primero en subir!</p></div>`;
+    }
+  } catch {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Error al cargar videos</p></div>`;
+  }
+}
+
+function videoCard(v) {
+  const dur = v.duration ? formatDuration(v.duration) : null;
+  const isQuick = v.duration && v.duration <= 120;
+  const thumb = v.thumbnailFileId
+    ? `<img src="${CDN}/${v.thumbnailFileId}" loading="lazy" onerror="this.style.display='none'">`
+    : `<div class="thumb-placeholder">🎬</div>`;
+  return `
+    <div class="video-card" onclick="openVideo(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+      <div class="video-thumb">
+        ${thumb}
+        ${dur ? `<span class="duration-badge${isQuick?' quick':''}">${dur}</span>` : ""}
+      </div>
+      <div class="video-info">
+        <div class="video-title">${esc(v.title)}</div>
+        <div class="video-meta">
+          <span class="uploader" onclick="event.stopPropagation();openChannelById('${v.uploadedBy}','${v.uploaderUsername}')">${esc(v.uploaderUsername)}</span>
+          <span class="dot-sep">·</span>
+          <span>${v.views||0} vistas</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Quicks ────────────────────────────────────────────────────────────────────
+async function showQuicks() {
+  showView("quicks", false);
+  if (quicksLoaded) return;
+  quicksLoaded = true;
+  const container = document.getElementById("quicks-container");
+  container.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/watch/videos?quick=true&limit=30`);
+    const videos = await r.json();
+    if (!videos.length) {
+      container.innerHTML = `<div class="empty" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="empty-icon">⚡</div><p>No hay Quicks todavía</p></div>`;
+      return;
+    }
+    container.innerHTML = videos.map(quickItem).join("");
+
+    // Autoplay visible
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        const video = e.target.querySelector("video");
+        if (!video) return;
+        if (e.isIntersecting) { video.play().catch(()=>{}); }
+        else { video.pause(); video.currentTime = 0; }
+      });
+    }, { threshold: 0.6 });
+    container.querySelectorAll(".quick-item").forEach(el => observer.observe(el));
+  } catch {
+    container.innerHTML = `<div class="empty">Error al cargar</div>`;
+  }
+}
+
+function quickItem(v) {
+  return `
+    <div class="quick-item" data-id="${v._id}">
+      <video src="${CDN}/${v.fileId}" loop playsinline muted></video>
+      <div class="quick-overlay">
+        <div class="quick-title">${esc(v.title)}</div>
+        <div class="quick-uploader">@${esc(v.uploaderUsername)}</div>
+      </div>
+      <div class="quick-actions">
+        <div class="quick-action-btn" onclick="quickLike('${v._id}',this)">
+          <span>♥</span><small>${v.likes?.length||0}</small>
+        </div>
+        <div class="quick-action-btn" onclick="openVideo(${JSON.stringify(v).replace(/"/g,'&quot;')})">
+          <span>💬</span><small>Ver</small>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function quickLike(id, el) {
+  if (!token) return toast("Inicia sesión", true);
+  try {
+    const r = await fetch(`${API}/watch/videos/${id}/like`, {
+      method:"POST", headers:{"Authorization":"Bearer "+token}
+    });
+    const d = await r.json();
+    el.classList.toggle("liked", d.liked);
+    el.querySelector("small").textContent = d.total;
+  } catch {}
+}
+
+// ── Video View ────────────────────────────────────────────────────────────────
+async function openVideo(v) {
+  currentVideo = v;
+  showView("video");
+
+  document.getElementById("main-video").src = `${CDN}/${v.fileId}`;
+  document.getElementById("vd-title").textContent = v.title;
+  document.getElementById("vd-views").textContent = `${(v.views||0)+1} vistas`;
+  document.getElementById("vd-date").textContent = formatDate(v.createdAt);
+  document.getElementById("vd-desc").textContent = v.description || "";
+  document.getElementById("vd-uploader").textContent = v.uploaderUsername;
+  document.getElementById("vd-avatar").textContent = v.uploaderUsername[0].toUpperCase();
+
+  // Likes
+  updateLikeBtn(v);
+
+  // Load channel info
+  loadChannelInfo(v.uploadedBy, v.uploaderUsername);
+
+  // Comments
+  loadComments();
+}
+
+function updateLikeBtn(v) {
+  const identifier = currentUser?.userId || currentUser?._id?.toString() || currentUser?.username;
+  const liked = v.likes?.includes(identifier);
+  const btn = document.getElementById("like-btn");
+  btn.className = "action-btn" + (liked ? " active" : "");
+  document.getElementById("like-count").textContent = v.likes?.length || 0;
+}
+
+async function toggleLike() {
+  if (!token) return toast("Inicia sesión para dar like", true);
+  try {
+    const r = await fetch(`${API}/watch/videos/${currentVideo._id}/like`, {
+      method:"POST", headers:{"Authorization":"Bearer "+token}
+    });
+    const d = await r.json();
+    if (!currentVideo.likes) currentVideo.likes = [];
+    const identifier = currentUser?.userId || currentUser?._id?.toString() || currentUser?.username;
+    if (d.liked) { currentVideo.likes.push(identifier); }
+    else { currentVideo.likes = currentVideo.likes.filter(x => x !== identifier); }
+    updateLikeBtn(currentVideo);
+    document.getElementById("like-count").textContent = d.total;
+  } catch { toast("Error", true); }
+}
+
+async function loadChannelInfo(userId, username) {
+  try {
+    const r = await fetch(`${API}/watch/channels/${userId}`);
+    const d = await r.json();
+    document.getElementById("vd-subs").textContent = `${d.subscriberCount} suscriptores`;
+
+    // Check if subscribed
+    if (token) checkSub(userId);
+  } catch {}
+}
+
+async function checkSub(userId) {
+  // Simple: try to get and check — backend doesn't have a GET /subscriptions endpoint
+  // so we just show the button and let toggle handle state
+  document.getElementById("sub-btn").style.display = 
+    (currentUser?.username === currentVideo?.uploaderUsername) ? "none" : "";
+}
+
+async function toggleSub() {
+  if (!token) return toast("Inicia sesión para suscribirte", true);
+  try {
+    const r = await fetch(`${API}/watch/channels/${currentVideo.uploadedBy}/subscribe`, {
+      method:"POST", headers:{"Authorization":"Bearer "+token}
+    });
+    const d = await r.json();
+    const btn = document.getElementById("sub-btn");
+    btn.textContent = d.subscribed ? "Suscrito" : "Suscribirse";
+    btn.className = "sub-btn" + (d.subscribed ? " subscribed" : "");
+    toast(d.subscribed ? "Suscrito ✓" : "Suscripción cancelada");
+  } catch { toast("Error", true); }
+}
+
+function openChannel() {
+  openChannelById(currentVideo.uploadedBy, currentVideo.uploaderUsername);
+}
+
+async function openChannelById(userId, username) {
+  currentChannel = { userId, username };
+  showView("channel");
+  document.getElementById("ch-avatar").textContent = username[0].toUpperCase();
+  document.getElementById("ch-name").textContent = username;
+  document.getElementById("ch-stats").textContent = "Cargando...";
+  document.getElementById("channel-videos-grid").innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const r = await fetch(`${API}/watch/channels/${userId}`);
+    const d = await r.json();
+    document.getElementById("ch-stats").textContent = `${d.subscriberCount} suscriptores · ${d.videos.length} videos`;
+
+    const grid = document.getElementById("channel-videos-grid");
+    grid.innerHTML = d.videos.length
+      ? d.videos.map(videoCard).join("")
+      : `<div class="empty"><div class="empty-icon">📭</div><p>Sin videos todavía</p></div>`;
+
+    // Sub button
+    const subBtn = document.getElementById("ch-sub-btn");
+    subBtn.style.display = (currentUser?.username === username) ? "none" : "";
+  } catch {
+    document.getElementById("ch-stats").textContent = "Error";
+  }
+}
+
+async function toggleSubChannel() {
+  if (!token || !currentChannel) return toast("Inicia sesión", true);
+  try {
+    const r = await fetch(`${API}/watch/channels/${currentChannel.userId}/subscribe`, {
+      method:"POST", headers:{"Authorization":"Bearer "+token}
+    });
+    const d = await r.json();
+    const btn = document.getElementById("ch-sub-btn");
+    btn.textContent = d.subscribed ? "Suscrito" : "Suscribirse";
+    btn.className = "sub-btn" + (d.subscribed ? " subscribed" : "");
+    toast(d.subscribed ? "Suscrito ✓" : "Suscripción cancelada");
+  } catch { toast("Error", true); }
+}
+
+// ── Comments ──────────────────────────────────────────────────────────────────
+async function loadComments() {
+  if (!currentVideo) return;
+  const list = document.getElementById("comments-list");
+  list.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/watch/videos/${currentVideo._id}/comments`);
+    const comments = await r.json();
+    document.getElementById("comment-count").textContent = `(${comments.length})`;
+    list.innerHTML = comments.length
+      ? comments.map(commentHTML).join("")
+      : `<div class="no-comments">Sin comentarios todavía. ¡Sé el primero!</div>`;
+  } catch {
+    list.innerHTML = `<div class="no-comments">Error al cargar comentarios</div>`;
+  }
+}
+
+function commentHTML(c) {
+  const isOwn = currentUser && (currentUser.username === c.authorUsername || currentUser.role === "admin");
+  return `
+    <div class="comment" id="comment-${c._id}">
+      <div class="comment-avatar">${c.authorUsername[0].toUpperCase()}</div>
+      <div class="comment-body">
+        <div class="comment-author">${esc(c.authorUsername)} <span>${formatDate(c.createdAt)}</span></div>
+        <div class="comment-text">${esc(c.content)}</div>
+        ${isOwn ? `<div class="comment-delete" onclick="deleteComment('${c._id}')">Eliminar</div>` : ""}
+      </div>
+    </div>`;
+}
+
+async function sendComment() {
+  if (!token) return toast("Inicia sesión para comentar", true);
+  const input = document.getElementById("comment-input");
+  const content = input.value.trim();
+  if (!content) return;
+  try {
+    const r = await fetch(`${API}/watch/videos/${currentVideo._id}/comments`, {
+      method:"POST",
+      headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+      body: JSON.stringify({content})
+    });
+    if (!r.ok) throw new Error();
+    input.value = "";
+    toast("Comentario enviado");
+    loadComments();
+  } catch { toast("Error al comentar", true); }
+}
+
+async function deleteComment(id) {
+  try {
+    await fetch(`${API}/watch/comments/${id}`, {
+      method:"DELETE", headers:{"Authorization":"Bearer "+token}
+    });
+    document.getElementById("comment-"+id)?.remove();
+    toast("Comentario eliminado");
+  } catch { toast("Error", true); }
+}
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+let selectedVideo = null, selectedThumb = null;
+
+function fileSelected(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  if (type === "video") {
+    selectedVideo = file;
+    document.getElementById("video-name").textContent = file.name;
+  } else {
+    selectedThumb = file;
+    document.getElementById("thumb-name").textContent = file.name;
+  }
+}
+
+async function uploadToCDN(file, progressEl, barEl) {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append("file", file);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${CDN}/upload`);
+    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    if (progressEl) progressEl.classList.add("show");
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable && barEl) barEl.style.width = (e.loaded/e.total*100)+"%";
+    };
+    xhr.onload = () => {
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch { reject(new Error("Respuesta inválida del CDN")); }
+    };
+    xhr.onerror = () => reject(new Error("Error de red"));
+    xhr.send(form);
+  });
+}
+
+async function getVideoDuration(file) {
+  return new Promise(resolve => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => { URL.revokeObjectURL(video.src); resolve(Math.round(video.duration)); };
+    video.onerror = () => resolve(null);
+    video.src = URL.createObjectURL(file);
+  });
+}
+
+async function doUpload() {
+  if (!token) return toast("Inicia sesión", true);
+  const title = document.getElementById("up-title").value.trim();
+  if (!title) return toast("El título es obligatorio", true);
+  if (!selectedVideo) return toast("Selecciona un video", true);
+
+  const btn = document.getElementById("upload-btn");
+  btn.disabled = true;
+  btn.textContent = "Subiendo...";
+
+  try {
+    // Duration
+    const duration = await getVideoDuration(selectedVideo);
+
+    // Upload video
+    toast("Subiendo video...");
+    const videoRes = await uploadToCDN(selectedVideo,
+      document.getElementById("video-progress"),
+      document.getElementById("video-bar")
+    );
+    if (!videoRes.success) throw new Error(videoRes.error || "Error subiendo video");
+
+    // Upload thumbnail (optional)
+    let thumbnailFileId = null;
+    if (selectedThumb) {
+      toast("Subiendo thumbnail...");
+      const thumbRes = await uploadToCDN(selectedThumb);
+      if (thumbRes.success) thumbnailFileId = thumbRes.fileId;
+    }
+
+    // Save to backend
+    const r = await fetch(`${API}/watch/videos`, {
+      method:"POST",
+      headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+      body: JSON.stringify({
+        title,
+        description: document.getElementById("up-desc").value.trim(),
+        category: document.getElementById("up-cat").value,
+        fileId: videoRes.fileId,
+        thumbnailFileId,
+        duration
+      })
+    });
+    if (!r.ok) throw new Error("Error guardando video");
+
+    toast("¡Video publicado! 🎉");
+    selectedVideo = null; selectedThumb = null;
+    document.getElementById("up-title").value = "";
+    document.getElementById("up-desc").value = "";
+    document.getElementById("video-name").textContent = "";
+    document.getElementById("thumb-name").textContent = "";
+    document.getElementById("video-progress").classList.remove("show");
+    btn.disabled = false;
+    btn.textContent = "Publicar video";
+    showHome();
+  } catch(err) {
+    toast(err.message || "Error al publicar", true);
+    btn.disabled = false;
+    btn.textContent = "Publicar video";
+  }
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+let searchTimeout;
+async function handleSearch(q) {
+  clearTimeout(searchTimeout);
+  if (!q.trim()) { loadHome(); return; }
+  searchTimeout = setTimeout(async () => {
+    showView("home", false);
+    const grid = document.getElementById("home-videos");
+    document.getElementById("quicks-preview").innerHTML = "";
+    grid.innerHTML = '<div class="spinner"></div>';
+    try {
+      const r = await fetch(`${API}/watch/videos?limit=50`);
+      const all = await r.json();
+      const filtered = all.filter(v =>
+        v.title.toLowerCase().includes(q.toLowerCase()) ||
+        v.uploaderUsername.toLowerCase().includes(q.toLowerCase()) ||
+        (v.description||"").toLowerCase().includes(q.toLowerCase())
+      );
+      grid.innerHTML = filtered.length
+        ? `<div class="section-title">Resultados para "${esc(q)}"</div><div class="video-grid">${filtered.map(videoCard).join("")}</div>`
+        : `<div class="empty"><div class="empty-icon">🔍</div><p>Sin resultados para "${esc(q)}"</p></div>`;
+    } catch { grid.innerHTML = '<div class="empty">Error al buscar</div>'; }
+  }, 400);
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+function shareVideo() {
+  const url = location.href.split("?")[0] + "?v=" + currentVideo._id;
+  if (navigator.share) {
+    navigator.share({ title: currentVideo.title, url });
+  } else {
+    navigator.clipboard?.writeText(url);
+    toast("Enlace copiado");
+  }
+}
+
+// ── Profile toggle ────────────────────────────────────────────────────────────
+function toggleProfile() {
+  // Simple: show a small menu
+  const existing = document.getElementById("profile-menu");
+  if (existing) { existing.remove(); return; }
+
+  const menu = document.createElement("div");
+  menu.id = "profile-menu";
+  menu.style.cssText = `position:fixed;top:56px;right:12px;background:var(--bg2);border:1px solid var(--bg3);
+    border-radius:var(--radius-lg);padding:8px;z-index:200;min-width:180px;`;
+  menu.innerHTML = `
+    <div style="padding:10px 12px;border-bottom:1px solid var(--bg3);margin-bottom:4px">
+      <div style="font-weight:600;font-size:14px">${esc(currentUser?.username||"")}</div>
+      <div style="font-size:12px;color:var(--text2)">${esc(currentUser?.email||"")}</div>
+    </div>
+    <button onclick="openChannelById('${currentUser?.userId||currentUser?._id||currentUser?.username}','${currentUser?.username}');document.getElementById('profile-menu').remove()"
+      style="width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:var(--text);transition:.15s"
+      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      Mi canal
+    </button>
+    <button onclick="logout()"
+      style="width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:#e05252;transition:.15s"
+      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      Cerrar sesión
+    </button>
+  `;
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener("click", () => menu.remove(), { once:true }), 10);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function formatDuration(s) {
+  const m = Math.floor(s/60), sec = s%60;
+  return `${m}:${sec.toString().padStart(2,"0")}`;
+}
+
+function formatDate(d) {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("es", { day:"numeric", month:"short", year:"numeric" });
+}
+
+// ── Deep link ─────────────────────────────────────────────────────────────────
+async function checkDeepLink() {
+  const params = new URLSearchParams(location.search);
+  const vid = params.get("v");
+  if (vid) {
+    try {
+      const r = await fetch(`${API}/watch/videos/${vid}`);
+      if (r.ok) openVideo(await r.json());
+    } catch {}
+  }
+}
+
+init().then(checkDeepLink);
+</script>
+</body>
+</html>
