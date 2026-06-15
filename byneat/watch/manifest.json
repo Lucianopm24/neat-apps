@@ -1,0 +1,16 @@
+{
+  "name": "Neat Watch",
+  "short_name": "Watch",
+  "start_url": "https://neat.qzz.io/byneat/watch/",
+  "display": "standalone",
+  "scope": "/byneat/watch/",
+  "background_color": "#0a0a0a",
+  "theme_color": "#f5c518",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='85'>▶️</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
