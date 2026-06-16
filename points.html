@@ -299,7 +299,7 @@ async function loadBalance() {
     const d = await r.json();
     if (!r.ok) throw new Error();
     npBalance = d.points === Infinity ? 999999 : (d.points || 0);
-    const displayVal = d.points === Infinity ? '∞' : fmt(npBalance);
+    const displayVal = d.forever ? '∞' : fmt(npBalance);
     document.getElementById('np-display').textContent = displayVal;
     document.getElementById('plus-bal').textContent = displayVal + ' NP';
 
