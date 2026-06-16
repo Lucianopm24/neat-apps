@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0e0e0e;
+  --bg2: #161616;
+  --bg3: #1e1e1e;
+  --bg4: #2a2a2a;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --text2: #999;
+  --text3: #555;
+  --accent: #f57c00;
+  --accent2: #ff9800;
+  --accent-dim: #1a1200;
+  --red: #e05252;
+  --green: #4caf50;
+  --radius: 10px;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; border: none; }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  height: 54px;
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 12px;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; flex-shrink: 0;
+}
+.nav-logo-icon {
+  background: var(--accent);
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.nav-logo-text { font-size: 16px; font-weight: 700; }
+.nav-gap { flex: 1; }
+.nav-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: .15s;
+}
+.nav-btn:hover { background: var(--bg4); color: var(--text); }
+.nav-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.nav-btn.primary:hover { background: var(--accent2); }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 12px 4px 4px;
+  cursor: pointer; transition: .15s;
+}
+.user-chip:hover { background: var(--bg4); }
+.avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 11px; flex-shrink: 0;
+}
+.user-chip span { font-size: 13px; font-weight: 600; }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* HOME */
+.home-wrap {
+  max-width: 680px; margin: 0 auto;
+  padding: 40px 20px;
+}
+.home-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.home-hero h1 {
+  font-size: 32px; font-weight: 700;
+  margin-bottom: 8px;
+}
+.home-hero h1 span { color: var(--accent); }
+.home-hero p { font-size: 15px; color: var(--text2); }
+
+.new-note-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.new-note-title {
+  width: 100%; background: transparent;
+  border: none; border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+  color: var(--text); font-family: inherit;
+  font-size: 16px; font-weight: 600;
+  outline: none;
+}
+.new-note-title::placeholder { color: var(--text3); font-weight: 400; }
+.new-note-body {
+  width: 100%; background: transparent;
+  border: none; padding: 16px 20px;
+  color: var(--text2); font-family: var(--mono);
+  font-size: 13px; outline: none; resize: none;
+  min-height: 140px;
+  line-height: 1.7;
+}
+.new-note-body::placeholder { color: var(--text3); }
+.new-note-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: 10px;
+}
+.note-opts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.opt-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px;
+  font-size: 12px; color: var(--text2);
+  cursor: pointer; transition: .15s; user-select: none;
+}
+.opt-chip:hover { background: var(--bg4); }
+.opt-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+.opt-chip input[type=text] {
+  background: none; border: none; outline: none;
+  color: inherit; font-family: var(--mono);
+  font-size: 12px; width: 120px;
+}
+.plus-lock { font-size: 10px; opacity: .6; }
+.btn-publish {
+  background: var(--accent); color: #fff;
+  padding: 8px 20px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  transition: .15s;
+}
+.btn-publish:hover { background: var(--accent2); }
+
+/* MY NOTES */
+.section-title {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); margin-bottom: 12px;
+}
+.notes-grid {
+  display: grid; gap: 10px;
+}
+.note-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  cursor: pointer; transition: border-color .15s;
+}
+.note-card:hover { border-color: var(--bg4); }
+.note-card-title {
+  font-size: 14px; font-weight: 600;
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.note-card-meta {
+  font-size: 11px; color: var(--text3);
+  display: flex; align-items: center; gap: 8px;
+}
+.note-id {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--accent2);
+}
+.lock-icon { font-size: 11px; }
+
+/* NOTE VIEW */
+.note-view-wrap {
+  max-width: 720px; margin: 0 auto;
+  padding: 32px 20px;
+}
+.note-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--text2); font-size: 13px;
+  margin-bottom: 24px; cursor: pointer;
+  transition: color .15s;
+}
+.note-back:hover { color: var(--text); }
+.note-header { margin-bottom: 24px; }
+.note-view-title {
+  font-size: 26px; font-weight: 700;
+  line-height: 1.3; margin-bottom: 12px;
+}
+.note-author-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text2);
+}
+.verified-img { width: 14px; height: 14px; object-fit: contain; }
+.note-date { color: var(--text3); font-size: 12px; }
+.note-actions-row {
+  display: flex; gap: 8px; margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.btn-sm {
+  padding: 6px 14px; border-radius: 6px;
+  font-size: 12px; font-weight: 600;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); transition: .15s;
+}
+.btn-sm:hover { background: var(--bg4); color: var(--text); }
+.btn-sm.danger { color: var(--red); }
+.btn-sm.danger:hover { background: #1a0606; border-color: var(--red); }
+
+/* MARKDOWN */
+.md-content {
+  font-size: 15px; color: var(--text2);
+  line-height: 1.8;
+}
+.md-content h1, .md-content h2, .md-content h3 {
+  color: var(--text); margin: 20px 0 8px;
+}
+.md-content p { margin-bottom: 12px; }
+.md-content code {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--bg3); padding: 2px 6px;
+  border-radius: 4px; color: var(--accent2);
+}
+.md-content pre {
+  background: var(--bg3); padding: 16px;
+  border-radius: 8px; overflow-x: auto; margin: 12px 0;
+}
+.md-content pre code { background: none; padding: 0; color: var(--text); }
+.md-content a { color: var(--accent2); text-decoration: underline; }
+.md-content ul, .md-content ol { padding-left: 20px; margin-bottom: 12px; }
+.md-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 14px; color: var(--text3); margin: 12px 0;
+}
+.md-content table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+.md-content th, .md-content td {
+  border: 1px solid var(--border);
+  padding: 8px 12px; font-size: 13px;
+}
+.md-content th { background: var(--bg3); color: var(--text); }
+
+/* HISTORY */
+.history-panel {
+  margin-top: 32px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.history-entry {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.history-entry-title {
+  font-size: 13px; font-weight: 600; margin-bottom: 4px;
+}
+.history-entry-date {
+  font-size: 11px; color: var(--text3); margin-bottom: 10px;
+}
+.history-entry-body {
+  font-size: 12px; color: var(--text3);
+  font-family: var(--mono);
+  white-space: pre-wrap;
+  max-height: 120px; overflow: hidden;
+}
+
+/* PASSWORD GATE */
+.pw-gate {
+  max-width: 380px; margin: 80px auto;
+  text-align: center; padding: 0 20px;
+}
+.pw-gate h2 { font-size: 20px; margin-bottom: 8px; }
+.pw-gate p { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+.pw-input {
+  width: 100%; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 16px; color: var(--text);
+  font-family: inherit; font-size: 14px; outline: none;
+  margin-bottom: 12px;
+}
+.pw-input:focus { border-color: var(--accent); }
+
+/* EDIT */
+.edit-wrap {
+  max-width: 720px; margin: 0 auto;
+  padding: 32px 20px;
+}
+.edit-title-input {
+  width: 100%; background: transparent;
+  border: none; border-bottom: 1px solid var(--border);
+  padding: 12px 0; color: var(--text);
+  font-family: inherit; font-size: 22px; font-weight: 700;
+  outline: none; margin-bottom: 16px;
+}
+.edit-body-input {
+  width: 100%; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; color: var(--text2);
+  font-family: var(--mono); font-size: 13px;
+  outline: none; resize: vertical; min-height: 300px;
+  line-height: 1.7; margin-bottom: 16px;
+}
+.edit-body-input:focus { border-color: var(--accent); }
+.edit-footer { display: flex; gap: 10px; align-items: center; }
+
+/* MODAL */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7); z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 14px; width: 100%; max-width: 420px;
+  overflow: hidden;
+}
+.modal-head {
+  padding: 18px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h3 { font-size: 15px; font-weight: 700; }
+.modal-close {
+  background: none; color: var(--text2); font-size: 20px; line-height: 1;
+}
+.modal-body { padding: 20px; }
+.field { margin-bottom: 14px; }
+.field label {
+  display: block; font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px;
+}
+.field input, .field select {
+  width: 100%; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 10px 12px; color: var(--text);
+  font-family: inherit; font-size: 13px; outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.modal-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* AUTH MODAL */
+#auth-err { color: var(--red); font-size: 12px; margin-bottom: 10px; display: none; }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--bg3); color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 13px; font-weight: 500;
+  padding: 10px 20px; border-radius: 999px;
+  opacity: 0; transition: .3s; pointer-events: none; z-index: 99;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.err { border-color: var(--red); color: var(--red); }
+
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid var(--bg4); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading { display: flex; justify-content: center; padding: 60px; }
+
+.empty {
+  text-align: center; padding: 48px 20px;
+  color: var(--text3); font-size: 13px;
+}
+.empty p { margin-top: 8px; }
+
+.plus-badge {
+  font-size: 10px; background: var(--accent); color: #fff;
+  padding: 2px 7px; border-radius: 999px; font-weight: 700;
+  vertical-align: middle; margin-left: 4px;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="nav-logo-icon">📝</div>
+    <span class="nav-logo-text">Neat Notes</span>
+  </div>
+  <div class="nav-gap"></div>
+  <div id="nav-actions">
+    <button class="nav-btn primary" onclick="showModal('auth-modal')">Entrar</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="home-wrap">
+    <div class="home-hero">
+      <h1>Escribe, comparte, <span>recuerda</span></h1>
+      <p>Notas con Markdown. Compártelas con un link.</p>
+    </div>
+
+    <div class="new-note-box">
+      <input class="new-note-title" id="new-title" type="text" placeholder="Título (opcional)">
+      <textarea class="new-note-body" id="new-body" placeholder="Escribe aquí... Markdown soportado"></textarea>
+      <div class="new-note-footer">
+        <div class="note-opts">
+          <div class="opt-chip" id="opt-public" onclick="togglePublic()">
+            🌐 <span id="opt-public-label">Pública</span>
+          </div>
+          <div class="opt-chip" id="opt-custom" onclick="toggleCustomId()" title="Solo Neat Plus">
+            🔗 <input type="text" id="custom-id-input" placeholder="url-personalizada" style="display:none" oninput="this.value=this.value.replace(/\s/g,'').toLowerCase()" onclick="event.stopPropagation()">
+            <span id="opt-custom-label">URL custom</span>
+            <span class="plus-lock">Plus</span>
+          </div>
+          <div class="opt-chip" id="opt-pw" onclick="togglePw()" title="Solo Neat Plus">
+            🔒 <span id="opt-pw-label">Contraseña</span>
+            <span class="plus-lock">Plus</span>
+          </div>
+        </div>
+        <button class="btn-publish" onclick="doCreate()">Publicar</button>
+      </div>
+    </div>
+
+    <div id="my-notes-section" style="display:none">
+      <div class="section-title">Mis notas</div>
+      <div class="notes-grid" id="my-notes-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE VIEW -->
+<div class="page" id="page-note">
+  <div class="note-view-wrap">
+    <div class="note-back" onclick="goBack()">← Volver</div>
+    <div id="note-content"></div>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div class="page" id="page-edit">
+  <div class="edit-wrap">
+    <div class="note-back" onclick="cancelEdit()">← Cancelar</div>
+    <input class="edit-title-input" id="edit-title" type="text" placeholder="Título">
+    <textarea class="edit-body-input" id="edit-body"></textarea>
+    <div class="edit-footer">
+      <button class="btn-publish" onclick="doSaveEdit()">Guardar cambios</button>
+      <button class="btn-sm" onclick="cancelEdit()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-bg" id="auth-modal" style="display:none" onclick="closeBg(event,'auth-modal')">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Entrar a Neat Notes</h3>
+      <button class="modal-close" onclick="hideModal('auth-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Usuario</label><input id="auth-user" type="text" placeholder="tu usuario"></div>
+      <div class="field"><label>Contraseña</label><input id="auth-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="auth-err"></div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="hideModal('auth-modal')">Cancelar</button>
+        <button class="btn-publish" id="login-btn" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-bg" id="pw-modal" style="display:none" onclick="closeBg(event,'pw-modal')">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Nota protegida 🔒</h3>
+      <button class="modal-close" onclick="hideModal('pw-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Contraseña</label><input id="pw-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitPw()"></div>
+      <div id="pw-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none"></div>
+      <div class="modal-footer">
+        <button class="btn-publish" onclick="submitPw()">Abrir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SET PASSWORD MODAL (Plus) -->
+<div class="modal-bg" id="setpw-modal" style="display:none" onclick="closeBg(event,'setpw-modal')">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Proteger nota <span class="plus-badge">Plus</span></h3>
+      <button class="modal-close" onclick="hideModal('setpw-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Contraseña para la nota</label><input id="setpw-input" type="password" placeholder="Deja vacío para quitar contraseña"></div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="hideModal('setpw-modal')">Cancelar</button>
+        <button class="btn-publish" onclick="doSetPw()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'https://neat-apps-b.vercel.app';
+const VERIFIED_IMG = 'https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png';
+let token = localStorage.getItem('nn_token');
+let currentUser = null;
+let currentNoteId = null;
+let currentNoteData = null;
+let editingNoteId = null;
+let pendingNoteId = null; // para pw gate
+let notePassword = null; // contraseña ingresada para nota protegida
+
+// opts state
+let optPublic = true;
+let optCustom = false;
+let optPw = false;
+let newNotePw = '';
+
+marked.setOptions({ breaks: true, gfm: true });
+
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (err ? ' err' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.className = '', 3000);
+}
+
+function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeBg(e, id) { if (e.target.id === id) hideModal(id); }
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+async function apiFetch(url, opts = {}) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(API + url, { ...opts, headers: h });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Error');
+  return d;
+}
+
+function updateNav() {
+  const el = document.getElementById('nav-actions');
+  if (currentUser) {
+    el.innerHTML = `
+      <div class="user-chip" onclick="logout()">
+        <div class="avatar">${currentUser.username[0].toUpperCase()}</div>
+        <span>${currentUser.username}</span>
+      </div>`;
+  } else {
+    el.innerHTML = `<button class="nav-btn primary" onclick="showModal('auth-modal')">Entrar</button>`;
+  }
+}
+
+async function doLogin() {
+  const u = document.getElementById('auth-user').value.trim();
+  const p = document.getElementById('auth-pass').value;
+  if (!u || !p) return;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('auth-err');
+  btn.disabled = true; btn.textContent = '...';
+  err.style.display = 'none';
+  try {
+    const d = await apiFetch('/chat/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
+    token = d.token;
+    localStorage.setItem('nn_token', token);
+    currentUser = d;
+    hideModal('auth-modal');
+    updateNav();
+    loadMyNotes();
+    toast('¡Bienvenido, ' + d.username + '!');
+  } catch (e) {
+    err.textContent = e.message; err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+function logout() {
+  token = null; currentUser = null;
+  localStorage.removeItem('nn_token');
+  updateNav();
+  document.getElementById('my-notes-section').style.display = 'none';
+  toast('Sesión cerrada');
+}
+
+// OPTS
+function togglePublic() {
+  optPublic = !optPublic;
+  const chip = document.getElementById('opt-public');
+  const label = document.getElementById('opt-public-label');
+  chip.classList.toggle('active', !optPublic);
+  label.textContent = optPublic ? 'Pública' : 'Privada';
+  chip.querySelector('span:first-of-type') && (chip.childNodes[0].textContent = optPublic ? '🌐 ' : '🔒 ');
+}
+
+function toggleCustomId() {
+  if (!currentUser) return showModal('auth-modal');
+  const hasPlus = currentUser.neatPlus || currentUser.role === 'admin';
+  if (!hasPlus) return toast('Necesitas Neat Plus para URLs personalizadas', true);
+  optCustom = !optCustom;
+  const chip = document.getElementById('opt-custom');
+  const input = document.getElementById('custom-id-input');
+  const label = document.getElementById('opt-custom-label');
+  chip.classList.toggle('active', optCustom);
+  input.style.display = optCustom ? 'block' : 'none';
+  label.style.display = optCustom ? 'none' : 'inline';
+  if (optCustom) input.focus();
+}
+
+function togglePw() {
+  if (!currentUser) return showModal('auth-modal');
+  const hasPlus = currentUser.neatPlus || currentUser.role === 'admin';
+  if (!hasPlus) return toast('Necesitas Neat Plus para notas con contraseña', true);
+  const pw = prompt('Contraseña para la nota (deja vacío para cancelar):');
+  if (pw === null) return;
+  newNotePw = pw;
+  optPw = !!pw;
+  document.getElementById('opt-pw').classList.toggle('active', optPw);
+  document.getElementById('opt-pw-label').textContent = optPw ? 'Con contraseña' : 'Contraseña';
+}
+
+async function doCreate() {
+  if (!currentUser) return showModal('auth-modal');
+  const title = document.getElementById('new-title').value.trim();
+  const content = document.getElementById('new-body').value.trim();
+  if (!content) return toast('Escribe algo primero', true);
+
+  const customId = optCustom ? document.getElementById('custom-id-input').value.trim() : undefined;
+  const body = { title: title || undefined, content, isPublic: optPublic };
+  if (customId) body.customId = customId;
+  if (optPw && newNotePw) body.password = newNotePw;
+
+  try {
+    const d = await apiFetch('/notes', { method: 'POST', body: JSON.stringify(body) });
+    toast('Nota publicada ✓');
+    document.getElementById('new-title').value = '';
+    document.getElementById('new-body').value = '';
+    optPublic = true; optCustom = false; optPw = false; newNotePw = '';
+    document.getElementById('opt-public').classList.remove('active');
+    document.getElementById('opt-public-label').textContent = 'Pública';
+    document.getElementById('opt-custom').classList.remove('active');
+    document.getElementById('custom-id-input').style.display = 'none';
+    document.getElementById('opt-custom-label').style.display = 'inline';
+    document.getElementById('opt-pw').classList.remove('active');
+    document.getElementById('opt-pw-label').textContent = 'Contraseña';
+    loadMyNotes();
+    // Copiar link al portapapeles
+    const url = location.origin + location.pathname + '?n=' + d.noteId;
+    navigator.clipboard?.writeText(url).catch(() => {});
+    setTimeout(() => toast('Link copiado al portapapeles 📋'), 800);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function loadMyNotes() {
+  if (!token) return;
+  document.getElementById('my-notes-section').style.display = 'block';
+  const list = document.getElementById('my-notes-list');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const notes = await apiFetch('/notes/me/list');
+    if (!notes.length) {
+      list.innerHTML = '<div class="empty"><p>Aún no tienes notas.</p></div>';
+      return;
+    }
+    list.innerHTML = notes.map(n => `
+      <div class="note-card" onclick="openNote('${n.noteId}')">
+        <div class="note-card-title">${n.title || '<em style="color:var(--text3);font-style:normal">Sin título</em>'}</div>
+        <div class="note-card-meta">
+          <span class="note-id">/n?n=${n.noteId}</span>
+          ${n.hasPassword ? '<span class="lock-icon">🔒</span>' : ''}
+          <span>${fmtDate(n.updatedAt)}</span>
+        </div>
+      </div>`).join('');
+  } catch { list.innerHTML = '<div class="empty"><p>Error cargando notas.</p></div>'; }
+}
+
+async function openNote(id, pw) {
+  currentNoteId = id;
+  showPage('note');
+  const wrap = document.getElementById('note-content');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  try {
+    const url = '/notes/' + id + (pw ? '?password=' + encodeURIComponent(pw) : '');
+    const note = await apiFetch(url);
+    currentNoteData = note;
+    notePassword = pw || null;
+    renderNote(note);
+  } catch (e) {
+    if (e.message === 'Nota protegida' || e.message === 'Contraseña incorrecta') {
+      wrap.innerHTML = '';
+      pendingNoteId = id;
+      if (e.message === 'Contraseña incorrecta') {
+        document.getElementById('pw-err').textContent = 'Contraseña incorrecta';
+        document.getElementById('pw-err').style.display = 'block';
+      } else {
+        document.getElementById('pw-err').style.display = 'none';
+      }
+      document.getElementById('pw-input').value = '';
+      showModal('pw-modal');
+      setTimeout(() => document.getElementById('pw-input').focus(), 100);
+    } else {
+      wrap.innerHTML = `<div class="empty"><p>${e.message}</p></div>`;
+    }
+  }
+}
+
+function submitPw() {
+  const pw = document.getElementById('pw-input').value;
+  if (!pw) return;
+  hideModal('pw-modal');
+  openNote(pendingNoteId, pw);
+}
+
+async function renderNote(note) {
+  const isOwner = currentUser && (currentUser.username === note.authorUsername || currentUser.role === 'admin');
+  const hasPlus = currentUser && (currentUser.neatPlus || currentUser.role === 'admin');
+
+  const verifiedBadge = note.authorVerified
+    ? `<img src="${VERIFIED_IMG}" class="verified-img" title="Verificado">`
+    : '';
+
+  const ownerActions = isOwner ? `
+    <button class="btn-sm" onclick="startEdit()">Editar</button>
+    <button class="btn-sm" onclick="shareNote()">Copiar link</button>
+    ${hasPlus ? `<button class="btn-sm" onclick="showModal('setpw-modal')">🔒 Contraseña</button>
+    <button class="btn-sm" onclick="loadHistory()">Historial</button>` : ''}
+    <button class="btn-sm danger" onclick="doDelete()">Eliminar</button>
+  ` : `<button class="btn-sm" onclick="shareNote()">Copiar link</button>`;
+
+  document.getElementById('note-content').innerHTML = `
+    <div class="note-header">
+      <div class="note-view-title">${note.title ? escHtml(note.title) : '<span style="color:var(--text3)">Sin título</span>'}</div>
+      <div class="note-author-row">
+        <span>por @${escHtml(note.authorUsername)}${verifiedBadge}</span>
+        <span class="note-date">· ${fmtDate(note.updatedAt)}</span>
+        ${note.hasPassword ? '<span style="font-size:12px">🔒</span>' : ''}
+      </div>
+    </div>
+    <div class="note-actions-row">${ownerActions}</div>
+    <div class="md-content" id="md-render"></div>
+    <div id="history-panel"></div>
+  `;
+
+  document.getElementById('md-render').innerHTML = marked.parse(note.content || '');
+}
+
+function startEdit() {
+  if (!currentNoteData) return;
+  document.getElementById('edit-title').value = currentNoteData.title || '';
+  document.getElementById('edit-body').value = currentNoteData.content || '';
+  editingNoteId = currentNoteId;
+  showPage('edit');
+}
+
+function cancelEdit() {
+  showPage('note');
+}
+
+async function doSaveEdit() {
+  const title = document.getElementById('edit-title').value.trim();
+  const content = document.getElementById('edit-body').value.trim();
+  if (!content) return toast('El contenido no puede estar vacío', true);
+  try {
+    await apiFetch('/notes/' + editingNoteId, {
+      method: 'PUT',
+      body: JSON.stringify({ title: title || null, content })
+    });
+    toast('Guardado ✓');
+    showPage('note');
+    openNote(editingNoteId, notePassword);
+    loadMyNotes();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function doSetPw() {
+  const pw = document.getElementById('setpw-input').value;
+  try {
+    await apiFetch('/notes/' + currentNoteId, {
+      method: 'PUT',
+      body: JSON.stringify({ password: pw || null })
+    });
+    hideModal('setpw-modal');
+    toast(pw ? 'Contraseña establecida ✓' : 'Contraseña eliminada');
+    openNote(currentNoteId, pw || undefined);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function doDelete() {
+  if (!confirm('¿Eliminar esta nota?')) return;
+  try {
+    await apiFetch('/notes/' + currentNoteId, { method: 'DELETE' });
+    toast('Nota eliminada');
+    showPage('home');
+    loadMyNotes();
+  } catch (e) { toast(e.message, true); }
+}
+
+function shareNote() {
+  const url = location.origin + location.pathname + '?n=' + currentNoteId;
+  navigator.clipboard?.writeText(url).catch(() => {});
+  toast('Link copiado 📋');
+}
+
+async function loadHistory() {
+  const panel = document.getElementById('history-panel');
+  panel.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const history = await apiFetch('/notes/' + currentNoteId + '/history');
+    if (!history.length) {
+      panel.innerHTML = '<div class="history-panel"><div class="section-title">Historial</div><div class="empty"><p>Sin versiones anteriores.</p></div></div>';
+      return;
+    }
+    panel.innerHTML = `
+      <div class="history-panel">
+        <div class="section-title">Historial de versiones <span class="plus-badge">Plus</span></div>
+        ${history.map((h, i) => `
+          <div class="history-entry">
+            <div class="history-entry-title">${h.title || 'Sin título'} <span style="color:var(--text3);font-weight:400">v${history.length - i}</span></div>
+            <div class="history-entry-date">${fmtDate(h.savedAt)}</div>
+            <div class="history-entry-body">${escHtml((h.content || '').substring(0, 300))}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch (e) { panel.innerHTML = ''; toast(e.message, true); }
+}
+
+function goBack() {
+  showPage('home');
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function init() {
+  // Abrir nota desde URL
+  const params = new URLSearchParams(location.search);
+  const noteId = params.get('n');
+
+  if (token) {
+    try {
+      const d = await apiFetch('/chat/me');
+      currentUser = d;
+      updateNav();
+      loadMyNotes();
+    } catch {
+      token = null;
+      localStorage.removeItem('nn_token');
+    }
+  }
+
+  if (noteId) {
+    openNote(noteId);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
