@@ -993,10 +993,8 @@ async function openChat(id) {
   document.getElementById("chat-header-name").textContent = name;
 if (chat.type === "direct") {
   const other = chat.participants?.find(p => p !== (currentUser.userId || currentUser.username));
-const otherUsername = allUsers.find(u => u._id === other || u.username === other)?.username || other;
-if (otherUsername) isVerified(otherUsername).then(v => {
-  if (v) document.getElementById("chat-header-name").innerHTML = esc(name) + verifiedBadge();
-});
+  const otherUsername = allUsers.find(u => u._id === other || u.username === other)?.username || other;
+  if (otherUsername) isVerified(otherUsername).then(v => {
     if (v) document.getElementById("chat-header-name").innerHTML = esc(name) + verifiedBadge();
   });
 }
