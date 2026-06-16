@@ -959,7 +959,8 @@ function renderChatList(list) {
   const name = chatName(c);
   if (c.type === "direct") {
     const other = c.participants?.find(p => p !== (currentUser.userId || currentUser.username));
-    if (other) isVerified(other).then(v => {
+const otherUsername = allUsers.find(u => u._id === other || u.username === other)?.username || other;
+if (otherUsername) isVerified(otherUsername).then(v => {
       const el = document.getElementById(`chat-name-${c._id}`);
       if (el && v) el.innerHTML = esc(name) + verifiedBadge();
     });
@@ -992,7 +993,10 @@ async function openChat(id) {
   document.getElementById("chat-header-name").textContent = name;
 if (chat.type === "direct") {
   const other = chat.participants?.find(p => p !== (currentUser.userId || currentUser.username));
-  if (other) isVerified(other).then(v => {
+const otherUsername = allUsers.find(u => u._id === other || u.username === other)?.username || other;
+if (otherUsername) isVerified(otherUsername).then(v => {
+  if (v) document.getElementById("chat-header-name").innerHTML = esc(name) + verifiedBadge();
+});
     if (v) document.getElementById("chat-header-name").innerHTML = esc(name) + verifiedBadge();
   });
 }
