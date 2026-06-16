@@ -1,2 +1,2 @@
-/u/:username /u/index.html 200
-/u/:username/web /u/index.html 200
+/u/* /u/index.html 200
+/u/*/web /u/index.html 200
