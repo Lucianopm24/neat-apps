@@ -839,7 +839,7 @@ function videoCard(v) {
       <div class="video-info">
         <div class="video-title">${esc(v.title)}</div>
         <div class="video-meta">
-          <span class="uploader" onclick="event.stopPropagation();openChannelById('${v.uploadedBy}','${v.uploaderUsername}')">${esc(v.uploaderUsername)}</span>
+          <span class="uploader" onclick="event.stopPropagation();openChannelById('${v.uploadedBy}','${v.uploaderUsername}')">${esc(v.uploaderUsername)}${verifiedBadge(v.uploaderVerified)}</span>
           <span class="dot-sep">·</span>
           <span>${v.views||0} vistas</span>
         </div>
@@ -884,7 +884,7 @@ function quickItem(v) {
       <video src="${CDN}/${v.fileId}" loop playsinline muted></video>
       <div class="quick-overlay">
         <div class="quick-title">${esc(v.title)}</div>
-        <div class="quick-uploader">@${esc(v.uploaderUsername)}</div>
+         <div class="quick-uploader">@${esc(v.uploaderUsername)}${verifiedBadge(v.uploaderVerified)}</div>
       </div>
       <div class="quick-actions">
         <div class="quick-action-btn" onclick="quickLike('${v._id}',this)">
@@ -919,7 +919,7 @@ async function openVideo(v) {
   document.getElementById("vd-views").textContent = `${(v.views||0)+1} vistas`;
   document.getElementById("vd-date").textContent = formatDate(v.createdAt);
   document.getElementById("vd-desc").textContent = v.description || "";
-  document.getElementById("vd-uploader").textContent = v.uploaderUsername;
+  document.getElementById("vd-uploader").innerHTML = esc(v.uploaderUsername) + verifiedBadge(v.uploaderVerified);
   document.getElementById("vd-avatar").textContent = v.uploaderUsername[0].toUpperCase();
 
   // Likes
@@ -1059,7 +1059,7 @@ function commentHTML(c) {
     <div class="comment" id="comment-${c._id}">
       <div class="comment-avatar">${c.authorUsername[0].toUpperCase()}</div>
       <div class="comment-body">
-        <div class="comment-author">${esc(c.authorUsername)} <span>${formatDate(c.createdAt)}</span></div>
+        <div class="comment-author">${esc(c.authorUsername)}${verifiedBadge(c.authorVerified)} <span>${formatDate(c.createdAt)}</span></div>
         <div class="comment-text">${esc(c.content)}</div>
         ${isOwn ? `<div class="comment-delete" onclick="deleteComment('${c._id}')">Eliminar</div>` : ""}
       </div>
@@ -1299,6 +1299,11 @@ function toggleProfile() {
   setTimeout(() => document.addEventListener("click", () => menu.remove(), { once:true }), 10);
 }
 
+function verifiedBadge(verified) {
+  if (!verified) return "";
+  return `<img src="https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-left:3px" title="Verificado">`;
+}
+  
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
