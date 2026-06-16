@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Forums</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0d0d; --bg2: #161616; --bg3: #1f1f1f; --bg4: #2a2a2a;
+  --text: #f0f0f0; --text2: #aaa; --text3: #555;
+  --orange: #f57c00; --orange2: #ff9800; --orange-dim: #1a1200;
+  --red: #e05252; --green: #4caf50; --radius: 12px;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+.material-icons-outlined, .material-icons-round { vertical-align: middle; }
+.no-scroll::-webkit-scrollbar { display: none; }
+.no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* NAV */
+nav { position: sticky; top: 0; z-index: 40; background: var(--bg2); border-bottom: 1px solid var(--bg3); height: 56px; display: flex; align-items: center; padding: 0 16px; gap: 12px; }
+.nav-logo { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0; }
+.nav-logo-icon { background: var(--orange); padding: 6px; border-radius: 10px; color: #fff; display: flex; }
+.nav-logo-text { font-size: 18px; font-weight: 700; color: var(--text); display: none; }
+@media(min-width:600px){ .nav-logo-text { display: block; } }
+.nav-search { flex: 1; max-width: 500px; position: relative; }
+.nav-search input { width: 100%; background: var(--bg3); border: 1px solid var(--bg4); border-radius: 999px; padding: 8px 16px 8px 40px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; }
+.nav-search input:focus { border-color: var(--orange); }
+.nav-search .si { position: absolute; left: 12px; top: 7px; color: var(--text3); font-size: 18px; }
+.nav-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.btn { border: none; padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; transition: .15s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-orange { background: var(--orange); color: #fff; }
+.btn-orange:hover { background: var(--orange2); }
+.btn-outline { background: transparent; border: 1px solid var(--bg4); color: var(--text2); }
+.btn-outline:hover { background: var(--bg3); color: var(--text); }
+.btn-ghost { background: transparent; border: none; color: var(--text2); padding: 8px 12px; border-radius: 999px; }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.user-chip { display: flex; align-items: center; gap: 8px; background: var(--bg3); border: 1px solid var(--bg4); border-radius: 999px; padding: 4px 12px 4px 4px; cursor: pointer; }
+.user-chip:hover { background: var(--bg4); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--orange); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+.avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+
+/* LAYOUT */
+.layout { max-width: 1200px; margin: 0 auto; display: flex; gap: 0; }
+
+/* SIDEBAR */
+aside { width: 240px; flex-shrink: 0; height: calc(100vh - 56px); position: sticky; top: 56px; overflow-y: auto; border-right: 1px solid var(--bg3); padding: 12px; }
+@media(max-width:768px){ aside { display: none; } }
+.sidebar-section { margin-bottom: 24px; }
+.sidebar-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.sidebar-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; border: none; background: transparent; color: var(--text2); font-size: 13px; font-weight: 500; transition: .15s; text-align: left; }
+.sidebar-btn:hover { background: var(--bg3); color: var(--text); }
+.sidebar-btn.active { background: var(--orange-dim); color: var(--orange2); }
+.sidebar-btn .mi { font-size: 18px; }
+.community-count { margin-left: auto; font-size: 11px; background: var(--bg3); padding: 2px 7px; border-radius: 999px; color: var(--text3); }
+
+/* MAIN */
+main { flex: 1; padding: 20px 16px; min-width: 0; }
+.feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.feed-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.feed-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+/* POST CARD */
+.post-card { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; display: flex; gap: 12px; transition: border-color .15s; cursor: pointer; }
+.post-card:hover { border-color: var(--bg4); }
+.post-card.detail { cursor: default; border-radius: var(--radius) var(--radius) 0 0; margin-bottom: 0; }
+.vote-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; background: var(--bg3); border-radius: 999px; padding: 6px 4px; height: fit-content; }
+.vote-btn { background: none; border: none; color: var(--text3); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; transition: .15s; }
+.vote-btn:hover.up { color: var(--orange2); background: var(--orange-dim); }
+.vote-btn:hover.down { color: #5c85d6; background: #0a1128; }
+.vote-btn.active-up { color: var(--orange2); }
+.vote-btn.active-down { color: #5c85d6; }
+.vote-score { font-size: 12px; font-weight: 700; color: var(--text2); }
+.post-body-wrap { flex: 1; min-width: 0; }
+.post-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.post-community { color: var(--orange2); font-weight: 600; display: flex; align-items: center; gap: 3px; }
+.post-community:hover { text-decoration: underline; }
+.post-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+.post-preview { font-size: 13px; color: var(--text2); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.post-actions { display: flex; align-items: center; gap: 4px; margin-top: 12px; }
+.action-btn { display: flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: 999px; border: none; background: transparent; color: var(--text3); font-size: 12px; font-weight: 500; transition: .15s; }
+.action-btn:hover { background: var(--bg3); color: var(--text2); }
+.action-btn .mi { font-size: 16px; }
+.edited-tag { font-size: 10px; color: var(--text3); margin-left: 4px; }
+
+/* MARKDOWN */
+.md-body { font-size: 14px; color: var(--text2); line-height: 1.7; margin: 8px 0; }
+.md-body h1,.md-body h2,.md-body h3 { color: var(--text); margin: 12px 0 6px; }
+.md-body p { margin-bottom: 8px; }
+.md-body code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--orange2); }
+.md-body pre { background: var(--bg3); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+.md-body pre code { background: none; padding: 0; color: var(--text); }
+.md-body a { color: var(--orange2); text-decoration: underline; }
+.md-body ul,.md-body ol { padding-left: 20px; margin-bottom: 8px; }
+.md-body blockquote { border-left: 3px solid var(--orange); padding-left: 12px; color: var(--text3); margin: 8px 0; }
+.md-body table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+.md-body th,.md-body td { border: 1px solid var(--bg4); padding: 8px 12px; font-size: 13px; }
+.md-body th { background: var(--bg3); color: var(--text); }
+
+/* COMMENTS */
+.comments-card { background: var(--bg2); border: 1px solid var(--bg3); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 20px; margin-bottom: 16px; }
+.comment-item { border-bottom: 1px solid var(--bg3); padding: 14px 0; }
+.comment-item:last-child { border-bottom: none; }
+.comment-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: var(--text3); }
+.comment-author { font-weight: 600; color: var(--text2); }
+.textarea { width: 100%; background: var(--bg3); border: 1px solid var(--bg4); border-radius: 10px; padding: 12px; color: var(--text); font-family: inherit; font-size: 13px; resize: vertical; outline: none; min-height: 80px; }
+.textarea:focus { border-color: var(--orange); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+.empty-state .mi { font-size: 48px; margin-bottom: 12px; display: block; }
+.empty-state h3 { font-size: 16px; color: var(--text2); margin-bottom: 6px; }
+
+/* MODAL */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { background: var(--bg2); border: 1px solid var(--bg3); border-radius: 16px; width: 100%; max-width: 480px; overflow: hidden; }
+.modal-lg { max-width: 640px; }
+.modal-head { padding: 20px 24px; border-bottom: 1px solid var(--bg3); display: flex; align-items: center; justify-content: space-between; }
+.modal-head h2 { font-size: 16px; font-weight: 700; }
+.modal-body { padding: 24px; }
+.input-group { margin-bottom: 14px; }
+.input-group label { display: block; font-size: 11px; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.input { width: 100%; background: var(--bg3); border: 1px solid var(--bg4); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: inherit; font-size: 14px; outline: none; }
+.input:focus { border-color: var(--orange); }
+.select { appearance: none; }
+.info-box { background: var(--orange-dim); border: 1px solid var(--orange); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--orange2); margin-bottom: 14px; display: flex; gap: 8px; align-items: center; }
+.check-row { display: flex; align-items: center; gap: 10px; background: var(--bg3); border-radius: 8px; padding: 12px; margin-bottom: 14px; }
+.check-row label { font-size: 13px; color: var(--text2); cursor: pointer; flex: 1; }
+.plus-tag { font-size: 10px; background: var(--orange); color: #fff; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding-top: 8px; }
+
+/* TABS */
+.tabs { display: flex; border-bottom: 1px solid var(--bg3); margin-bottom: 20px; }
+.tab { padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--text3); border: none; background: none; border-bottom: 2px solid transparent; transition: .15s; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--orange2); border-bottom-color: var(--orange2); }
+
+/* PLUS BADGE */
+.plus-badge { font-size: 10px; background: var(--orange); color: #fff; padding: 2px 7px; border-radius: 999px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+
+/* TOAST */
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--bg3); color: var(--text); border: 1px solid var(--bg4); font-size: 13px; font-weight: 500; padding: 10px 20px; border-radius: 999px; opacity: 0; transition: .3s; pointer-events: none; z-index: 99; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.err { border-color: var(--red); color: var(--red); }
+
+/* VERIFIED */
+.verified { width: 15px; height: 15px; vertical-align: middle; margin-left: 3px; }
+
+/* SPINNER */
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--bg4); border-top-color: var(--orange); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-center { display: flex; justify-content: center; padding: 60px 0; }
+
+/* FAB mobile */
+.fab { display: none; position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--orange); color: #fff; border: none; font-size: 24px; z-index: 30; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+@media(max-width:768px){ .fab { display: flex; } }
+
+/* COMMUNITY VIEW aside */
+.community-info { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="navigateTo('home')">
+    <div class="nav-logo-icon"><span class="material-icons-round" style="font-size:18px">forum</span></div>
+    <span class="nav-logo-text">Neat Forums</span>
+  </div>
+  <div class="nav-search">
+    <span class="material-icons-outlined si">search</span>
+    <input type="text" placeholder="Buscar en Neat..." id="search-input" oninput="filterPosts(this.value)">
+  </div>
+  <div class="nav-actions" id="nav-actions">
+    <button class="btn btn-orange" onclick="showModal('auth-modal')">Entrar</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="no-scroll">
+    <div class="sidebar-section">
+      <button class="sidebar-btn active" id="sb-home" onclick="navigateTo('home')">
+        <span class="material-icons-outlined mi">home</span> Inicio
+      </button>
+      <button class="sidebar-btn" id="sb-saved" onclick="navigateTo('saved')">
+        <span class="material-icons-outlined mi">bookmarks</span> Guardados
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">
+        Comunidades
+        <button class="btn-ghost" style="padding:2px" onclick="requireAuth(()=>showModal('community-modal'))" title="Crear comunidad">
+          <span class="material-icons-round" style="font-size:18px">add</span>
+        </button>
+      </div>
+      <div id="community-list"></div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="feed-view">
+      <div class="feed-header">
+        <div>
+          <div class="feed-title" id="feed-title">
+            <span class="material-icons-round" style="color:var(--orange2)">explore</span> Descubrir
+          </div>
+          <div class="feed-desc" id="feed-desc"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-orange" id="create-post-btn" onclick="requireAuth(()=>showModal('post-modal'))">
+            <span class="material-icons-round" style="font-size:16px">add</span> Post
+          </button>
+        </div>
+      </div>
+      <div id="posts-container"></div>
+    </div>
+
+    <div id="post-view" style="display:none">
+      <button class="btn btn-ghost" style="margin-bottom:14px;padding-left:0" onclick="navigateTo('home')">
+        <span class="material-icons-round">arrow_back</span> Volver
+      </button>
+      <div id="post-detail"></div>
+      <div class="comments-card" id="comments-section"></div>
+    </div>
+  </main>
+</div>
+
+<button class="fab" onclick="requireAuth(()=>showModal('post-modal'))">
+  <span class="material-icons-round">add</span>
+</button>
+
+<!-- AUTH MODAL -->
+<div class="modal-bg" id="auth-modal" style="display:none" onclick="closeModalBg(event,'auth-modal')">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Entrar a Neat Forums</h2>
+      <button class="btn-ghost" style="padding:4px" onclick="hideModal('auth-modal')"><span class="material-icons-round">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group"><label>Usuario</label><input class="input" id="auth-user" type="text" placeholder="tu usuario de Neat"></div>
+      <div class="input-group"><label>Contraseña</label><input class="input" id="auth-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="auth-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none"></div>
+      <div class="modal-footer" style="padding-top:0">
+        <button class="btn btn-outline" onclick="hideModal('auth-modal')">Cancelar</button>
+        <button class="btn btn-orange" id="login-btn" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE POST MODAL -->
+<div class="modal-bg" id="post-modal" style="display:none" onclick="closeModalBg(event,'post-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h2><span class="material-icons-round" style="color:var(--orange2);vertical-align:middle">edit_square</span> Crear publicación</h2>
+      <button class="btn-ghost" style="padding:4px" onclick="hideModal('post-modal')"><span class="material-icons-round">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label>Comunidad</label>
+        <select class="input select" id="post-community">
+          <option value="">Selecciona una comunidad</option>
+        </select>
+      </div>
+      <div class="input-group"><label>Título</label><input class="input" id="post-title" type="text" maxlength="200" placeholder="Un título interesante..."></div>
+      <div class="input-group">
+        <label>Contenido — Markdown soportado (opcional)</label>
+        <textarea class="textarea" id="post-body" rows="6" placeholder="¿Qué tienes en mente? Puedes usar **negrita**, *cursiva*, `código`, etc."></textarea>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="post-anon">
+        <label for="post-anon">Publicar de forma anónima <span class="plus-tag">Neat Plus</span></label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="hideModal('post-modal')">Cancelar</button>
+        <button class="btn btn-orange" onclick="doCreatePost()">Publicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE COMMUNITY MODAL -->
+<div class="modal-bg" id="community-modal" style="display:none" onclick="closeModalBg(event,'community-modal')">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Crear comunidad</h2>
+      <button class="btn-ghost" style="padding:4px" onclick="hideModal('community-modal')"><span class="material-icons-round">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box"><span class="material-icons-outlined" style="font-size:16px">info</span> Solo usuarios con Neat Plus o admin pueden crear comunidades.</div>
+      <div class="input-group">
+        <label>Nombre (solo letras, números y _)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:10px;color:var(--text3);font-weight:700">n/</span>
+          <input class="input" id="comm-name" type="text" pattern="[a-zA-Z0-9_]{3,30}" placeholder="MiComunidad" style="padding-left:32px" oninput="this.value=this.value.replace(/\s/g,'')">
+        </div>
+      </div>
+      <div class="input-group"><label>Descripción</label><textarea class="textarea" id="comm-desc" rows="3" placeholder="¿De qué trata tu comunidad?"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="hideModal('community-modal')">Cancelar</button>
+        <button class="btn btn-orange" onclick="doCreateCommunity()">Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT POST MODAL -->
+<div class="modal-bg" id="edit-modal" style="display:none" onclick="closeModalBg(event,'edit-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h2>Editar publicación <span class="plus-tag">Neat Plus</span></h2>
+      <button class="btn-ghost" style="padding:4px" onclick="hideModal('edit-modal')"><span class="material-icons-round">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group"><label>Título</label><input class="input" id="edit-title" type="text"></div>
+      <div class="input-group"><label>Contenido</label><textarea class="textarea" id="edit-body" rows="6"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="hideModal('edit-modal')">Cancelar</button>
+        <button class="btn btn-orange" onclick="doEditPost()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'https://neat-apps-b.vercel.app';
+const VERIFIED_IMG = 'https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png';
+let token = localStorage.getItem('nf_token');
+let currentUser = null;
+let communities = [];
+let allPosts = [];
+let currentView = 'home';
+let currentCommunity = null;
+let currentPostData = null;
+let editingPostId = null;
+const verifiedCache = {};
+
+marked.setOptions({ breaks: true, gfm: true });
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(d) { return new Date(d).toLocaleDateString('es', {day:'numeric',month:'short',year:'numeric'}); }
+
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.innerHTML = `<span class="material-icons-round" style="font-size:16px">${err?'error':'check_circle'}</span>${msg}`;
+  el.className = 'show' + (err?' err':'');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.className = '', 3000);
+}
+
+function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeModalBg(e, id) { if (e.target.id === id) hideModal(id); }
+function requireAuth(fn) { if (!token) { showModal('auth-modal'); return; } fn(); }
+
+async function apiFetch(url, opts={}) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(API + url, { ...opts, headers: h });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Error');
+  return d;
+}
+
+async function isVerified(username) {
+  if (verifiedCache[username] !== undefined) return verifiedCache[username];
+  try {
+    const d = await apiFetch(`/chat/users/${username}/verified`);
+    verifiedCache[username] = d.verified;
+    return d.verified;
+  } catch { return false; }
+}
+
+function verifiedBadge(verified) {
+  return verified ? `<img src="${VERIFIED_IMG}" class="verified" title="Verificado">` : '';
+}
+
+async function doLogin() {
+  const u = document.getElementById('auth-user').value.trim();
+  const p = document.getElementById('auth-pass').value;
+  if (!u || !p) return;
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  document.getElementById('auth-err').style.display = 'none';
+  try {
+    const d = await apiFetch('/auth/login', { method:'POST', body: JSON.stringify({username:u,password:p}) });
+    token = d.token;
+    localStorage.setItem('nf_token', token);
+    currentUser = d.user || { username: u };
+    hideModal('auth-modal');
+    updateNavUser();
+    toast('Sesión iniciada');
+    loadCommunities();
+    loadPosts();
+  } catch(e) {
+    const err = document.getElementById('auth-err');
+    err.textContent = e.message; err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+function logout() {
+  token = null; currentUser = null;
+  localStorage.removeItem('nf_token');
+  updateNavUser();
+  navigateTo('home');
+  toast('Sesión cerrada');
+}
+
+function updateNavUser() {
+  const el = document.getElementById('nav-actions');
+  if (currentUser) {
+    el.innerHTML = `
+      <div class="user-chip" onclick="logout()">
+        <div class="avatar">${currentUser.username[0].toUpperCase()}</div>
+        <span style="font-size:13px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(currentUser.username)}</span>
+        <span class="material-icons-outlined" style="font-size:16px;color:var(--text3)">logout</span>
+      </div>`;
+  } else {
+    el.innerHTML = `<button class="btn btn-orange" onclick="showModal('auth-modal')">Entrar</button>`;
+  }
+}
+
+async function loadCommunities() {
+  try {
+    communities = await apiFetch('/forums/communities');
+    renderCommunities();
+    populateCommunitySelect();
+  } catch {}
+}
+
+function renderCommunities() {
+  const el = document.getElementById('community-list');
+  el.innerHTML = communities.map(c => `
+    <button class="sidebar-btn ${currentCommunity?.name===c.name?'active':''}" onclick="navigateTo('community','${esc(c.name)}')">
+      <span class="material-icons-round mi" style="color:var(--orange2)">hive</span>
+      <span style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span>
+      <span class="community-count">${c.members}</span>
+    </button>`).join('') || '<div style="font-size:12px;color:var(--text3);padding:8px 12px">Sin comunidades</div>';
+}
+
+function populateCommunitySelect() {
+  const sel = document.getElementById('post-community');
+  sel.innerHTML = '<option value="">Selecciona una comunidad</option>' +
+    communities.map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
+  if (currentCommunity) sel.value = currentCommunity.name;
+}
+
+async function loadPosts(communityName=null) {
+  const container = document.getElementById('posts-container');
+  container.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  try {
+    const url = communityName ? `/forums/posts?community=${encodeURIComponent(communityName)}` : '/forums/posts';
+    allPosts = await apiFetch(url);
+    renderPosts(allPosts);
+  } catch { container.innerHTML = '<div class="empty-state"><span class="material-icons-outlined mi">error_outline</span><h3>Error cargando posts</h3></div>'; }
+}
+
+async function loadSaved() {
+  const container = document.getElementById('posts-container');
+  container.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  try {
+    allPosts = await apiFetch('/forums/saved');
+    renderPosts(allPosts);
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><span class="material-icons-outlined mi">lock</span><h3>${e.message}</h3></div>`;
+  }
+}
+
+function renderPosts(posts) {
+  const container = document.getElementById('posts-container');
+  if (!posts.length) {
+    container.innerHTML = `<div class="empty-state">
+      <span class="material-icons-outlined mi">search_off</span>
+      <h3>Sin publicaciones</h3>
+      <p style="font-size:13px;margin-bottom:16px">Sé el primero en publicar aquí.</p>
+      <button class="btn btn-orange" onclick="requireAuth(()=>showModal('post-modal'))"><span class="material-icons-round" style="font-size:16px">add</span> Crear post</button>
+    </div>`; return;
+  }
+  container.innerHTML = posts.map(p => postCardHTML(p)).join('');
+  posts.forEach(p => enrichPostCard(p));
+}
+
+function postCardHTML(p) {
+  const preview = p.body ? `<div class="post-preview">${esc(p.body.substring(0,200))}</div>` : '';
+  const edited = p.editedAt ? '<span class="edited-tag">(editado)</span>' : '';
+  return `<div class="post-card" id="pc-${p._id}" onclick="openPost('${p._id}')">
+    <div class="vote-col" onclick="event.stopPropagation()">
+      <button class="vote-btn up" onclick="doVote('${p._id}',1)"><span class="material-icons-round" style="font-size:18px">arrow_upward</span></button>
+      <span class="vote-score" id="score-${p._id}">${p.score}</span>
+      <button class="vote-btn down" onclick="doVote('${p._id}',-1)"><span class="material-icons-round" style="font-size:18px">arrow_downward</span></button>
+    </div>
+    <div class="post-body-wrap">
+      <div class="post-meta">
+        <span class="post-community" onclick="event.stopPropagation();navigateTo('community','${esc(p.community)}')">
+          <span class="material-icons-round" style="font-size:14px">hive</span> ${esc(p.community)}
+        </span>
+        <span>•</span>
+        <span id="pm-author-${p._id}">por ${esc(p.authorUsername)}</span>
+        <span>•</span>
+        <span>${fmt(p.createdAt)}</span>${edited}
+      </div>
+      <div class="post-title">${esc(p.title)}</div>
+      ${preview}
+      <div class="post-actions" onclick="event.stopPropagation()">
+        <button class="action-btn" onclick="openPost('${p._id}')"><span class="material-icons-outlined mi">chat_bubble_outline</span>${p.commentCount} comentarios</button>
+        <button class="action-btn" onclick="doSave('${p._id}')"><span class="material-icons-outlined mi">bookmark_border</span>Guardar</button>
+        ${currentUser && (currentUser.username===p.realAuthor||currentUser.role==='admin') ? `
+          <button class="action-btn" onclick="openEdit('${p._id}','${esc(p.title).replace(/'/g,"\\'")}')"><span class="material-icons-outlined mi">edit</span></button>
+          <button class="action-btn" style="color:var(--red)" onclick="doDelete('${p._id}')"><span class="material-icons-outlined mi">delete_outline</span></button>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function enrichPostCard(p) {
+  if (!p.anonymous) {
+    const v = await isVerified(p.authorUsername);
+    const el = document.getElementById(`pm-author-${p._id}`);
+    if (el) el.innerHTML = `por ${esc(p.authorUsername)}${verifiedBadge(v)}`;
+  }
+}
+
+async function openPost(id) {
+  currentView = 'post';
+  document.getElementById('feed-view').style.display = 'none';
+  document.getElementById('post-view').style.display = 'block';
+  document.getElementById('post-detail').innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
+  document.getElementById('comments-section').innerHTML = '';
+  updateSidebarActive();
+
+  try {
+    const posts = await apiFetch(`/forums/posts?_id=${id}`);
+    let post = allPosts.find(p => p._id === id) || (posts && posts[0]);
+    if (!post) { post = allPosts.find(p => p._id === id); }
+    // fallback: find in allPosts
+    if (!post) { toast('Post no encontrado', true); navigateTo('home'); return; }
+    currentPostData = post;
+
+    const v = post.anonymous ? false : await isVerified(post.authorUsername);
+    const edited = post.editedAt ? `<span class="edited-tag">(editado ${fmt(post.editedAt)})</span>` : '';
+    const mdBody = post.body ? `<div class="md-body">${marked.parse(post.body)}</div>` : '';
+    const isAuthor = currentUser && (currentUser.username===post.realAuthor||currentUser.role==='admin');
+
+    document.getElementById('post-detail').innerHTML = `
+      <div class="post-card detail">
+        <div class="vote-col">
+          <button class="vote-btn up" onclick="doVote('${post._id}',1)"><span class="material-icons-round" style="font-size:18px">arrow_upward</span></button>
+          <span class="vote-score" id="score-${post._id}">${post.score}</span>
+          <button class="vote-btn down" onclick="doVote('${post._id}',-1)"><span class="material-icons-round" style="font-size:18px">arrow_downward</span></button>
+        </div>
+        <div class="post-body-wrap">
+          <div class="post-meta">
+            <span class="post-community" onclick="navigateTo('community','${esc(post.community)}')">
+              <span class="material-icons-round" style="font-size:14px">hive</span> ${esc(post.community)}
+            </span>
+            <span>•</span>
+            <span>por ${esc(post.authorUsername)}${verifiedBadge(v)}</span>
+            <span>•</span><span>${fmt(post.createdAt)}</span>${edited}
+          </div>
+          <div class="post-title" style="font-size:20px">${esc(post.title)}</div>
+          ${mdBody}
+          <div class="post-actions">
+            ${isAuthor ? `
+              <button class="action-btn" onclick="openEdit('${post._id}','')"><span class="material-icons-outlined mi">edit</span> Editar</button>
+              <button class="action-btn" style="color:var(--red)" onclick="doDelete('${post._id}')"><span class="material-icons-outlined mi">delete_outline</span> Eliminar</button>` : ''}
+            <button class="action-btn" onclick="doSave('${post._id}')"><span class="material-icons-outlined mi">bookmark_border</span> Guardar</button>
+          </div>
+        </div>
+      </div>`;
+
+    await loadComments(post._id);
+  } catch(e) { toast(e.message, true); }
+}
+
+async function loadComments(postId) {
+  const sec = document.getElementById('comments-section');
+  try {
+    const comments = await apiFetch(`/forums/posts/${postId}/comments`);
+    const commentHTML = await Promise.all(comments.map(async c => {
+      const v = await isVerified(c.authorUsername);
+      return `<div class="comment-item">
+        <div class="comment-meta">
+          <div class="avatar avatar-sm">${c.authorUsername[0].toUpperCase()}</div>
+          <span class="comment-author">${esc(c.authorUsername)}${verifiedBadge(v)}</span>
+          <span>•</span><span>${fmt(c.createdAt)}</span>
+        </div>
+        <div class="md-body" style="margin-left:36px">${marked.parse(c.body)}</div>
+      </div>`;
+    }));
+
+    sec.innerHTML = `
+      <h3 style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:16px">
+        <span class="material-icons-outlined" style="vertical-align:middle;font-size:18px">forum</span>
+        Comentarios (${comments.length})
+      </h3>
+      ${token ? `
+        <textarea class="textarea" id="comment-input" placeholder="¿Qué opinas? Puedes usar Markdown." style="margin-bottom:10px"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+          <button class="btn btn-orange" onclick="doComment('${postId}')">Comentar</button>
+        </div>` : `<div style="margin-bottom:16px;font-size:13px;color:var(--text3)"><button class="btn btn-outline" onclick="showModal('auth-modal')">Inicia sesión</button> para comentar</div>`}
+      ${commentHTML.length ? commentHTML.join('') : '<div class="empty-state" style="padding:30px 0"><span class="material-icons-outlined mi">speaker_notes_off</span><p style="font-size:13px">Sin comentarios aún</p></div>'}`;
+  } catch {}
+}
+
+async function doComment(postId) {
+  const input = document.getElementById('comment-input');
+  const body = input.value.trim();
+  if (!body) return;
+  try {
+    await apiFetch(`/forums/posts/${postId}/comments`, { method:'POST', body: JSON.stringify({body}) });
+    input.value = '';
+    toast('Comentario añadido');
+    await loadComments(postId);
+  } catch(e) { toast(e.message, true); }
+}
+
+async function doVote(postId, vote) {
+  if (!token) return showModal('auth-modal');
+  try {
+    const res = await apiFetch(`/forums/posts/${postId}/vote`, { method:'POST', body: JSON.stringify({vote}) });
+    const scoreEl = document.getElementById('score-' + postId);
+    if (scoreEl) {
+      const current = parseInt(scoreEl.textContent) || 0;
+      const diff = res.removed ? -vote : res.changed ? vote*2 : vote;
+      scoreEl.textContent = current + diff;
+    }
+  } catch(e) { toast(e.message, true); }
+}
+
+async function doSave(postId) {
+  if (!token) return showModal('auth-modal');
+  try {
+    const res = await apiFetch(`/forums/posts/${postId}/save`, { method:'POST' });
+    toast(res.saved ? 'Post guardado ✓' : 'Post removido de guardados');
+  } catch(e) { toast(e.message, true); }
+}
+
+async function doDelete(postId) {
+  if (!confirm('¿Eliminar este post?')) return;
+  try {
+    await apiFetch(`/forums/posts/${postId}`, { method:'DELETE' });
+    toast('Post eliminado');
+    navigateTo(currentCommunity ? 'community' : 'home', currentCommunity?.name);
+  } catch(e) { toast(e.message, true); }
+}
+
+function openEdit(postId, title) {
+  editingPostId = postId;
+  const post = allPosts.find(p => p._id === postId) || currentPostData;
+  document.getElementById('edit-title').value = post ? post.title : title;
+  document.getElementById('edit-body').value = post ? (post.body||'') : '';
+  showModal('edit-modal');
+}
+
+async function doEditPost() {
+  const title = document.getElementById('edit-title').value.trim();
+  const body = document.getElementById('edit-body').value;
+  if (!title) return toast('El título es obligatorio', true);
+  try {
+    await apiFetch(`/forums/posts/${editingPostId}`, { method:'PUT', body: JSON.stringify({title,body}) });
+    hideModal('edit-modal');
+    toast('Post editado ✓');
+    if (currentView === 'post') openPost(editingPostId);
+    else loadPosts(currentCommunity?.name);
+  } catch(e) { toast(e.message, true); }
+}
+
+async function doCreatePost() {
+  const title = document.getElementById('post-title').value.trim();
+  const body = document.getElementById('post-body').value;
+  const community = document.getElementById('post-community').value;
+  const anonymous = document.getElementById('post-anon').checked;
+  if (!title || !community) return toast('Título y comunidad son obligatorios', true);
+  try {
+    await apiFetch('/forums/posts', { method:'POST', body: JSON.stringify({title,body,community,anonymous}) });
+    hideModal('post-modal');
+    document.getElementById('post-title').value = '';
+    document.getElementById('post-body').value = '';
+    toast('Post publicado ✓');
+    navigateTo('community', community);
+  } catch(e) { toast(e.message, true); }
+}
+
+async function doCreateCommunity() {
+  const name = document.getElementById('comm-name').value.trim();
+  const description = document.getElementById('comm-desc').value.trim();
+  if (!name) return toast('El nombre es obligatorio', true);
+  try {
+    await apiFetch('/forums/communities', { method:'POST', body: JSON.stringify({name,description}) });
+    hideModal('community-modal');
+    document.getElementById('comm-name').value = '';
+    document.getElementById('comm-desc').value = '';
+    toast('Comunidad creada ✓');
+    await loadCommunities();
+    navigateTo('community', name);
+  } catch(e) { toast(e.message, true); }
+}
+
+function navigateTo(view, data=null) {
+  currentView = view;
+  document.getElementById('feed-view').style.display = 'block';
+  document.getElementById('post-view').style.display = 'none';
+
+  if (view === 'home') {
+    currentCommunity = null;
+    document.getElementById('feed-title').innerHTML = '<span class="material-icons-round" style="color:var(--orange2)">explore</span> Descubrir';
+    document.getElementById('feed-desc').textContent = '';
+    loadPosts();
+  } else if (view === 'community') {
+    const comm = typeof data === 'string' ? communities.find(c=>c.name===data) || {name:data} : data;
+    currentCommunity = comm;
+    document.getElementById('feed-title').innerHTML = `<span class="material-icons-round" style="color:var(--orange2)">hive</span> n/${esc(comm.name)}`;
+    document.getElementById('feed-desc').textContent = comm.description || '';
+    loadPosts(comm.name);
+  } else if (view === 'saved') {
+    currentCommunity = null;
+    document.getElementById('feed-title').innerHTML = '<span class="material-icons-round" style="color:var(--orange2)">bookmarks</span> Guardados';
+    document.getElementById('feed-desc').textContent = '';
+    loadSaved();
+  }
+  updateSidebarActive();
+  populateCommunitySelect();
+  renderCommunities();
+  window.scrollTo(0,0);
+}
+
+function updateSidebarActive() {
+  document.getElementById('sb-home').className = 'sidebar-btn' + (currentView==='home'?' active':'');
+  document.getElementById('sb-saved').className = 'sidebar-btn' + (currentView==='saved'?' active':'');
+}
+
+function filterPosts(q) {
+  if (!q) { renderPosts(allPosts); return; }
+  const filtered = allPosts.filter(p => p.title.toLowerCase().includes(q.toLowerCase()) || (p.body||'').toLowerCase().includes(q.toLowerCase()));
+  renderPosts(filtered);
+}
+
+async function init() {
+  await loadCommunities();
+  if (token) {
+    try {
+      const d = await apiFetch('/chat/me');
+      currentUser = d;
+      updateNavUser();
+    } catch { token = null; localStorage.removeItem('nf_token'); }
+  }
+  loadPosts();
+}
+
+init();
+</script>
+</body>
+</html>
