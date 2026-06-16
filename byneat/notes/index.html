@@ -394,6 +394,15 @@ nav {
 }
 .empty p { margin-top: 8px; }
 
+.tab-btn {
+  padding: 8px 16px; background: none; border: none;
+  color: var(--text3); font-size: 13px; font-weight: 500;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: .15s; cursor: pointer;
+}
+.tab-btn:hover { color: var(--text2); }
+.tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
 .plus-badge {
   font-size: 10px; background: var(--accent); color: #fff;
   padding: 2px 7px; border-radius: 999px; font-weight: 700;
@@ -427,8 +436,8 @@ nav {
       <textarea class="new-note-body" id="new-body" placeholder="Escribe aquí... Markdown soportado"></textarea>
       <div class="new-note-footer">
         <div class="note-opts">
-          <div class="opt-chip" id="opt-public" onclick="togglePublic()">
-            🌐 <span id="opt-public-label">Pública</span>
+          <div class="opt-chip active" id="opt-visibility" onclick="cycleVisibility()">
+            <span id="opt-vis-icon">🌐</span> <span id="opt-vis-label">Pública</span>
           </div>
           <div class="opt-chip" id="opt-custom" onclick="toggleCustomId()" title="Solo Neat Plus">
             🔗 <input type="text" id="custom-id-input" placeholder="url-personalizada" style="display:none" oninput="this.value=this.value.replace(/\s/g,'').toLowerCase()" onclick="event.stopPropagation()">
@@ -444,9 +453,17 @@ nav {
       </div>
     </div>
 
-    <div id="my-notes-section" style="display:none">
-      <div class="section-title">Mis notas</div>
-      <div class="notes-grid" id="my-notes-list"></div>
+    <div style="margin-top:8px">
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:4px">
+        <button class="tab-btn active" id="tab-feed" onclick="switchTab('feed')">Feed público</button>
+        <button class="tab-btn" id="tab-mine" onclick="switchTab('mine')">Mis notas</button>
+      </div>
+      <div id="panel-feed">
+        <div class="notes-grid" id="feed-list"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+      <div id="panel-mine" style="display:none">
+        <div class="notes-grid" id="my-notes-list"><div class="empty"><p>Inicia sesión para ver tus notas.</p></div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -539,10 +556,23 @@ let pendingNoteId = null; // para pw gate
 let notePassword = null; // contraseña ingresada para nota protegida
 
 // opts state
-let optPublic = true;
+const VIS_STATES = [
+  { key: 'public',   icon: '🌐', label: 'Pública' },
+  { key: 'unlisted', icon: '🔗', label: 'No listada' },
+  { key: 'private',  icon: '🔒', label: 'Privada' },
+];
+let visIndex = 0;
 let optCustom = false;
 let optPw = false;
 let newNotePw = '';
+
+function cycleVisibility() {
+  visIndex = (visIndex + 1) % VIS_STATES.length;
+  const s = VIS_STATES[visIndex];
+  document.getElementById('opt-vis-icon').textContent = s.icon;
+  document.getElementById('opt-vis-label').textContent = s.label;
+  document.getElementById('opt-visibility').classList.toggle('active', visIndex !== 0);
+}
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -618,14 +648,6 @@ function logout() {
 }
 
 // OPTS
-function togglePublic() {
-  optPublic = !optPublic;
-  const chip = document.getElementById('opt-public');
-  const label = document.getElementById('opt-public-label');
-  chip.classList.toggle('active', !optPublic);
-  label.textContent = optPublic ? 'Pública' : 'Privada';
-  chip.querySelector('span:first-of-type') && (chip.childNodes[0].textContent = optPublic ? '🌐 ' : '🔒 ');
-}
 
 function toggleCustomId() {
   if (!currentUser) return showModal('auth-modal');
@@ -660,7 +682,7 @@ async function doCreate() {
   if (!content) return toast('Escribe algo primero', true);
 
   const customId = optCustom ? document.getElementById('custom-id-input').value.trim() : undefined;
-  const body = { title: title || undefined, content, isPublic: optPublic };
+  const body = { title: title || undefined, content, visibility: VIS_STATES[visIndex].key };
   if (customId) body.customId = customId;
   if (optPw && newNotePw) body.password = newNotePw;
 
@@ -669,9 +691,10 @@ async function doCreate() {
     toast('Nota publicada ✓');
     document.getElementById('new-title').value = '';
     document.getElementById('new-body').value = '';
-    optPublic = true; optCustom = false; optPw = false; newNotePw = '';
-    document.getElementById('opt-public').classList.remove('active');
-    document.getElementById('opt-public-label').textContent = 'Pública';
+    visIndex = 0; optCustom = false; optPw = false; newNotePw = '';
+    document.getElementById('opt-vis-icon').textContent = '🌐';
+    document.getElementById('opt-vis-label').textContent = 'Pública';
+    document.getElementById('opt-visibility').classList.remove('active');
     document.getElementById('opt-custom').classList.remove('active');
     document.getElementById('custom-id-input').style.display = 'none';
     document.getElementById('opt-custom-label').style.display = 'inline';
@@ -687,7 +710,7 @@ async function doCreate() {
 
 async function loadMyNotes() {
   if (!token) return;
-  document.getElementById('my-notes-section').style.display = 'block';
+
   const list = document.getElementById('my-notes-list');
   list.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   try {
@@ -870,6 +893,32 @@ function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function switchTab(tab) {
+  document.getElementById('panel-feed').style.display = tab === 'feed' ? 'block' : 'none';
+  document.getElementById('panel-mine').style.display = tab === 'mine' ? 'block' : 'none';
+  document.getElementById('tab-feed').classList.toggle('active', tab === 'feed');
+  document.getElementById('tab-mine').classList.toggle('active', tab === 'mine');
+}
+
+async function loadFeed() {
+  const list = document.getElementById('feed-list');
+  try {
+    const notes = await apiFetch('/notes');
+    if (!notes.length) {
+      list.innerHTML = '<div class="empty"><p>Aún no hay notas públicas.</p></div>';
+      return;
+    }
+    list.innerHTML = notes.map(n => `
+      <div class="note-card" onclick="openNote('${n.noteId}')">
+        <div class="note-card-title">${n.title || '<span style="color:var(--text3)">Sin título</span>'}</div>
+        <div class="note-card-meta">
+          <span>@${escHtml(n.authorUsername)}${n.authorVerified ? `<img src="${VERIFIED_IMG}" class="verified-img" style="margin-left:3px">` : ''}</span>
+          <span>${fmtDate(n.createdAt)}</span>
+        </div>
+      </div>`).join('');
+  } catch { list.innerHTML = '<div class="empty"><p>Error cargando feed.</p></div>'; }
+}
+
 async function init() {
   // Abrir nota desde URL
   const params = new URLSearchParams(location.search);
@@ -890,6 +939,8 @@ async function init() {
   if (noteId) {
     openNote(noteId);
   }
+
+  loadFeed();
 }
 
 init();
