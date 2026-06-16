@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body>
+<pre id="out">Cargando...</pre>
+<script>
+const code = new URLSearchParams(location.search).get('code');
+const error = new URLSearchParams(location.search).get('error');
+
+if (error) {
+  document.getElementById('out').textContent = '❌ Cancelado: ' + error;
+} else if (code) {
+  fetch('https://neat-apps-b.vercel.app/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code,
+      clientId: '294aaa2923ed47bff3bd7c24d7dcd1c5',
+      clientSecret: '0355b8a55ff1921ebe9979353a0833e71b334dfee15f1a9dedc5867c074730c7',
+      redirectUri: 'https://neat.qzz.io/oauth-test.html'
+    })
+  })
+  .then(r => r.json())
+  .then(async d => {
+    const info = await fetch('https://neat-apps-b.vercel.app/oauth/userinfo', {
+      headers: { Authorization: 'Bearer ' + d.access_token }
+    }).then(r => r.json());
+    document.getElementById('out').textContent = 
+      '✅ Token OK\n\nScopes: ' + d.scopes?.join(', ') + '\n\nUsuario:\n' + JSON.stringify(info, null, 2);
+  });
+} else {
+  document.getElementById('out').textContent = 'Sin parámetros.';
+}
+</script>
+</body>
+</html>
