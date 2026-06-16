@@ -942,14 +942,26 @@ function renderChatList(list) {
     return `<div class="chat-item${isActive ? " active" : ""}" onclick="openChat('${c._id}')">
       <div class="chat-avatar">${initials}</div>
       <div class="chat-item-info">
-        <div class="chat-item-name">${esc(name)}</div>
+        <div class="chat-item-name" id="chat-name-${c._id}">${esc(name)}</div>
         <div class="chat-item-last">${esc(c.lastMessage || "Sin mensajes")}</div>
       </div>
       <div class="chat-item-meta">
         <div class="chat-item-time">${c.updatedAt ? fmtTime(c.updatedAt) : ""}</div>
       </div>
     </div>`;
-  }).join("");
+  })
+   .join("");
+
+ list.forEach(c => {
+  const name = chatName(c);
+  if (c.type === "direct") {
+    const other = c.participants?.find(p => p !== (currentUser.userId || currentUser.username));
+    if (other) isVerified(other).then(v => {
+      const el = document.getElementById(`chat-name-${c._id}`);
+      if (el && v) el.innerHTML = esc(name) + verifiedBadge();
+    });
+  }
+});
 }
 
 function filterChats(q) {
@@ -975,6 +987,12 @@ async function openChat(id) {
   document.getElementById("chat-panel").classList.add("visible");
   const name = chatName(chat);
   document.getElementById("chat-header-name").textContent = name;
+if (chat.type === "direct") {
+  const other = chat.participants?.find(p => p !== (currentUser.userId || currentUser.username));
+  if (other) isVerified(other).then(v => {
+    if (v) document.getElementById("chat-header-name").innerHTML = esc(name) + verifiedBadge();
+  });
+}
   document.getElementById("chat-header-avatar").textContent = name[0].toUpperCase();
   document.getElementById("chat-header-sub").textContent = chat.type === "group" ? `${chat.participants?.length || ""} participantes` : chat.participants?.find(p => p !== (currentUser.userId || currentUser.username)) || "";
   document.getElementById("messages").innerHTML = `<div style="padding:40px;display:flex;justify-content:center"><div class="spinner"></div></div>`;
@@ -1030,11 +1048,14 @@ function buildMsgEl(m) {
   const group = document.createElement("div");
   group.className = `msg-group ${isMe ? "me" : "them"}`;
   if (!isMe && activeChat?.type === "group") {
-    const senderEl = document.createElement("div");
-    senderEl.className = "msg-sender";
-    senderEl.textContent = m.senderUsername;
-    group.appendChild(senderEl);
-  }
+  const senderEl = document.createElement("div");
+  senderEl.className = "msg-sender";
+  senderEl.textContent = m.senderUsername;
+  group.appendChild(senderEl);
+  isVerified(m.senderUsername).then(v => {
+    if (v) senderEl.innerHTML = esc(m.senderUsername) + verifiedBadge();
+  });
+}
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.appendChild(buildContent(m));
@@ -1404,6 +1425,21 @@ function closeImgViewer() {
   document.getElementById("img-viewer").classList.remove("visible");
 }
 
+const verifiedCache = {};
+async function isVerified(username) {
+  if (verifiedCache[username] !== undefined) return verifiedCache[username];
+  try {
+    const r = await fetch(`${API}/chat/users/${username}/verified`);
+    const d = await r.json();
+    verifiedCache[username] = d.verified;
+    return d.verified;
+  } catch { return false; }
+}
+
+function verifiedBadge() {
+  return `<img src="https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;margin-left:3px" title="Verificado">`;
+}
+ 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function esc(s) { return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
