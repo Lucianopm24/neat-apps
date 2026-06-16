@@ -1,2 +1,3 @@
+/u/profile.html /u/profile.html 200
 /u/* /u/profile.html 200
 /u/*/web /u/profile.html 200
