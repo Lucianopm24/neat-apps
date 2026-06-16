@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Términos de Uso — Neat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--surface:#1a1d27;--border:#2a2d3e;--text:#e8eaf0;--muted:#6b7280;--blue:#3b82f6}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:40px 16px}
+.wrap{max-width:680px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.logo-icon{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.logo-text{font-size:18px;font-weight:600}
+.lang-toggle{display:flex;gap:4px}
+.lang-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.lang-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+h1{font-size:28px;font-weight:600;margin-bottom:8px}
+.updated{font-size:13px;color:var(--muted);margin-bottom:40px}
+section{margin-bottom:36px}
+h2{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--blue)}
+p{font-size:14px;line-height:1.7;color:#b0b8cc;margin-bottom:10px}
+ul{padding-left:18px}
+li{font-size:14px;line-height:1.7;color:#b0b8cc;margin-bottom:4px}
+.note{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--muted);margin-top:10px}
+footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);text-align:center}
+footer a{color:var(--blue);text-decoration:none}
+.lang{display:none}.lang.active{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="/play/" class="logo">
+      <div class="logo-icon">N</div>
+      <span class="logo-text">Neat</span>
+    </a>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('es')">Español</button>
+      <button class="lang-btn" onclick="setLang('en')">English</button>
+    </div>
+  </header>
+
+  <!-- Español -->
+  <div class="lang active" id="lang-es">
+    <h1>Términos de Uso</h1>
+    <p class="updated">Última actualización: junio 2026</p>
+
+    <section>
+      <h2>¿Qué es Neat?</h2>
+      <p>Neat es un ecosistema de apps web (Chatter, Watch, Forums, Points y más) creado y operado por una sola persona. Es un proyecto personal, no una empresa.</p>
+    </section>
+
+    <section>
+      <h2>Datos que guardamos</h2>
+      <ul>
+        <li>Nombre de usuario y contraseña (cifrada, nunca en texto plano)</li>
+        <li>Dirección de email generada automáticamente (@neat.qzz.io)</li>
+        <li>Mensajes de Neat Chatter — cifrados en reposo, pero el administrador técnicamente podría acceder a ellos</li>
+        <li>Videos subidos a Neat Watch (almacenados vía Telegram)</li>
+        <li>Posts, comentarios y votos de Neat Forums</li>
+        <li>Historial de Neat Points y transacciones</li>
+        <li>Tokens de sesión OAuth</li>
+      </ul>
+      <div class="note">🔒 Los mensajes de Chatter están cifrados en reposo. Esto significa que son más difíciles de leer en caso de una filtración, pero no es cifrado de extremo a extremo — el administrador del servidor tiene acceso técnico a ellos. Sé honesto con lo que compartes.</div>
+    </section>
+
+    <section>
+      <h2>Reglas de uso</h2>
+      <ul>
+        <li>No spam ni mensajes masivos no solicitados</li>
+        <li>No contenido ilegal (material de abuso, piratería, etc.)</li>
+        <li>No acosar, amenazar ni suplantar a otros usuarios</li>
+        <li>No intentar acceder a cuentas o datos ajenos</li>
+        <li>No usar bots o scripts para explotar los servicios</li>
+      </ul>
+      <p style="margin-top:10px">El administrador puede suspender cuentas que violen estas reglas sin previo aviso.</p>
+    </section>
+
+    <section>
+      <h2>Neat Plus</h2>
+      <p>Neat Plus es una suscripción de pago con Neat Points. No hay reembolsos. Si el servicio deja de funcionar, los puntos gastados no se devuelven — es un proyecto personal y puede cambiar en cualquier momento.</p>
+    </section>
+
+    <section>
+      <h2>Disponibilidad</h2>
+      <p>Neat no garantiza disponibilidad continua. Al ser un proyecto personal, puede haber interrupciones, cambios o incluso cierre sin previo aviso.</p>
+    </section>
+
+    <section>
+      <h2>Contacto</h2>
+      <p>Si tienes preguntas o quieres reportar algo, escríbeme por <a href="/byneat/chatter" style="color:var(--blue)">Neat Chatter</a>.</p>
+    </section>
+  </div>
+
+  <!-- English -->
+  <div class="lang" id="lang-en">
+    <h1>Terms of Use</h1>
+    <p class="updated">Last updated: June 2026</p>
+
+    <section>
+      <h2>What is Neat?</h2>
+      <p>Neat is an ecosystem of web apps (Chatter, Watch, Forums, Points and more) created and operated by a single person. It's a personal project, not a company.</p>
+    </section>
+
+    <section>
+      <h2>Data we store</h2>
+      <ul>
+        <li>Username and password (hashed, never in plain text)</li>
+        <li>Auto-generated email address (@neat.qzz.io)</li>
+        <li>Neat Chatter messages — encrypted at rest, but the administrator can technically access them</li>
+        <li>Videos uploaded to Neat Watch (stored via Telegram)</li>
+        <li>Posts, comments and votes on Neat Forums</li>
+        <li>Neat Points balance and transaction history</li>
+        <li>OAuth session tokens</li>
+      </ul>
+      <div class="note">🔒 Chatter messages are encrypted at rest, making them harder to read in case of a data breach. However, this is not end-to-end encryption — the server administrator has technical access to them. Be mindful of what you share.</div>
+    </section>
+
+    <section>
+      <h2>Rules</h2>
+      <ul>
+        <li>No spam or unsolicited mass messages</li>
+        <li>No illegal content (abuse material, piracy, etc.)</li>
+        <li>No harassment, threats or impersonation of other users</li>
+        <li>No attempting to access other users' accounts or data</li>
+        <li>No bots or scripts to exploit the services</li>
+      </ul>
+      <p style="margin-top:10px">The administrator may suspend accounts that violate these rules without prior notice.</p>
+    </section>
+
+    <section>
+      <h2>Neat Plus</h2>
+      <p>Neat Plus is a subscription paid with Neat Points. No refunds. If the service stops working, spent points are not returned — this is a personal project and may change at any time.</p>
+    </section>
+
+    <section>
+      <h2>Availability</h2>
+      <p>Neat does not guarantee continuous availability. As a personal project, there may be outages, changes or even shutdown without prior notice.</p>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>If you have questions or want to report something, reach me on <a href="/byneat/chatter" style="color:var(--blue)">Neat Chatter</a>.</p>
+    </section>
+  </div>
+
+  <footer>
+    <a href="/play/">← Volver a Neat Play</a>
+  </footer>
+</div>
+<script>
+function setLang(l) {
+  document.querySelectorAll(".lang").forEach(e => e.classList.remove("active"));
+  document.querySelectorAll(".lang-btn").forEach(e => e.classList.remove("active"));
+  document.getElementById("lang-"+l).classList.add("active");
+  event.target.classList.add("active");
+}
+</script>
+</body>
+</html>
