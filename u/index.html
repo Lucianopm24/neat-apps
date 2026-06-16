@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat ID</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--card:#fff;--text:#1a1a2e;--text2:#555;--text3:#999;
+  --border:#e5e7eb;--blue:#185FA5;--green:#3B6D11;--green2:#639922;
+  --radius:16px;--radius-sm:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:inherit;}
+
+/* HEADER */
+.top-bar{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.top-logo{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+.top-logo span{color:var(--blue);}
+.top-actions{display:flex;gap:8px;align-items:center;}
+.btn{border:none;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:hover{background:#1557b0;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
+.btn-outline:hover{background:var(--bg);color:var(--text);}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.btn-green{background:var(--green2);color:#fff;}
+.btn-green:hover{background:var(--green);}
+
+/* MAIN LAYOUT */
+.container{max-width:680px;margin:0 auto;padding:24px 16px 60px;}
+
+/* PROFILE CARD */
+.profile-card{background:var(--card);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.profile-banner{height:100px;background:linear-gradient(135deg,#185FA5,#378ADD);position:relative;}
+.profile-banner-plus{background:linear-gradient(135deg,#3B6D11,#639922,#c8e6a0);}
+.profile-avatar-wrap{position:absolute;bottom:-36px;left:24px;}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--blue);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0;}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-body{padding:48px 24px 24px;}
+.profile-name-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.profile-name{font-size:20px;font-weight:700;}
+.verified{width:18px;height:18px;object-fit:contain;vertical-align:middle;}
+.plus-tag{font-size:10px;background:var(--green2);color:#fff;padding:2px 8px;border-radius:999px;font-weight:700;}
+.profile-handle{font-size:13px;color:var(--text3);margin-bottom:10px;}
+.profile-bio{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+.profile-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.profile-meta-item{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:4px;}
+
+/* LINKS */
+.section{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.section-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.link-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;transition:.15s;text-decoration:none;color:var(--text);}
+.link-item:hover{background:#e8edf5;transform:translateX(3px);}
+.link-icon{width:36px;height:36px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.link-label{font-size:14px;font-weight:500;flex:1;}
+.link-arrow{color:var(--text3);font-size:16px;}
+.cat-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-left:4px;}
+
+/* EDIT BTN */
+.edit-fab{position:fixed;bottom:24px;right:24px;z-index:20;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1;}
+.modal-head h2{font-size:16px;font-weight:700;}
+.modal-body{padding:20px 24px;flex:1;}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;}
+.input-group{margin-bottom:14px;}
+.input-group label{display:block;font-size:11px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:inherit;font-size:14px;outline:none;}
+.input:focus{border-color:var(--blue);}
+.textarea{min-height:80px;resize:vertical;}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text3);border:none;background:none;border-bottom:2px solid transparent;transition:.15s;cursor:pointer;font-family:inherit;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* LINK EDITOR */
+.link-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;background:var(--bg);padding:10px;border-radius:var(--radius-sm);}
+.link-row input{flex:1;background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;}
+.link-row input:focus{border-color:var(--blue);}
+.link-row .icon-in{width:48px;}
+.del-btn{background:none;border:none;color:var(--text3);font-size:18px;padding:4px;flex-shrink:0;}
+.del-btn:hover{color:#e05252;}
+.add-link-btn{width:100%;padding:10px;background:transparent;border:1px dashed var(--border);border-radius:var(--radius-sm);color:var(--text3);font-size:13px;font-weight:500;transition:.15s;margin-top:4px;}
+.add-link-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+/* CODE EDITOR */
+.code-editor{width:100%;min-height:240px;background:#1a1a2e;color:#c0dd97;font-family:'Fira Code','Courier New',monospace;font-size:13px;padding:14px;border-radius:var(--radius-sm);border:none;outline:none;resize:vertical;line-height:1.6;}
+
+/* TOAST */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:#1a1a2e;color:#fff;font-size:13px;font-weight:500;padding:10px 20px;border-radius:999px;opacity:0;transition:.3s;pointer-events:none;z-index:99;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.err{background:#7a1f1f;}
+
+/* SUSPENDED */
+.suspended-banner{background:#7a1f1f;color:#fff;padding:16px 20px;border-radius:var(--radius);margin-bottom:16px;font-size:14px;display:flex;gap:10px;align-items:center;}
+
+/* NOT FOUND */
+.not-found{text-align:center;padding:80px 20px;color:var(--text3);}
+.not-found h2{font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px;}
+
+/* SPINNER */
+.spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;justify-content:center;padding:60px;}
+
+/* WEB PREVIEW */
+.web-link{display:inline-flex;align-items:center;gap:6px;background:var(--green2);color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600;margin-top:8px;}
+.web-link:hover{background:var(--green);}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-logo">Neat <span>ID</span></div>
+  <div class="top-actions" id="top-actions">
+    <button class="btn btn-outline btn-sm" onclick="window.location.href='https://neat.qzz.io'">← Neat</button>
+  </div>
+</div>
+
+<div class="container" id="main-container">
+  <div class="loading"><div class="spinner"></div></div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Editar perfil</h2>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('profile',this)">Perfil</button>
+        <button class="tab" onclick="switchTab('links',this)">Links</button>
+        <button class="tab" id="tab-web" onclick="switchTab('web',this)" style="display:none">Página web</button>
+      </div>
+
+      <!-- PROFILE TAB -->
+      <div id="tab-profile">
+        <div class="input-group"><label>Biografía</label><textarea class="input textarea" id="edit-bio" placeholder="Cuéntanos algo sobre ti..."></textarea></div>
+      </div>
+
+      <!-- LINKS TAB -->
+      <div id="tab-links" style="display:none">
+        <div id="links-editor"></div>
+        <button class="add-link-btn" onclick="addLinkRow()">+ Agregar link</button>
+      </div>
+
+      <!-- WEB TAB -->
+      <div id="tab-web-editor" style="display:none">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Pega tu HTML personalizado. Se mostrará en <strong>/u/TU_USUARIO/web</strong></p>
+        <textarea class="code-editor" id="edit-web" placeholder="<!DOCTYPE html>&#10;<html>&#10;  <body>&#10;    <h1>Mi página</h1>&#10;  </body>&#10;</html>"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveProfile()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-bg" id="auth-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head">
+      <h2>Inicia sesión para editar</h2>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('auth-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group"><label>Usuario</label><input class="input" id="au" type="text" placeholder="tu usuario"></div>
+      <div class="input-group"><label>Contraseña</label><input class="input" id="ap" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="auth-err" style="color:#e05252;font-size:12px;margin-top:8px;display:none"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="document.getElementById('auth-modal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-blue" onclick="doLogin()" id="login-btn">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'https://neat-apps-b.vercel.app';
+const VERIFIED_IMG = 'https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png';
+let token = localStorage.getItem('ni_token');
+let currentUser = null;
+let profileData = null;
+let editLinks = [];
+
+// Get username from URL: /u/Luciano or /u/index.html?u=Luciano
+function getUsername() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('u')) return params.get('u');
+  const parts = location.pathname.split('/').filter(Boolean);
+  const uIdx = parts.indexOf('u');
+  if (uIdx !== -1 && parts[uIdx + 1] && parts[uIdx + 1] !== 'index.html') return parts[uIdx + 1];
+  return null;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (err ? ' err' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.className = '', 3000);
+}
+
+function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
+
+async function doLogin() {
+  const u = document.getElementById('au').value.trim();
+  const p = document.getElementById('ap').value;
+  if (!u || !p) return;
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  document.getElementById('auth-err').style.display = 'none';
+  try {
+    const endpoint = u === 'Luciano' || u === 'luciano' ? '/auth/login' : '/chat/login';
+    const r = await fetch(API + endpoint, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, password: p})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    token = d.token;
+    localStorage.setItem('ni_token', token);
+    currentUser = {username: d.username, role: d.role};
+    document.getElementById('auth-modal').classList.remove('open');
+    updateTopBar();
+    toast('Sesión iniciada');
+    // Si estamos viendo nuestro propio perfil, mostrar botón editar
+    if (profileData && currentUser.username.toLowerCase() === profileData.username.toLowerCase()) {
+      showEditBtn();
+    }
+  } catch(e) {
+    const err = document.getElementById('auth-err');
+    err.textContent = e.message; err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+function updateTopBar() {
+  const el = document.getElementById('top-actions');
+  if (currentUser) {
+    el.innerHTML = `
+      <span style="font-size:13px;color:var(--text2);font-weight:500">${esc(currentUser.username)}</span>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Salir</button>
+    `;
+  } else {
+    el.innerHTML = `<button class="btn btn-outline btn-sm" onclick="window.location.href='https://neat.qzz.io'">← Neat</button>`;
+  }
+}
+
+function logout() {
+  token = null; currentUser = null;
+  localStorage.removeItem('ni_token');
+  updateTopBar();
+  render();
+}
+
+async function loadProfile(username) {
+  try {
+    const r = await fetch(`${API}/u/${username}`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function resolveAvatar(fileId) {
+  try {
+    const r = await fetch(`${API}/chat/telegram/file/${fileId}`, {
+      headers: token ? {'Authorization':'Bearer '+token} : {}
+    });
+    const d = await r.json();
+    return d.url;
+  } catch { return null; }
+}
+
+function showEditBtn() {
+  const existing = document.getElementById('edit-fab');
+  if (existing) return;
+  const fab = document.createElement('div');
+  fab.className = 'edit-fab';
+  fab.id = 'edit-fab';
+  fab.innerHTML = `<button class="btn btn-blue" onclick="openEditor()">✏️ Editar perfil</button>`;
+  document.body.appendChild(fab);
+}
+
+function removeEditBtn() {
+  const el = document.getElementById('edit-fab');
+  if (el) el.remove();
+}
+
+async function render() {
+  const username = getUsername();
+  const container = document.getElementById('main-container');
+
+  if (!username) {
+    container.innerHTML = `<div class="not-found"><h2>¿Quién eres?</h2><p>Accede a /u/TuUsuario para ver un perfil.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  profileData = await loadProfile(username);
+
+  if (!profileData) {
+    container.innerHTML = `<div class="not-found"><h2>Usuario no encontrado</h2><p>@${esc(username)} no existe en Neat.</p></div>`;
+    return;
+  }
+
+  // Check if viewer is owner
+  const isOwner = currentUser && currentUser.username.toLowerCase() === profileData.username.toLowerCase();
+  if (isOwner) showEditBtn(); else removeEditBtn();
+
+  // Build HTML
+  let html = '';
+
+  // Suspended banner
+  if (profileData.suspended) {
+    html += `<div class="suspended-banner">⚠️ Esta cuenta está suspendida.</div>`;
+  }
+
+  // Profile card
+  const bannerClass = profileData.neatPlus ? 'profile-banner profile-banner-plus' : 'profile-banner';
+  const verifiedHTML = profileData.verified ? `<img src="${VERIFIED_IMG}" class="verified" title="Verificado">` : '';
+  const plusHTML = profileData.neatPlus ? `<span class="plus-tag">Plus</span>` : '';
+
+  html += `<div class="profile-card">
+    <div class="${bannerClass}">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="avatar-el">
+          ${profileData.username[0].toUpperCase()}
+        </div>
+      </div>
+    </div>
+    <div class="profile-body">
+      <div class="profile-name-row">
+        <span class="profile-name">${esc(profileData.username)}</span>
+        ${verifiedHTML}${plusHTML}
+      </div>
+      <div class="profile-handle">@${esc(profileData.username)} · neat.qzz.io</div>
+      ${profileData.bio ? `<div class="profile-bio">${esc(profileData.bio)}</div>` : ''}
+      ${profileData.hasCustomWeb && profileData.neatPlus ? `<a href="/u/${esc(profileData.username)}/web" class="web-link" target="_blank">🌐 Ver mi página</a>` : ''}
+    </div>
+  </div>`;
+
+  // Auto links
+  if (profileData.autoLinks?.length) {
+    html += `<div class="section"><div class="section-title">Apps de Neat</div>`;
+    profileData.autoLinks.forEach(l => {
+      html += `<a href="${esc(l.url)}" class="link-item" target="_blank">
+        <div class="link-icon">${l.icon}</div>
+        <span class="link-label">${esc(l.label)}</span>
+        <span class="link-arrow">›</span>
+      </a>`;
+    });
+    html += `</div>`;
+  }
+
+  // Custom links
+  if (profileData.customLinks?.length) {
+    // Group by category if Plus
+    if (profileData.neatPlus) {
+      const cats = {};
+      const uncategorized = [];
+      profileData.customLinks.forEach(l => {
+        if (l.category) { if (!cats[l.category]) cats[l.category] = []; cats[l.category].push(l); }
+        else uncategorized.push(l);
+      });
+
+      html += `<div class="section"><div class="section-title">Links</div>`;
+      if (uncategorized.length) uncategorized.forEach(l => html += linkHTML(l));
+      Object.entries(cats).forEach(([cat, links]) => {
+        html += `<div class="cat-label">${esc(cat)}</div>`;
+        links.forEach(l => html += linkHTML(l));
+      });
+      html += `</div>`;
+    } else {
+      html += `<div class="section"><div class="section-title">Links</div>`;
+      profileData.customLinks.forEach(l => html += linkHTML(l));
+      html += `</div>`;
+    }
+  }
+
+  // Login prompt if not logged in viewing own profile (by URL)
+  if (!currentUser) {
+    html += `<div style="text-align:center;padding:16px 0">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('auth-modal').classList.add('open')">
+        Iniciar sesión para editar tu perfil
+      </button>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+
+  // Load avatar async
+  if (profileData.avatarFileId) {
+    resolveAvatar(profileData.avatarFileId).then(url => {
+      if (!url) return;
+      const el = document.getElementById('avatar-el');
+      if (el) el.innerHTML = `<img src="${url}" alt="avatar">`;
+    });
+  }
+}
+
+function linkHTML(l) {
+  return `<a href="${esc(l.url)}" class="link-item" target="_blank">
+    <div class="link-icon">${esc(l.icon || '🔗')}</div>
+    <span class="link-label">${esc(l.label)}</span>
+    <span class="link-arrow">›</span>
+  </a>`;
+}
+
+// EDITOR
+function openEditor() {
+  if (!token) { document.getElementById('auth-modal').classList.add('open'); return; }
+  document.getElementById('edit-bio').value = profileData.bio || '';
+  editLinks = JSON.parse(JSON.stringify(profileData.customLinks || []));
+  renderLinksEditor();
+  // Show web tab if Plus
+  document.getElementById('tab-web').style.display = profileData.neatPlus ? 'block' : 'none';
+  switchTab('profile', document.querySelector('.tab'));
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('tab-profile').style.display = name === 'profile' ? 'block' : 'none';
+  document.getElementById('tab-links').style.display = name === 'links' ? 'block' : 'none';
+  document.getElementById('tab-web-editor').style.display = name === 'web' ? 'block' : 'none';
+}
+
+function renderLinksEditor() {
+  const el = document.getElementById('links-editor');
+  el.innerHTML = editLinks.map((l, i) => `
+    <div class="link-row">
+      <input class="icon-in" type="text" value="${esc(l.icon||'🔗')}" placeholder="🔗" oninput="editLinks[${i}].icon=this.value">
+      <input type="text" value="${esc(l.label)}" placeholder="Nombre" oninput="editLinks[${i}].label=this.value">
+      <input type="url" value="${esc(l.url)}" placeholder="https://..." oninput="editLinks[${i}].url=this.value">
+      ${profileData.neatPlus ? `<input type="text" value="${esc(l.category||'')}" placeholder="Categoría" oninput="editLinks[${i}].category=this.value" style="max-width:100px">` : ''}
+      <button class="del-btn" onclick="removeLink(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addLinkRow() {
+  editLinks.push({icon:'🔗', label:'', url:'', category:''});
+  renderLinksEditor();
+}
+
+function removeLink(i) {
+  editLinks.splice(i, 1);
+  renderLinksEditor();
+}
+
+async function saveProfile() {
+  const bio = document.getElementById('edit-bio').value.trim();
+  const html = document.getElementById('edit-web').value.trim();
+  const body = { bio, customLinks: editLinks.filter(l => l.url) };
+
+  try {
+    const r = await fetch(`${API}/u/${profileData.username}`, {
+      method: 'PUT',
+      headers: {'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error); }
+
+    // Save custom web if Plus and has content
+    if (profileData.neatPlus && html) {
+      await fetch(`${API}/u/${profileData.username}/web`, {
+        method: 'PUT',
+        headers: {'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body: JSON.stringify({html})
+      });
+    }
+
+    closeModal();
+    toast('Perfil guardado ✓');
+    profileData = await loadProfile(profileData.username);
+    render();
+  } catch(e) { toast(e.message, true); }
+}
+
+// INIT
+async function init() {
+  // Try to restore session
+  if (token) {
+    try {
+      const r = await fetch(API + '/chat/me', {headers:{'Authorization':'Bearer '+token}});
+      if (r.ok) { currentUser = await r.json(); updateTopBar(); }
+      else { token = null; localStorage.removeItem('ni_token'); }
+    } catch {}
+  }
+  render();
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-bg').forEach(bg =>
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); })
+);
+
+init();
+</script>
+</body>
+</html>
