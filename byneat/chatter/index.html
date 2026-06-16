@@ -1297,10 +1297,10 @@ async function uploadAvatar(input) {
 
 // ── Users ─────────────────────────────────────────────────────────────────────
 async function loadUsers() {
-  if (currentUser.role !== "admin") return;
   try {
-    const res = await fetch(`${API}/chat/users`, { headers: { Authorization: "Bearer " + token } });
-    allUsers = await res.json();
+    const endpoint = currentUser.role === "admin" ? "/chat/users" : "/chat/users/list";
+    const res = await fetch(`${API}${endpoint}`, { headers: { Authorization: "Bearer " + token } });
+    if (res.ok) allUsers = await res.json();
   } catch {}
 }
 
