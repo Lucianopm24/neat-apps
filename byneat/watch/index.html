@@ -881,7 +881,7 @@ async function showQuicks() {
 function quickItem(v) {
   return `
     <div class="quick-item" data-id="${v._id}">
-      <video src="${CDN}/${v.fileId}" loop playsinline muted></video>
+      <video src="${CDN}/${v.fileId}" loop playsinline></video>
       <div class="quick-overlay">
         <div class="quick-title">${esc(v.title)}</div>
          <div class="quick-uploader">@${esc(v.uploaderUsername)}${verifiedBadge(v.uploaderVerified)}</div>
