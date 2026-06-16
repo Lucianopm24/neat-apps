@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2a2d3e;
+  --text:#e8eaf0;--muted:#6b7280;--blue:#3b82f6;--green:#22c55e;
+  --red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;
+  --radius:10px;--shadow:0 4px 24px rgba(0,0,0,.4)
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;position:sticky;top:0}
+.logo{padding:20px 18px;font-size:18px;font-weight:600;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-icon{width:30px;height:30px;background:var(--blue);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--blue);color:#fff}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{padding:14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.topbar h1{font-size:16px;font-weight:600}
+.user-badge{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;background:var(--green);border-radius:50%}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* ── Login ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);width:100%}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:36px;width:360px}
+.login-card h2{font-size:20px;font-weight:600;margin-bottom:4px}
+.login-card p{color:var(--muted);font-size:13px;margin-bottom:24px}
+
+/* ── Forms ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
+.field textarea{resize:vertical;min-height:80px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.85}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{opacity:.85}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--blue)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ── Cards / Panels ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+.panel-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:14px;font-weight:600}
+.panel-body{padding:18px}
+
+/* ── Stats row ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:24px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-val{font-size:26px;font-weight:700;margin-bottom:2px}
+.stat-label{font-size:12px;color:var(--muted)}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-blue{background:#1d3d6b;color:#60a5fa}
+.badge-green{background:#14532d;color:#4ade80}
+.badge-red{background:#450a0a;color:#f87171}
+.badge-yellow{background:#451a03;color:#fbbf24}
+.badge-purple{background:#3b0764;color:#c084fc}
+
+/* ── Search ── */
+.search-row{display:flex;gap:10px;margin-bottom:16px}
+.search-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none}
+.search-row input:focus{border-color:var(--blue)}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:420px;max-width:90vw}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;z-index:200;transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--green)}
+.toast.err{border-color:var(--red)}
+
+/* ── Misc ── */
+.copy-id{font-family:monospace;font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:4px;cursor:pointer;border:1px solid var(--border)}
+.copy-id:hover{border-color:var(--blue)}
+.flex-gap{display:flex;gap:8px;flex-wrap:wrap}
+.screen{display:none}.screen.active{display:block}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginWrap" class="login-wrap">
+  <div class="login-card">
+    <h2>Neat Admin</h2>
+    <p>Acceso restringido a administradores</p>
+    <div class="field"><label>Usuario</label><input id="liUser" placeholder="admin"></div>
+    <div class="field"><label>Contraseña</label><input id="liPass" type="password" placeholder="••••••"></div>
+    <div id="liErr" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appWrap" style="display:none;width:100%">
+  <div class="sidebar">
+    <div class="logo"><div class="logo-icon">N</div>Neat Admin</div>
+    <nav class="nav">
+      <button class="nav-item active" onclick="go('usuarios')" id="nav-usuarios"><span class="nav-icon">👥</span>Usuarios</button>
+      <button class="nav-item" onclick="go('points')" id="nav-points"><span class="nav-icon">💰</span>Points</button>
+      <button class="nav-item" onclick="go('oauth')" id="nav-oauth"><span class="nav-icon">🔑</span>OAuth Apps</button>
+      <button class="nav-item" onclick="go('play')" id="nav-play"><span class="nav-icon">🎮</span>Neat Play</button>
+    </nav>
+    <div class="sidebar-footer" id="adminBadge"></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="pageTitle">Usuarios</h1>
+      <div class="user-badge"><div class="dot"></div><span id="adminName"></span></div>
+    </div>
+    <div class="content">
+
+      <!-- Usuarios -->
+      <div id="screen-usuarios" class="screen active">
+        <div class="stats" id="userStats"></div>
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Todos los usuarios</span>
+          </div>
+          <div class="panel-body">
+            <div class="search-row">
+              <input id="userSearch" placeholder="Buscar por usuario..." oninput="filterUsers()">
+              <button class="btn btn-ghost btn-sm" onclick="loadUsers()">↺ Actualizar</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Usuario</th><th>ID</th><th>Email</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="userTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Points -->
+      <div id="screen-points" class="screen">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Dar Neat Points</span></div>
+          <div class="panel-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+              <div class="field" style="margin:0"><label>Usuario</label><input id="npUser" placeholder="username"></div>
+              <div class="field" style="margin:0"><label>Cantidad</label><input id="npAmount" type="number" placeholder="100"></div>
+              <button class="btn btn-success" onclick="givePoints()">Dar NP</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Historial global (últimas 100)</span><button class="btn btn-ghost btn-sm" onclick="loadNPHistory()">↺</button></div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Tipo</th><th>De</th><th>Para</th><th>Cantidad</th><th>Fecha</th></tr></thead>
+                <tbody id="npTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OAuth -->
+      <div id="screen-oauth" class="screen">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Clientes OAuth</span>
+            <button class="btn btn-primary btn-sm" onclick="openOAuthModal()">+ Nueva app</button>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nombre</th><th>Client ID</th><th>Scopes</th><th>Creado</th></tr></thead>
+                <tbody id="oauthTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neat Play -->
+      <div id="screen-play" class="screen">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Apps en Neat Play</span>
+            <button class="btn btn-primary btn-sm" onclick="openAppModal()">+ Nueva app</button>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nombre</th><th>Categoría</th><th>URL</th><th>Acciones</th></tr></thead>
+                <tbody id="playTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Acciones de usuario -->
+<div class="modal-bg" id="userModal">
+  <div class="modal">
+    <h3 id="userModalTitle">Gestionar usuario</h3>
+    <div id="userModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('userModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: OAuth -->
+<div class="modal-bg" id="oauthModal">
+  <div class="modal">
+    <h3>Nueva app OAuth</h3>
+    <div class="field"><label>Nombre</label><input id="oaName" placeholder="Mi App"></div>
+    <div class="field"><label>Redirect URIs (una por línea)</label><textarea id="oaRedirects" placeholder="https://miapp.com/callback"></textarea></div>
+    <div class="field"><label>Scopes (separados por coma)</label><input id="oaScopes" value="profile,email"></div>
+    <div id="oaResult" style="display:none;margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;font-family:monospace;word-break:break-all"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('oauthModal')">Cerrar</button>
+      <button class="btn btn-primary" onclick="createOAuthClient()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Play App -->
+<div class="modal-bg" id="appModal">
+  <div class="modal">
+    <h3 id="appModalTitle">Nueva app</h3>
+    <div class="field"><label>Nombre</label><input id="appName" placeholder="Neat Something"></div>
+    <div class="field"><label>Descripción</label><input id="appDesc" placeholder="Descripción breve"></div>
+    <div class="field"><label>URL</label><input id="appUrl" placeholder="https://neat.qzz.io/byneat/algo"></div>
+    <div class="field"><label>Icono (emoji o URL)</label><input id="appIcon" placeholder="🎮"></div>
+    <div class="field"><label>Categoría</label><input id="appCat" placeholder="Social, Herramientas..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('appModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveApp()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Suspender -->
+<div class="modal-bg" id="suspendModal">
+  <div class="modal">
+    <h3>Suspender cuenta</h3>
+    <div class="field"><label>Razón</label><textarea id="suspendReason" placeholder="Describe el motivo..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('suspendModal')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmSuspend()">Suspender</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "https://neat-apps-b.vercel.app";
+let token = localStorage.getItem("na_token");
+let allUsers = [];
+let editingAppId = null;
+let suspendTarget = null;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const u = document.getElementById("liUser").value.trim();
+  const p = document.getElementById("liPass").value;
+  const err = document.getElementById("liErr");
+  err.style.display = "none";
+  try {
+    const r = await fetch(`${API}/chat/login`, {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({username: u, password: p})
+    });
+    const d = await r.json();
+    if (!r.ok || d.role !== "admin") { err.textContent = d.error || "No eres admin"; err.style.display="block"; return; }
+    token = d.token;
+    localStorage.setItem("na_token", token);
+    initApp(d.username);
+  } catch { err.textContent = "Error de conexión"; err.style.display = "block"; }
+}
+
+function initApp(username) {
+  document.getElementById("loginWrap").style.display = "none";
+  document.getElementById("appWrap").style.display = "flex";
+  document.getElementById("adminName").textContent = username;
+  document.getElementById("adminBadge").textContent = `Sesión activa · ${username}`;
+  loadUsers();
+}
+
+function api(path, opts = {}) {
+  return fetch(API + path, {
+    ...opts,
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token, ...(opts.headers || {}) }
+  });
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+const titles = {usuarios:"Usuarios", points:"Neat Points", oauth:"OAuth Apps", play:"Neat Play"};
+function go(section) {
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("nav-"+section).classList.add("active");
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-"+section).classList.add("active");
+  document.getElementById("pageTitle").textContent = titles[section];
+  if (section === "points") loadNPHistory();
+  if (section === "oauth") loadOAuth();
+  if (section === "play") loadPlay();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type = "ok") {
+  const t = document.getElementById("toast");
+  t.textContent = (type === "ok" ? "✓ " : "✕ ") + msg;
+  t.className = "toast show " + type;
+  setTimeout(() => t.className = "toast", 2500);
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+// ── Usuarios ──────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const r = await api("/chat/users");
+  allUsers = await r.json();
+  renderUserStats();
+  renderUsers(allUsers);
+}
+
+function renderUserStats() {
+  const total = allUsers.length;
+  const plus = allUsers.filter(u => u.neatPlus).length;
+  const verified = allUsers.filter(u => u.verified).length;
+  const suspended = allUsers.filter(u => u.suspended).length;
+  document.getElementById("userStats").innerHTML = `
+    <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Usuarios</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--purple)">${plus}</div><div class="stat-label">Neat Plus</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--blue)">${verified}</div><div class="stat-label">Verificados</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--red)">${suspended}</div><div class="stat-label">Suspendidos</div></div>
+  `;
+}
+
+function filterUsers() {
+  const q = document.getElementById("userSearch").value.toLowerCase();
+  renderUsers(allUsers.filter(u => u.username.toLowerCase().includes(q)));
+}
+
+function renderUsers(users) {
+  const tb = document.getElementById("userTable");
+  if (!users.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">Sin resultados</td></tr>`; return; }
+  tb.innerHTML = users.map(u => {
+    const badges = [];
+    if (u.role === "admin") badges.push(`<span class="badge badge-blue">admin</span>`);
+    if (u.neatPlus) badges.push(`<span class="badge badge-purple">Plus</span>`);
+    if (u.verified) badges.push(`<span class="badge badge-blue">✓</span>`);
+    if (u.suspended) badges.push(`<span class="badge badge-red">suspendido</span>`);
+    const idStr = u._id === "admin" ? "—" : `<span class="copy-id" title="Click para copiar" onclick="copyId('${u._id}')">${String(u._id).slice(0,8)}…</span>`;
+    const actions = u._id === "admin" ? "—" : `<button class="btn btn-ghost btn-sm" onclick="openUserModal('${u._id}','${u.username}')">Gestionar</button>`;
+    return `<tr>
+      <td><strong>${u.username}</strong></td>
+      <td>${idStr}</td>
+      <td style="color:var(--muted)">${u.email || "—"}</td>
+      <td><div class="flex-gap">${badges.join("") || '<span style="color:var(--muted);font-size:12px">normal</span>'}</div></td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join("");
+}
+
+function copyId(id) {
+  navigator.clipboard.writeText(id);
+  toast("ID copiado");
+}
+
+function openUserModal(id, username) {
+  const u = allUsers.find(x => String(x._id) === id);
+  document.getElementById("userModalTitle").textContent = `@${username}`;
+  document.getElementById("userModalBody").innerHTML = `
+    <div style="margin-bottom:16px;font-size:12px;color:var(--muted)">
+      ID: <span class="copy-id" onclick="copyId('${id}')">${id}</span>
+    </div>
+    <div class="flex-gap" style="flex-direction:column">
+      <div class="flex-gap">
+        <button class="btn btn-ghost btn-sm" onclick="toggleVerify('${id}','${username}',${!u?.verified})">
+          ${u?.verified ? "❌ Quitar verificación" : "✓ Verificar"}
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="togglePlus('${id}','${username}',${!u?.neatPlus})">
+          ${u?.neatPlus ? "Quitar Neat Plus" : "✨ Dar Neat Plus"}
+        </button>
+      </div>
+      <div class="flex-gap">
+        ${u?.suspended 
+          ? `<button class="btn btn-success btn-sm" onclick="toggleSuspend('${id}','${username}',false)">▶ Desuspender</button>`
+          : `<button class="btn btn-danger btn-sm" onclick="openSuspendModal('${id}','${username}')">🚫 Suspender</button>`
+        }
+      </div>
+      ${u?.suspended ? `<div style="font-size:12px;color:var(--red)">Razón: ${u.suspendedReason || "Sin razón"}</div>` : ""}
+    </div>
+  `;
+  document.getElementById("userModal").classList.add("open");
+}
+
+async function toggleVerify(id, username, verified) {
+  await api(`/chat/users/${id}/verify`, {method:"PUT", body: JSON.stringify({verified})});
+  toast(`${username} ${verified ? "verificado" : "desverificado"}`);
+  closeModal("userModal"); loadUsers();
+}
+
+async function togglePlus(id, username, active) {
+  const u = allUsers.find(x => String(x._id) === id);
+  await api("/neat/plus/admin", {method:"PUT", body: JSON.stringify({username: u.username, active, days: 30})});
+  toast(`Neat Plus ${active ? "activado" : "quitado"} para ${username}`);
+  closeModal("userModal"); loadUsers();
+}
+
+function openSuspendModal(id, username) {
+  suspendTarget = {id, username};
+  document.getElementById("suspendReason").value = "";
+  closeModal("userModal");
+  document.getElementById("suspendModal").classList.add("open");
+}
+
+async function confirmSuspend() {
+  const reason = document.getElementById("suspendReason").value.trim();
+  await api(`/chat/users/${suspendTarget.id}/suspend`, {method:"PUT", body: JSON.stringify({suspended:true, reason})});
+  toast(`${suspendTarget.username} suspendido`);
+  closeModal("suspendModal"); loadUsers();
+}
+
+async function toggleSuspend(id, username, suspended) {
+  await api(`/chat/users/${id}/suspend`, {method:"PUT", body: JSON.stringify({suspended})});
+  toast(`${username} ${suspended ? "suspendido" : "desuspendido"}`);
+  closeModal("userModal"); loadUsers();
+}
+
+// ── Neat Points ───────────────────────────────────────────────────────────────
+async function givePoints() {
+  const username = document.getElementById("npUser").value.trim();
+  const amount = parseInt(document.getElementById("npAmount").value);
+  if (!username || !amount) { toast("Completa los campos", "err"); return; }
+  const r = await api("/neat/points/add", {method:"POST", body: JSON.stringify({username, amount})});
+  const d = await r.json();
+  if (!r.ok) { toast(d.error, "err"); return; }
+  toast(`${amount} NP dados a ${username}`);
+  loadNPHistory();
+}
+
+async function loadNPHistory() {
+  const r = await api("/neat/points/history/all");
+  const data = await r.json();
+  const tb = document.getElementById("npTable");
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">Sin historial</td></tr>`; return; }
+  const typeLabel = {transfer:"Transferencia", exchange:"Exchange", admin_grant:"Admin", neat_plus:"Neat Plus"};
+  const typeColor = {transfer:"badge-blue", exchange:"badge-yellow", admin_grant:"badge-green", neat_plus:"badge-purple"};
+  tb.innerHTML = data.map(h => `<tr>
+    <td><span class="badge ${typeColor[h.type]||'badge-blue'}">${typeLabel[h.type]||h.type}</span></td>
+    <td>${h.from}</td><td>${h.to}</td>
+    <td><strong>${h.amount} NP</strong></td>
+    <td style="color:var(--muted)">${new Date(h.createdAt).toLocaleDateString("es")}</td>
+  </tr>`).join("");
+}
+
+// ── OAuth ─────────────────────────────────────────────────────────────────────
+async function loadOAuth() {
+  const r = await api("/oauth/clients");
+  const clients = await r.json();
+  const tb = document.getElementById("oauthTable");
+  if (!clients.length) { tb.innerHTML = `<tr><td colspan="4" class="empty">Sin apps OAuth</td></tr>`; return; }
+  tb.innerHTML = clients.map(c => `<tr>
+    <td><strong>${c.name}</strong></td>
+    <td><span class="copy-id" onclick="copyId('${c.clientId}')">${c.clientId.slice(0,12)}…</span></td>
+    <td style="color:var(--muted)">${(c.scopes||[]).join(", ")}</td>
+    <td style="color:var(--muted)">${new Date(c.createdAt).toLocaleDateString("es")}</td>
+  </tr>`).join("");
+}
+
+function openOAuthModal() {
+  document.getElementById("oaResult").style.display = "none";
+  document.getElementById("oauthModal").classList.add("open");
+}
+
+async function createOAuthClient() {
+  const name = document.getElementById("oaName").value.trim();
+  const redirectUris = document.getElementById("oaRedirects").value.trim().split("\n").filter(Boolean);
+  const scopes = document.getElementById("oaScopes").value.split(",").map(s => s.trim()).filter(Boolean);
+  if (!name || !redirectUris.length) { toast("Completa los campos", "err"); return; }
+  const r = await api("/oauth/clients", {method:"POST", body: JSON.stringify({name, redirectUris, scopes})});
+  const d = await r.json();
+  if (!r.ok) { toast(d.error, "err"); return; }
+  const res = document.getElementById("oaResult");
+  res.style.display = "block";
+  res.innerHTML = `<b>Client ID:</b> ${d.clientId}<br><b>Secret:</b> ${d.clientSecret}`;
+  toast("App creada — guarda el secret");
+  loadOAuth();
+}
+
+// ── Neat Play ─────────────────────────────────────────────────────────────────
+async function loadPlay() {
+  const r = await api("/apps");
+  const apps = await r.json();
+  const tb = document.getElementById("playTable");
+  if (!apps.length) { tb.innerHTML = `<tr><td colspan="4" class="empty">Sin apps</td></tr>`; return; }
+  tb.innerHTML = apps.map(a => `<tr>
+    <td><span style="margin-right:6px">${a.icon||"📦"}</span><strong>${a.name}</strong></td>
+    <td style="color:var(--muted)">${a.category||"—"}</td>
+    <td><a href="${a.url}" target="_blank" style="color:var(--blue);font-size:12px">${a.url}</a></td>
+    <td>
+      <div class="flex-gap">
+        <button class="btn btn-ghost btn-sm" onclick="openAppModal('${a._id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteApp('${a._id}','${a.name}')">🗑️</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+let playApps = [];
+async function openAppModal(id = null) {
+  editingAppId = id;
+  document.getElementById("appModalTitle").textContent = id ? "Editar app" : "Nueva app";
+  if (id) {
+    if (!playApps.length) { const r = await api("/apps"); playApps = await r.json(); }
+    const a = playApps.find(x => x._id === id) || {};
+    document.getElementById("appName").value = a.name || "";
+    document.getElementById("appDesc").value = a.description || "";
+    document.getElementById("appUrl").value = a.url || "";
+    document.getElementById("appIcon").value = a.icon || "";
+    document.getElementById("appCat").value = a.category || "";
+  } else {
+    ["appName","appDesc","appUrl","appIcon","appCat"].forEach(i => document.getElementById(i).value = "");
+  }
+  document.getElementById("appModal").classList.add("open");
+}
+
+async function saveApp() {
+  const body = {
+    name: document.getElementById("appName").value.trim(),
+    description: document.getElementById("appDesc").value.trim(),
+    url: document.getElementById("appUrl").value.trim(),
+    icon: document.getElementById("appIcon").value.trim(),
+    category: document.getElementById("appCat").value.trim()
+  };
+  if (!body.name || !body.url) { toast("Nombre y URL requeridos", "err"); return; }
+  if (editingAppId) {
+    await api(`/apps/${editingAppId}`, {method:"PUT", body: JSON.stringify(body)});
+    toast("App actualizada");
+  } else {
+    await api("/apps", {method:"POST", body: JSON.stringify(body)});
+    toast("App creada");
+  }
+  closeModal("appModal"); loadPlay(); playApps = [];
+}
+
+async function deleteApp(id, name) {
+  if (!confirm(`¿Eliminar "${name}"?`)) return;
+  await api(`/apps/${id}`, {method:"DELETE"});
+  toast(`${name} eliminada`);
+  loadPlay(); playApps = [];
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+if (token) {
+  // Verificar token guardado
+  fetch(`${API}/chat/me`, {headers:{Authorization:"Bearer "+token}})
+    .then(r => r.json())
+    .then(d => {
+      if (d.role === "admin") initApp(d.username);
+      else { localStorage.removeItem("na_token"); token = null; }
+    }).catch(() => {});
+}
+
+document.getElementById("liPass").addEventListener("keydown", e => e.key === "Enter" && doLogin());
+</script>
+</body>
+</html>
