@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #3B6D11; --green-light: #EAF3DE; --green-mid: #639922; --green-pale: #C0DD97;
+    --bg: #0d0d0d; --bg2: #161616; --bg3: #1f1f1f; --bg4: #2a2a2a;
+    --text: #f0f0f0; --text2: #aaa; --text3: #555;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', system-ui, sans-serif; min-height: 100vh; }
+
+  /* AUTH */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .auth-card { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 32px; width: 100%; max-width: 360px; }
+  .auth-logo { font-size: 22px; font-weight: 700; color: var(--green-pale); margin-bottom: 6px; }
+  .auth-sub { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+  .input-group { margin-bottom: 12px; }
+  .input-group label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 5px; }
+  .input-group input { background: var(--bg3); border: 1px solid var(--bg4); border-radius: var(--radius-sm); color: var(--text); font-family: inherit; font-size: 14px; padding: 10px 12px; width: 100%; outline: none; }
+  .input-group input:focus { border-color: var(--green-mid); }
+
+  /* NAV */
+  nav { background: var(--bg2); border-bottom: 1px solid var(--bg3); padding: 0 20px; display: flex; align-items: center; height: 52px; gap: 20px; position: sticky; top: 0; z-index: 10; }
+  .nav-logo { font-weight: 700; font-size: 15px; color: var(--green-pale); }
+  .nav-logo span { color: var(--text3); }
+  .nav-tabs { display: flex; gap: 2px; }
+  .nav-tab { background: none; border: none; color: var(--text2); font-size: 13px; font-family: inherit; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: .15s; }
+  .nav-tab:hover { background: var(--bg3); color: var(--text); }
+  .nav-tab.active { background: var(--bg3); color: var(--green-pale); font-weight: 500; }
+  .nav-user { margin-left: auto; font-size: 12px; color: var(--text3); }
+
+  /* VIEWS */
+  .view { display: none; padding: 24px 20px; max-width: 680px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 20px; }
+  .card + .card, .card + .plus-card { margin-top: 12px; }
+
+  /* BALANCE HERO */
+  .balance-hero { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 28px 24px; text-align: center; margin-bottom: 14px; }
+  .balance-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .balance-num { font-size: 52px; font-weight: 700; color: var(--green-pale); line-height: 1; }
+  .balance-unit { font-size: 13px; color: var(--text3); margin-top: 6px; }
+
+  /* STAT GRID */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .stat-val { font-size: 18px; font-weight: 700; }
+  .stat-val.green { color: var(--green-pale); }
+
+  /* HISTORY */
+  .hist-item { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--bg3); }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-desc { font-size: 13px; color: var(--text2); }
+  .hist-from { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .hist-amt { font-size: 14px; font-weight: 700; }
+  .hist-amt.plus { color: var(--green-pale); }
+  .hist-amt.minus { color: #e05252; }
+
+  /* EXCHANGE */
+  .xchange-wrap { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+  .xchange-side { flex: 1; background: var(--bg3); border: 1px solid var(--bg4); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .xchange-currency { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .xchange-icon { font-size: 26px; margin-bottom: 6px; }
+  .xchange-input { background: var(--bg4); border: 1px solid var(--bg3); border-radius: var(--radius-sm); color: var(--text); font-family: inherit; font-size: 20px; font-weight: 700; text-align: center; width: 100%; padding: 8px 0; outline: none; }
+  .xchange-input:focus { border-color: var(--green-mid); }
+  .xchange-sub { font-size: 10px; color: var(--text3); margin-top: 5px; }
+  .xchange-arrow { font-size: 20px; color: var(--green-pale); flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .xchange-preview { font-size: 10px; color: var(--green-pale); font-weight: 700; }
+  .xchange-np { font-size: 26px; font-weight: 700; color: var(--green-pale); }
+  .rate-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 9px 13px; font-size: 12px; color: var(--green-pale); display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+
+  /* BTN */
+  .btn { display: block; width: 100%; padding: 13px; border-radius: var(--radius-sm); border: none; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: .15s; }
+  .btn-green { background: var(--green-mid); color: #fff; }
+  .btn-green:hover { background: var(--green); }
+  .btn-green:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; }
+
+  /* PLUS */
+  .plus-card { background: var(--bg2); border: 1px solid var(--green-mid); border-radius: var(--radius); padding: 24px; margin-bottom: 12px; }
+  .plus-badge { display: inline-block; background: var(--green-mid); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; letter-spacing: 0.5px; }
+  .plus-price { font-size: 26px; font-weight: 700; color: var(--green-pale); margin: 6px 0 14px; }
+  .plus-price span { font-size: 13px; color: var(--text3); font-weight: 400; }
+  .plus-feature { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .plus-check { color: var(--green-pale); }
+
+  h3 { font-size: 13px; font-weight: 500; color: var(--text3); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  @keyframes countup { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  .anim-in { animation: countup .35s ease forwards; }
+
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--green); color: #fff; font-size: 13px; font-weight: 500; padding: 10px 20px; border-radius: 20px; opacity: 0; transition: .3s; pointer-events: none; z-index: 99; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.err { background: #7a1f1f; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bg4); border-top-color: var(--green-pale); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { text-align: center; color: var(--text3); font-size: 13px; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">Neat Points</div>
+    <div class="auth-sub">Inicia sesión con tu cuenta de Neat</div>
+    <div class="input-group"><label>Usuario</label><input id="au" type="text" placeholder="tu usuario"></div>
+    <div class="input-group"><label>Contraseña</label><input id="ap" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-green" onclick="doLogin()" id="login-btn">Entrar</button>
+    <div id="auth-err" style="color:#e05252;font-size:12px;margin-top:10px;display:none"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <nav>
+    <div class="nav-logo">Neat <span>Points</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showView('home',this)">Inicio</button>
+      <button class="nav-tab" onclick="showView('exchange',this)">Exchange</button>
+      <button class="nav-tab" onclick="showView('transfer',this)">Transferir</button>
+      <button class="nav-tab" onclick="showView('plus',this)">Neat Plus</button>
+    </div>
+    <div class="nav-user" id="nav-user"></div>
+  </nav>
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="balance-hero">
+      <div class="balance-label">Tu balance</div>
+      <div class="balance-num" id="np-display">—</div>
+      <div class="balance-unit">Neat Points</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Estado Plus</div><div class="stat-val" id="stat-plus" style="font-size:13px">—</div></div>
+      <div class="stat"><div class="stat-label">Historial</div><div class="stat-val" id="stat-hist">—</div></div>
+    </div>
+    <div class="card">
+      <h3>Actividad reciente</h3>
+      <div id="hist-list"><div class="empty"><span class="spinner"></span></div></div>
+    </div>
+  </div>
+
+  <!-- EXCHANGE -->
+  <div class="view" id="view-exchange">
+    <div class="card">
+      <h3>Cambiar LUCKS por Neat Points</h3>
+      <div class="rate-box">⚡ Tasa: 12 LUCKS = 1 NP · múltiplos de 12</div>
+      <div class="xchange-wrap">
+        <div class="xchange-side">
+          <div class="xchange-currency">LUCKS</div>
+          <div class="xchange-icon">⚡</div>
+          <input class="xchange-input" type="number" id="lucks-input" placeholder="0" min="12" step="12" oninput="calcExchange()">
+          <div class="xchange-sub">de InnerNet</div>
+        </div>
+        <div class="xchange-arrow">
+          <span>→</span>
+          <div class="xchange-preview" id="xchange-preview">0 NP</div>
+        </div>
+        <div class="xchange-side">
+          <div class="xchange-currency">Neat Points</div>
+          <div class="xchange-icon">🟢</div>
+          <div class="xchange-np" id="np-recv">0</div>
+          <div class="xchange-sub">recibirás</div>
+        </div>
+      </div>
+      <div class="input-group"><label>Usuario de InnerNet</label><input type="text" id="inet-user" placeholder="tu usuario en InnerNet"></div>
+      <div class="input-group"><label>Contraseña de InnerNet</label><input type="password" id="inet-pass" placeholder="••••••••"></div>
+      <button class="btn btn-green" id="xchange-btn" onclick="doExchange()" disabled>Hacer exchange</button>
+    </div>
+    <div class="card anim-in" id="xchange-result" style="display:none;margin-top:12px;text-align:center">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Exchange completado ✓</div>
+      <div style="display:flex;justify-content:center;align-items:center;gap:32px">
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">LUCKS gastados</div><div style="font-size:22px;font-weight:700;color:#e05252" id="res-lucks">0</div></div>
+        <div style="color:var(--green-pale);font-size:18px">→</div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">NP recibidos</div><div style="font-size:22px;font-weight:700;color:var(--green-pale)" id="res-np">0</div></div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--green-pale)" id="res-balance"></div>
+    </div>
+  </div>
+
+  <!-- TRANSFER -->
+  <div class="view" id="view-transfer">
+    <div class="card">
+      <h3>Enviar Neat Points</h3>
+      <div class="input-group"><label>Destinatario</label><input type="text" id="tr-to" placeholder="usuario de Neat"></div>
+      <div class="input-group"><label>Cantidad</label><input type="number" id="tr-amt" placeholder="0" min="1"></div>
+      <button class="btn btn-green" onclick="doTransfer()">Enviar NP</button>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>Tu nombre de usuario</h3>
+      <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 16px;font-size:16px;font-weight:700;color:var(--green-pale)" id="my-username">—</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Comparte tu usuario para recibir NP de otros.</div>
+    </div>
+  </div>
+
+  <!-- NEAT PLUS -->
+  <div class="view" id="view-plus">
+    <div class="plus-card">
+      <div class="plus-badge">NEAT PLUS</div>
+      <div style="font-size:18px;font-weight:500;margin-bottom:4px">Desbloquea el ecosistema completo</div>
+      <div class="plus-price">500 NP <span>/ mes</span></div>
+      <div class="plus-feature"><span class="plus-check">✓</span> Mensajes ilimitados en Chatter</div>
+      <div class="plus-feature"><span class="plus-check">✓</span> Mensajes cifrados E2E</div>
+      <div class="plus-feature"><span class="plus-check">✓</span> Sin anuncios en todas las apps</div>
+      <div class="plus-feature"><span class="plus-check">✓</span> Badge Plus en tu perfil</div>
+      <div class="plus-feature"><span class="plus-check">✓</span> Acceso prioritario a nuevas apps</div>
+      <button class="btn btn-green" style="margin-top:16px" onclick="doPlus()" id="plus-btn">Activar Neat Plus — 500 NP</button>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text2);text-align:center">Balance actual: <strong style="color:var(--green-pale)" id="plus-bal">—</strong></div>
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:5px" id="plus-status"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'https://neat-apps-b.vercel.app';
+let token = localStorage.getItem('np_token');
+let currentUser = null;
+let npBalance = 0;
+
+function fmt(n) { return Number(n).toLocaleString(); }
+
+function toast(msg, err) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (err ? ' err' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.className = '', 2800);
+}
+
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function animateCount(el, from, to, dur, pre='') {
+  const start = Date.now();
+  const tick = () => {
+    const p = Math.min((Date.now()-start)/dur, 1);
+    const e = 1 - Math.pow(1-p, 3);
+    el.textContent = pre + fmt(Math.round(from + (to-from)*e));
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+async function doLogin() {
+  const u = document.getElementById('au').value.trim();
+  const p = document.getElementById('ap').value;
+  if (!u || !p) return;
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  document.getElementById('auth-err').style.display = 'none';
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const d = await r.json();
+    if (!r.ok || !d.token) throw new Error(d.error || 'Error de login');
+    token = d.token;
+    localStorage.setItem('np_token', token);
+    currentUser = d.user || {username: u};
+    await showApp();
+  } catch(e) {
+    const err = document.getElementById('auth-err');
+    err.textContent = e.message; err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+async function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('nav-user').textContent = currentUser?.username || '';
+  document.getElementById('my-username').textContent = currentUser?.username || '';
+  await loadBalance();
+  await loadHistory();
+}
+
+async function loadBalance() {
+  try {
+    const r = await fetch(`${API}/neat/points/balance`, {headers:{'Authorization':'Bearer '+token}});
+    const d = await r.json();
+    if (!r.ok) throw new Error();
+    npBalance = d.points === Infinity ? 999999 : (d.points || 0);
+    const displayVal = d.points === Infinity ? '∞' : fmt(npBalance);
+    document.getElementById('np-display').textContent = displayVal;
+    document.getElementById('plus-bal').textContent = displayVal + ' NP';
+
+    const plusEl = document.getElementById('stat-plus');
+    if (d.neatPlus) {
+      plusEl.textContent = 'Activo ✓';
+      plusEl.style.color = 'var(--green-pale)';
+      const exp = d.expiresAt ? new Date(d.expiresAt).toLocaleDateString() : 'para siempre';
+      document.getElementById('plus-status').textContent = d.forever ? 'Acceso permanente (admin)' : 'Vence: ' + exp;
+      document.getElementById('plus-btn').textContent = 'Ya tienes Neat Plus ✓';
+      document.getElementById('plus-btn').disabled = true;
+    } else {
+      plusEl.textContent = 'Inactivo';
+      plusEl.style.color = 'var(--text3)';
+      document.getElementById('plus-status').textContent = 'Necesitas 500 NP para activar';
+    }
+  } catch {}
+}
+
+async function loadHistory() {
+  const box = document.getElementById('hist-list');
+  try {
+    const r = await fetch(`${API}/neat/points/history`, {headers:{'Authorization':'Bearer '+token}});
+    const list = await r.json();
+    if (!r.ok || !list.length) {
+      document.getElementById('stat-hist').textContent = '0 txns';
+      box.innerHTML = '<div class="empty">Sin actividad aún</div>';
+      return;
+    }
+    document.getElementById('stat-hist').textContent = list.length + ' txns';
+    box.innerHTML = list.slice(0,8).map(h => {
+      const isIn = h.to === currentUser?.username;
+      const typeLabel = h.type === 'admin_grant' ? 'Admin grant' : h.type === 'neat_plus' ? 'Neat Plus activado' : h.type === 'exchange' ? 'Exchange de LUCKS' : 'Transferencia';
+      const fromTo = isIn ? ('de ' + h.from) : ('a ' + h.to);
+      const amt = isIn ? `<div class="hist-amt plus">+${fmt(h.amount)} NP</div>` : `<div class="hist-amt minus">−${fmt(h.amount)} NP</div>`;
+      const date = h.createdAt ? new Date(h.createdAt).toLocaleDateString() : '';
+      return `<div class="hist-item"><div><div class="hist-desc">${typeLabel}</div><div class="hist-from">${fromTo} · ${date}</div></div>${amt}</div>`;
+    }).join('');
+  } catch {
+    box.innerHTML = '<div class="empty">Error cargando historial</div>';
+  }
+}
+
+function calcExchange() {
+  const lucks = parseInt(document.getElementById('lucks-input').value) || 0;
+  const np = Math.floor(lucks / 12);
+  document.getElementById('np-recv').textContent = fmt(np);
+  document.getElementById('xchange-preview').textContent = np + ' NP';
+  document.getElementById('xchange-btn').disabled = lucks < 12 || lucks % 12 !== 0;
+}
+
+async function doExchange() {
+  const lucks = parseInt(document.getElementById('lucks-input').value) || 0;
+  const inetUser = document.getElementById('inet-user').value.trim();
+  const inetPass = document.getElementById('inet-pass').value;
+  if (!inetUser || !inetPass) return toast('Ingresa tus datos de InnerNet', true);
+  if (lucks < 12 || lucks % 12 !== 0) return toast('Debe ser múltiplo de 12', true);
+
+  const btn = document.getElementById('xchange-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Procesando...';
+
+  try {
+    const r = await fetch(`${API}/neat/points/exchange`, {
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({lucks, innernetUsername: inetUser, innernetPassword: inetPass})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error en el exchange');
+
+    const oldNp = npBalance;
+    npBalance += d.npReceived;
+
+    animateCount(document.getElementById('np-display'), oldNp, npBalance, 1000);
+    document.getElementById('plus-bal').textContent = fmt(npBalance) + ' NP';
+
+    const result = document.getElementById('xchange-result');
+    result.style.display = 'block';
+    document.getElementById('res-lucks').textContent = '−' + fmt(d.lucksSpent);
+    animateCount(document.getElementById('res-np'), 0, d.npReceived, 800, '+');
+    document.getElementById('res-balance').textContent = 'Nuevo balance: ' + fmt(npBalance) + ' NP';
+
+    document.getElementById('lucks-input').value = '';
+    document.getElementById('np-recv').textContent = '0';
+    document.getElementById('xchange-preview').textContent = '0 NP';
+    document.getElementById('inet-pass').value = '';
+    toast('Exchange completado ✓');
+    await loadHistory();
+  } catch(e) {
+    toast(e.message, true);
+  }
+  btn.disabled = false; btn.textContent = 'Hacer exchange';
+}
+
+async function doTransfer() {
+  const to = document.getElementById('tr-to').value.trim();
+  const amt = parseInt(document.getElementById('tr-amt').value) || 0;
+  if (!to || !amt) return toast('Completa los campos', true);
+  try {
+    const r = await fetch(`${API}/neat/points/transfer`, {
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({to, amount: amt})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    const old = npBalance;
+    npBalance -= amt;
+    animateCount(document.getElementById('np-display'), old, npBalance, 700);
+    document.getElementById('plus-bal').textContent = fmt(npBalance) + ' NP';
+    document.getElementById('tr-to').value = '';
+    document.getElementById('tr-amt').value = '';
+    toast('Enviaste ' + fmt(amt) + ' NP a ' + to);
+    await loadHistory();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function doPlus() {
+  try {
+    const r = await fetch(`${API}/neat/plus/activate`, {
+      method:'POST', headers:{'Authorization':'Bearer '+token}
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Error');
+    toast('¡Neat Plus activado! 🎉');
+    await loadBalance();
+    await loadHistory();
+  } catch(e) { toast(e.message, true); }
+}
+
+async function init() {
+  if (!token) return;
+  try {
+    const r = await fetch(`${API}/chat/me`, {headers:{'Authorization':'Bearer '+token}});
+    if (!r.ok) { token = null; localStorage.removeItem('np_token'); return; }
+    currentUser = await r.json();
+    await showApp();
+  } catch {}
+}
+
+init();
+</script>
+</body>
+</html>
