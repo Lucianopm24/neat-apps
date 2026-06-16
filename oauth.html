@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autorizar — Neat</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --blue-light: #e8f0fe;
+    --red: #d93025;
+    --red-light: #fce8e6;
+    --yellow: #f9ab00;
+    --green: #1e8e3e;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-400: #9aa0a6;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --white: #ffffff;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 8px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+  }
+
+  body {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    background: var(--gray-50);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    color: var(--gray-900);
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 32px 32px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .neat-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .neat-logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--blue);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    font-family: 'Google Sans', sans-serif;
+  }
+
+  .neat-logo-text {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+
+  .card-header h1 {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--gray-900);
+    margin-bottom: 6px;
+  }
+
+  .card-header p {
+    font-size: 14px;
+    color: var(--gray-600);
+    line-height: 1.5;
+  }
+
+  .app-name {
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .card-body {
+    padding: 24px 32px;
+  }
+
+  /* ── Account switcher ── */
+  .account-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 10px;
+  }
+
+  .accounts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .account-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--gray-50);
+  }
+
+  .account-item:hover { background: var(--gray-100); }
+
+  .account-item.selected {
+    border-color: var(--blue);
+    background: var(--blue-light);
+  }
+
+  .account-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 15px;
+    font-family: 'Google Sans', sans-serif;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .account-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .account-info { flex: 1; min-width: 0; }
+
+  .account-username {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .account-username .verified {
+    width: 14px;
+    height: auto;
+    vertical-align: middle;
+  }
+
+  .account-email {
+    font-size: 12px;
+    color: var(--gray-600);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-check {
+    color: var(--blue);
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .account-item.selected .account-check { opacity: 1; }
+
+  .account-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-400);
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .account-remove:hover { background: var(--gray-200); color: var(--red); }
+
+  .btn-add-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    border: 2px dashed var(--gray-200);
+    background: none;
+    cursor: pointer;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.15s;
+    margin-bottom: 20px;
+  }
+
+  .btn-add-account:hover { border-color: var(--blue); background: var(--blue-light); }
+
+  /* ── Login form ── */
+  .form-group { margin-bottom: 16px; }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-800);
+    margin-bottom: 6px;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--gray-900);
+    background: var(--white);
+    transition: border-color 0.15s;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .form-group input:focus { border-color: var(--blue); }
+  .form-group input::placeholder { color: var(--gray-400); }
+
+  /* ── Scopes ── */
+  .scopes-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-800);
+    margin-bottom: 10px;
+  }
+
+  .scopes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .scope-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    background: var(--gray-50);
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1.5px solid transparent;
+  }
+
+  .scope-item:hover { background: var(--gray-100); }
+  .scope-item.sensitive { border-color: transparent; }
+  .scope-item.sensitive.checked { border-color: var(--yellow); background: #fffbf0; }
+
+  .scope-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--gray-400);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: var(--white);
+  }
+
+  .scope-item.checked .scope-checkbox {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+  }
+
+  .scope-item.checked.sensitive .scope-checkbox {
+    background: var(--yellow);
+    border-color: var(--yellow);
+  }
+
+  .scope-checkbox::after {
+    content: '';
+    display: none;
+    width: 5px;
+    height: 9px;
+    border: 2px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  .scope-item.checked .scope-checkbox::after { display: block; }
+
+  .scope-info { flex: 1; }
+
+  .scope-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .scope-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .badge-sensitive { background: #fef3c7; color: #92400e; }
+  .badge-danger { background: var(--red-light); color: var(--red); }
+
+  .scope-desc {
+    font-size: 12px;
+    color: var(--gray-600);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* ── Warning ── */
+  .scope-warning {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #78350f;
+    line-height: 1.5;
+  }
+
+  .scope-warning.visible { display: flex; }
+  .scope-warning-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  .account-warning {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--red-light);
+    border: 1px solid #f5c6c4;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #7f1d1d;
+    line-height: 1.5;
+  }
+
+  .account-warning.visible { display: flex; }
+
+  /* ── Buttons ── */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-cancel {
+    background: none;
+    color: var(--blue);
+    border: 1.5px solid var(--gray-200);
+  }
+
+  .btn-cancel:hover { background: var(--gray-100); border-color: var(--gray-400); }
+
+  .btn-authorize {
+    background: var(--blue);
+    color: white;
+  }
+
+  .btn-authorize:hover { background: var(--blue-dark); }
+  .btn-authorize:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── States ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .error-msg {
+    background: var(--red-light);
+    color: var(--red);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px;
+    color: var(--gray-600);
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gray-200);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    color: var(--gray-400);
+    font-size: 12px;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200);
+  }
+
+  /* ── Footer ── */
+  .card-footer {
+    padding: 14px 32px 20px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray-400);
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .card-footer a { color: var(--blue); text-decoration: none; }
+  .card-footer a:hover { text-decoration: underline; }
+
+  /* ── Success ── */
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    background: #e6f4ea;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+  <!-- Loading inicial -->
+  <div id="screenLoading" class="screen active">
+    <div class="loading">
+      <div class="spinner"></div>
+      Cargando…
+    </div>
+  </div>
+
+  <!-- Error fatal (app no encontrada, redirect inválido) -->
+  <div id="screenError" class="screen">
+    <div class="card-header">
+      <div class="neat-logo">
+        <div class="neat-logo-icon">N</div>
+        <span class="neat-logo-text">Neat</span>
+      </div>
+      <h1>Algo salió mal</h1>
+      <p id="fatalErrorMsg">La aplicación no fue encontrada.</p>
+    </div>
+    <div class="card-body">
+      <button class="btn btn-cancel" style="width:100%" onclick="window.close()">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Pantalla principal (cuentas + scopes) -->
+  <div id="screenMain" class="screen">
+    <div class="card-header">
+      <div class="neat-logo">
+        <div class="neat-logo-icon">N</div>
+        <span class="neat-logo-text">Neat</span>
+      </div>
+      <h1>Iniciar sesión en <span class="app-name" id="appNameHeader"></span></h1>
+      <p>Elige una cuenta para continuar</p>
+    </div>
+    <div class="card-body">
+      <!-- Cuentas guardadas -->
+      <div class="account-label">Tus cuentas</div>
+      <div class="accounts-list" id="accountsList"></div>
+
+      <button class="btn-add-account" onclick="showAddAccount()">
+        <span style="font-size:18px">＋</span>
+        Agregar otra cuenta
+      </button>
+
+      <!-- Scopes -->
+      <div class="scopes-title">Esta app quiere acceso a:</div>
+      <div class="scopes-list" id="scopesList"></div>
+
+      <div class="scope-warning" id="sensitiveWarning">
+        <span class="scope-warning-icon">⚠️</span>
+        <span>Tienes permisos sensibles activos. Solo actívalos si confías completamente en esta aplicación.</span>
+      </div>
+
+      <div class="account-warning" id="accountWarning">
+        <span class="scope-warning-icon">🚨</span>
+        <span><strong>Acceso completo activado.</strong> Este permiso le da a la app control total sobre tu cuenta, equivalente a tu contraseña. Solo autoriza apps oficiales de Neat.</span>
+      </div>
+
+      <div class="error-msg" id="mainError"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-cancel" onclick="cancelAuth()">Cancelar</button>
+        <button class="btn btn-authorize" id="btnAuthorize" onclick="authorize()">Autorizar</button>
+      </div>
+    </div>
+    <div class="card-footer">
+      Al autorizar, aceptas los <a href="https://neat.qzz.io/terms">Términos de Neat</a>
+    </div>
+  </div>
+
+  <!-- Agregar cuenta -->
+  <div id="screenAddAccount" class="screen">
+    <div class="card-header">
+      <div class="neat-logo">
+        <div class="neat-logo-icon">N</div>
+        <span class="neat-logo-text">Neat</span>
+      </div>
+      <h1>Agregar cuenta</h1>
+      <p>Inicia sesión con tu cuenta de Neat</p>
+    </div>
+    <div class="card-body">
+      <div class="error-msg" id="loginError"></div>
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="loginUsername" placeholder="Tu usuario" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="loginPassword" placeholder="Tu contraseña" autocomplete="current-password">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-cancel" onclick="showMain()">Volver</button>
+        <button class="btn btn-authorize" id="btnLogin" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+    <div class="card-footer">
+      ¿No tienes cuenta? <a href="https://neat.qzz.io/byneat/chatter">Regístrate en Neat</a>
+    </div>
+  </div>
+
+  <!-- Éxito -->
+  <div id="screenSuccess" class="screen">
+    <div class="card-header">
+      <div class="success-icon">✓</div>
+      <h1>¡Autorizado!</h1>
+      <p>Redirigiendo a <span class="app-name" id="appNameSuccess"></span>…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://neat-apps-b.vercel.app";
+const VERIFIED_IMG = "https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png";
+
+const SCOPE_META = {
+  openid:  { label: "OpenID",          desc: "Identificación estándar OpenID Connect",              sensitive: false },
+  profile: { label: "Perfil",           desc: "Nombre de usuario, bio, avatar y verificación",       sensitive: false },
+  email:   { label: "Email",            desc: "Tu dirección de correo electrónico",                  sensitive: false },
+  forums:  { label: "Neat Forums",      desc: "Leer, crear y comentar posts en Neat Forums",         sensitive: true  },
+  watch:   { label: "Neat Watch",       desc: "Ver y subir videos en Neat Watch",                    sensitive: true  },
+  points:  { label: "Neat Points",      desc: "Ver tu saldo y transferir Neat Points",               sensitive: true  },
+  chatter: { label: "Neat Chatter",     desc: "Leer y enviar mensajes en Neat Chatter",              sensitive: true  },
+  account: { label: "Acceso completo",  desc: "Control total de tu cuenta, equivalente a tu contraseña", sensitive: true, danger: true },
+};
+
+// Estado
+let params = {};
+let clientInfo = null;
+let accounts = [];       // [{username, email, token, avatarFileId, verified}]
+let selectedIdx = 0;
+let activeScopes = new Set();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.onload = async () => {
+  params = Object.fromEntries(new URLSearchParams(location.search));
+
+  // Cargar cuentas guardadas
+  try { accounts = JSON.parse(localStorage.getItem("neat_oauth_accounts") || "[]"); } catch { accounts = []; }
+
+  if (!params.client_id) return fatalError("Parámetro client_id faltante.");
+
+  // Cargar info del cliente
+  try {
+    const r = await fetch(`${API}/oauth/clients/${params.client_id}`);
+    if (!r.ok) return fatalError("Aplicación no encontrada.");
+    clientInfo = await r.json();
+  } catch { return fatalError("No se pudo conectar con Neat."); }
+
+  // Scopes pedidos
+  const requested = (params.scope || "profile").split(/[,\s]+/).filter(s => SCOPE_META[s]);
+  // Normales: marcados por defecto. Sensibles: desmarcados por defecto
+  requested.forEach(s => { if (!SCOPE_META[s]?.sensitive) activeScopes.add(s); });
+
+  document.getElementById("appNameHeader").textContent = clientInfo.name;
+  document.getElementById("appNameSuccess").textContent = clientInfo.name;
+
+  renderScopes(requested);
+
+  if (accounts.length === 0) {
+    showAddAccount();
+  } else {
+    renderAccounts();
+    showMain();
+  }
+};
+
+// ── Screens ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function showMain() { renderAccounts(); showScreen("screenMain"); }
+function showAddAccount() { showScreen("screenAddAccount"); }
+
+function fatalError(msg) {
+  document.getElementById("fatalErrorMsg").textContent = msg;
+  showScreen("screenError");
+}
+
+// ── Accounts ──────────────────────────────────────────────────────────────────
+function saveAccounts() {
+  localStorage.setItem("neat_oauth_accounts", JSON.stringify(accounts));
+}
+
+function renderAccounts() {
+  const list = document.getElementById("accountsList");
+  list.innerHTML = "";
+  accounts.forEach((acc, i) => {
+    const el = document.createElement("div");
+    el.className = "account-item" + (i === selectedIdx ? " selected" : "");
+    el.onclick = () => { selectedIdx = i; renderAccounts(); };
+
+    const avatarContent = acc.avatarFileId
+      ? `<img src="https://api.telegram.org/file/bot${acc.avatarFileId}" onerror="this.style.display='none';this.parentElement.textContent='${acc.username[0].toUpperCase()}'">`
+      : acc.username[0].toUpperCase();
+
+    el.innerHTML = `
+      <div class="account-avatar">${avatarContent}</div>
+      <div class="account-info">
+        <div class="account-username">
+          ${escHtml(acc.username)}
+          ${acc.verified ? `<img src="${VERIFIED_IMG}" class="verified">` : ""}
+        </div>
+        <div class="account-email">${escHtml(acc.email || "")}</div>
+      </div>
+      <span class="account-check">✓</span>
+      <button class="account-remove" title="Quitar cuenta" onclick="removeAccount(event, ${i})">✕</button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function removeAccount(e, i) {
+  e.stopPropagation();
+  accounts.splice(i, 1);
+  if (selectedIdx >= accounts.length) selectedIdx = Math.max(0, accounts.length - 1);
+  saveAccounts();
+  if (accounts.length === 0) showAddAccount();
+  else renderAccounts();
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+  const btn = document.getElementById("btnLogin");
+
+  errEl.classList.remove("visible");
+  if (!username || !password) { showErr(errEl, "Completa todos los campos."); return; }
+
+  btn.disabled = true;
+  btn.textContent = "Entrando…";
+
+  try {
+    const r = await fetch(`${API}/chat/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const d = await r.json();
+    if (!r.ok) { showErr(errEl, d.note || d.error || "Credenciales inválidas."); return; }
+
+    // Obtener info del perfil
+    let email = "", verified = false, avatarFileId = null;
+    try {
+      const pr = await fetch(`${API}/oauth/userinfo`, { headers: { Authorization: "Bearer " + d.token } });
+      if (pr.ok) { const pd = await pr.json(); email = pd.email || ""; verified = !!pd.verified; avatarFileId = pd.avatarFileId || null; }
+    } catch {}
+
+    // Evitar duplicados
+    const existing = accounts.findIndex(a => a.username.toLowerCase() === username.toLowerCase());
+    const acc = { username: d.username || username, email, verified, avatarFileId, token: d.token };
+    if (existing >= 0) { accounts[existing] = acc; selectedIdx = existing; }
+    else { accounts.push(acc); selectedIdx = accounts.length - 1; }
+
+    saveAccounts();
+    showMain();
+  } catch { showErr(errEl, "Error de conexión. Intenta de nuevo."); }
+  finally { btn.disabled = false; btn.textContent = "Entrar"; }
+}
+
+// ── Scopes ────────────────────────────────────────────────────────────────────
+function renderScopes(requested) {
+  const list = document.getElementById("scopesList");
+  list.innerHTML = "";
+  requested.forEach(scope => {
+    const meta = SCOPE_META[scope];
+    if (!meta) return;
+    const checked = activeScopes.has(scope);
+    const el = document.createElement("div");
+    el.className = `scope-item${checked ? " checked" : ""}${meta.sensitive ? " sensitive" : ""}`;
+    el.dataset.scope = scope;
+    el.onclick = () => toggleScope(scope, meta, el);
+
+    let badge = "";
+    if (meta.danger) badge = `<span class="scope-badge badge-danger">⚠ Peligroso</span>`;
+    else if (meta.sensitive) badge = `<span class="scope-badge badge-sensitive">Sensible</span>`;
+
+    el.innerHTML = `
+      <div class="scope-checkbox"></div>
+      <div class="scope-info">
+        <div class="scope-name">${meta.label} ${badge}</div>
+        <div class="scope-desc">${meta.desc}</div>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function toggleScope(scope, meta, el) {
+  if (meta.sensitive && !activeScopes.has(scope)) {
+    // Activar sensible: confirmar
+    if (meta.danger) {
+      if (!confirm(`⚠️ ADVERTENCIA\n\nEstás a punto de dar ACCESO COMPLETO a tu cuenta.\n\nEsto equivale a compartir tu contraseña. Solo hazlo si confías totalmente en "${clientInfo?.name}".\n\n¿Continuar?`)) return;
+    } else {
+      if (!confirm(`¿Activar permiso "${meta.label}"?\n\nEsta app podrá ${meta.desc.toLowerCase()}. Solo continúa si confías en "${clientInfo?.name}".`)) return;
+    }
+  }
+
+  if (activeScopes.has(scope)) { activeScopes.delete(scope); el.classList.remove("checked"); }
+  else { activeScopes.add(scope); el.classList.add("checked"); }
+
+  updateWarnings();
+}
+
+function updateWarnings() {
+  const hasSensitive = [...activeScopes].some(s => SCOPE_META[s]?.sensitive && !SCOPE_META[s]?.danger);
+  const hasAccount = activeScopes.has("account");
+  document.getElementById("sensitiveWarning").classList.toggle("visible", hasSensitive && !hasAccount);
+  document.getElementById("accountWarning").classList.toggle("visible", hasAccount);
+}
+
+// ── Authorize ─────────────────────────────────────────────────────────────────
+async function authorize() {
+  if (accounts.length === 0) { showAddAccount(); return; }
+  const acc = accounts[selectedIdx];
+  const errEl = document.getElementById("mainError");
+  const btn = document.getElementById("btnAuthorize");
+  errEl.classList.remove("visible");
+
+  const redirectUri = params.redirect_uri || clientInfo?.redirectUris?.[0];
+  if (!redirectUri) { showErr(errEl, "redirect_uri no especificada."); return; }
+
+  btn.disabled = true;
+  btn.textContent = "Autorizando…";
+
+  try {
+    const r = await fetch(`${API}/oauth/authorize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + acc.token },
+      body: JSON.stringify({ clientId: params.client_id, redirectUri, scopes: [...activeScopes] })
+    });
+    const d = await r.json();
+    if (!r.ok) { showErr(errEl, d.note || d.error || "Error al autorizar."); return; }
+
+    showScreen("screenSuccess");
+    setTimeout(() => {
+      const url = new URL(redirectUri);
+      url.searchParams.set("code", d.code);
+      if (params.state) url.searchParams.set("state", params.state);
+      location.href = url.toString();
+    }, 1200);
+  } catch { showErr(errEl, "Error de conexión. Intenta de nuevo."); }
+  finally { btn.disabled = false; btn.textContent = "Autorizar"; }
+}
+
+function cancelAuth() {
+  const redirectUri = params.redirect_uri || clientInfo?.redirectUris?.[0];
+  if (redirectUri) {
+    const url = new URL(redirectUri);
+    url.searchParams.set("error", "access_denied");
+    if (params.state) url.searchParams.set("state", params.state);
+    location.href = url.toString();
+  } else window.close();
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function showErr(el, msg) { el.textContent = msg; el.classList.add("visible"); }
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>
