@@ -917,6 +917,9 @@ async function checkToken() {
 // ── Sidebar user ──────────────────────────────────────────────────────────────
 function renderSidebarUser() {
   document.getElementById("sidebar-username").textContent = currentUser.username;
+isVerified(currentUser.username).then(v => {
+  if (v) document.getElementById("sidebar-username").innerHTML = esc(currentUser.username) + verifiedBadge();
+});
   document.getElementById("sidebar-email").textContent = currentUser.email || "";
   const av = document.getElementById("sidebar-avatar");
   av.textContent = currentUser.username[0].toUpperCase();
