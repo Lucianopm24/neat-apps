@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat Developers</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a24;
+  --bg4: #22222f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e8f0;
+  --text2: #8888a8;
+  --text3: #55556a;
+  --accent: #7c6af7;
+  --accent2: #a599ff;
+  --accent-glow: rgba(124,106,247,0.15);
+  --green: #3ecf8e;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Auth ── */
+#auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(124,106,247,0.12) 0%, transparent 60%);
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 380px;
+  padding: 2rem;
+}
+
+.auth-wordmark {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent2);
+  letter-spacing: 0.1em;
+  margin-bottom: 2rem;
+}
+
+.auth-wordmark span { color: var(--text3); }
+
+.auth-box h1 {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.auth-box p {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 2rem;
+}
+
+.field { margin-bottom: 14px; }
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.field input:focus { border-color: var(--accent); }
+
+.btn-primary {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s, transform 0.1s;
+  margin-top: 6px;
+}
+
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:active { transform: scale(0.99); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.auth-error {
+  font-size: 13px;
+  color: var(--red);
+  margin-top: 10px;
+  min-height: 18px;
+}
+
+/* ── App layout ── */
+#app { display: none; min-height: 100vh; }
+#app.visible { display: flex; }
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-logo {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo-text {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent2);
+  letter-spacing: 0.08em;
+}
+
+.sidebar-logo-text span { color: var(--text3); }
+
+.sidebar-nav { flex: 1; padding: 12px 10px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: all 0.12s;
+  margin-bottom: 2px;
+}
+
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--accent-glow); color: var(--accent2); }
+.nav-item-icon { font-size: 15px; width: 18px; text-align: center; }
+
+.sidebar-footer {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.user-pill:hover { background: var(--bg3); }
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-name { font-size: 13px; font-weight: 500; flex: 1; }
+.user-logout { font-size: 12px; color: var(--text3); }
+
+/* ── Main ── */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px;
+  max-width: 900px;
+}
+
+.page { display: none; }
+.page.active { display: block; }
+
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.page-sub {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 32px;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+/* ── App cards ── */
+.app-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+
+.app-card:hover { border-color: var(--border2); }
+
+.app-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.app-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.app-created {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.app-actions { display: flex; gap: 6px; }
+
+.btn-sm {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: none;
+  color: var(--text2);
+  font-family: inherit;
+  transition: all 0.12s;
+}
+
+.btn-sm:hover { background: var(--bg3); color: var(--text); }
+.btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
+.btn-sm.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-sm.accent:hover { opacity: 0.85; }
+
+.kv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.kv-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  width: 90px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kv-value {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  background: var(--bg3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.kv-value:hover { color: var(--text); }
+
+.kv-value.secret { letter-spacing: 0.15em; color: var(--text3); }
+.kv-value.revealed { letter-spacing: normal; color: var(--accent2); }
+
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-right: 4px;
+  background: var(--bg4);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+
+/* ── Empty ── */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+}
+
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty p { font-size: 14px; }
+
+/* ── Modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modal-backdrop.visible { display: flex; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+
+.modal-body { padding: 0 24px 24px; }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: none;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-cancel:hover { background: var(--bg3); }
+
+.btn-confirm {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-confirm:hover { opacity: 0.9; }
+
+.modal-field { margin-bottom: 14px; }
+.modal-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.modal-field input, .modal-field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-field textarea { resize: vertical; min-height: 80px; }
+.modal-field input:focus, .modal-field textarea:focus { border-color: var(--accent); }
+
+.modal-hint {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ── Docs ── */
+.doc-section { margin-bottom: 40px; }
+
+.doc-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-section h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.doc-section p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.code-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  overflow-x: auto;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.code-block .copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--text3);
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.code-block .copy-btn:hover { color: var(--text); }
+
+.method-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.method-badge.post { background: rgba(124,106,247,0.15); color: var(--accent2); }
+.method-badge.get { background: rgba(62,207,142,0.12); color: var(--green); }
+
+.endpoint-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.endpoint-path { color: var(--text); }
+.endpoint-desc { color: var(--text3); font-size: 11px; margin-left: auto; font-family: 'Inter', sans-serif; }
+
+.scope-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.scope-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text3);
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+.scope-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.scope-table td:first-child { font-family: var(--mono); font-size: 12px; color: var(--accent2); }
+
+/* ── Plan banner ── */
+.plan-banner {
+  background: linear-gradient(135deg, rgba(124,106,247,0.12), rgba(124,106,247,0.04));
+  border: 1px solid rgba(124,106,247,0.25);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.plan-icon { font-size: 28px; }
+.plan-info { flex: 1; }
+.plan-name { font-size: 14px; font-weight: 600; }
+.plan-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.25s;
+  z-index: 200;
+  pointer-events: none;
+}
+
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Spinner ── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-center { display: flex; justify-content: center; padding: 40px; }
+</style>
+</head>
+<body>
+
+<!-- Auth -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-wordmark">NEAT <span>/</span> DEVELOPERS</div>
+    <h1>Bienvenido</h1>
+    <p>Inicia sesión con tu cuenta de Neat para gestionar tus apps.</p>
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" id="auth-user" placeholder="tu_usuario" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <button class="btn-primary" id="auth-btn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">NEAT <span>/</span> DEV</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showPage('apps')" id="nav-apps">
+        <span class="nav-item-icon">⬡</span> Mis apps
+      </div>
+      <div class="nav-item" onclick="showPage('docs')" id="nav-docs">
+        <span class="nav-item-icon">◈</span> Documentación
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill" onclick="logout()">
+        <div class="user-avatar" id="sidebar-avatar"></div>
+        <div class="user-name" id="sidebar-name"></div>
+        <div class="user-logout">↩</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <!-- Apps page -->
+    <div class="page active" id="page-apps">
+      <div class="page-title">Mis apps</div>
+      <div class="page-sub">Gestiona tus clientes OAuth2.</div>
+      <div id="plan-banner"></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn-sm accent" onclick="openCreateModal()">+ Nueva app</button>
+      </div>
+      <div id="apps-list"><div class="loading-center"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- Docs page -->
+    <div class="page" id="page-docs">
+      <div class="page-title">Documentación</div>
+      <div class="page-sub">Integra Neat OAuth2 en tu aplicación.</div>
+
+      <div class="doc-section">
+        <h2>Flujo OAuth2</h2>
+        <p>Neat usa el flujo Authorization Code. Tu app redirige al usuario a la pantalla de autorización, el usuario aprueba, y recibes un <code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">code</code> que intercambias por un token.</p>
+        <h3>1. Redirigir al usuario</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+GET https://neat.qzz.io/oauth.html
+  ?client_id=TU_CLIENT_ID
+  &redirect_uri=https://tu-app.com/callback
+  &scope=profile email
+  &state=RANDOM_STRING</div>
+        <h3>2. Intercambiar el code por token</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+POST https://neat-apps-b.vercel.app/oauth/token
+
+{
+  "code": "EL_CODE",
+  "clientId": "TU_CLIENT_ID",
+  "clientSecret": "TU_CLIENT_SECRET",
+  "redirectUri": "https://tu-app.com/callback"
+}</div>
+        <h3>3. Obtener info del usuario</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+GET https://neat-apps-b.vercel.app/oauth/userinfo
+Authorization: Bearer ACCESS_TOKEN</div>
+      </div>
+
+      <div class="doc-section">
+        <h2>Scopes</h2>
+        <table class="scope-table">
+          <thead><tr><th>Scope</th><th>Acceso</th><th>Sensible</th></tr></thead>
+          <tbody>
+            <tr><td>profile</td><td>Username, bio, avatar, verificación</td><td>No</td></tr>
+            <tr><td>email</td><td>Dirección de correo</td><td>No</td></tr>
+            <tr><td>openid</td><td>ID token OpenID Connect</td><td>No</td></tr>
+            <tr><td>chatter</td><td>Leer y enviar mensajes</td><td>Sí</td></tr>
+            <tr><td>watch</td><td>Videos, likes, listas</td><td>Sí</td></tr>
+            <tr><td>forums</td><td>Posts, votos, comunidades</td><td>Sí</td></tr>
+            <tr><td>points</td><td>Balance y transferencias de NP</td><td>Sí</td></tr>
+            <tr><td>account</td><td>Acceso completo (equivale a contraseña)</td><td>⚠️ Peligroso</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="doc-section">
+        <h2>Endpoints</h2>
+        <div class="endpoint-row"><span class="method-badge get">GET</span><span class="endpoint-path">/oauth/userinfo</span><span class="endpoint-desc">Perfil del usuario autenticado</span></div>
+        <div class="endpoint-row"><span class="method-badge post">POST</span><span class="endpoint-path">/oauth/token</span><span class="endpoint-desc">Intercambiar code por token</span></div>
+        <div class="endpoint-row"><span class="method-badge post">POST</span><span class="endpoint-path">/oauth/authorize</span><span class="endpoint-desc">Generar código de autorización</span></div>
+        <div class="endpoint-row"><span class="method-badge post">POST</span><span class="endpoint-path">/oauth/revoke</span><span class="endpoint-desc">Revocar token</span></div>
+        <div class="endpoint-row"><span class="method-badge get">GET</span><span class="endpoint-path">/.well-known/openid-configuration</span><span class="endpoint-desc">Discovery OpenID Connect</span></div>
+      </div>
+
+      <div class="doc-section">
+        <h2>Ejemplo en JavaScript</h2>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+// Después de recibir el code en tu callback:
+const res = await fetch('https://neat-apps-b.vercel.app/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    code,
+    clientId: 'TU_CLIENT_ID',
+    clientSecret: 'TU_CLIENT_SECRET',
+    redirectUri: 'https://tu-app.com/callback'
+  })
+});
+const { access_token } = await res.json();
+
+// Obtener perfil:
+const user = await fetch('https://neat-apps-b.vercel.app/oauth/userinfo', {
+  headers: { Authorization: `Bearer ${access_token}` }
+}).then(r => r.json());
+
+console.log(user.username, user.email);</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear app -->
+<div class="modal-backdrop" id="modal-create">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Nueva app</h3>
+      <button class="btn-cancel" onclick="closeModal('modal-create')" style="padding:4px 8px">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label>Nombre de la app</label>
+        <input type="text" id="new-name" placeholder="Mi aplicación">
+      </div>
+      <div class="modal-field">
+        <label>Redirect URIs</label>
+        <textarea id="new-uris" placeholder="https://tu-app.com/callback&#10;Una por línea"></textarea>
+        <div class="modal-hint">Una URL por línea.</div>
+      </div>
+      <div class="modal-field">
+        <label>Scopes permitidos</label>
+        <input type="text" id="new-scopes" placeholder="profile email" value="profile email">
+        <div class="modal-hint">Separados por espacio.</div>
+      </div>
+      <div class="auth-error" id="create-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-create')">Cancelar</button>
+      <button class="btn-confirm" onclick="createApp()">Crear app</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API = "https://neat-apps-b.vercel.app";
+let token = localStorage.getItem("nd_token");
+let currentUser = null;
+let myApps = [];
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById("auth-user").value.trim();
+  const password = document.getElementById("auth-pass").value;
+  const errEl = document.getElementById("auth-error");
+  const btn = document.getElementById("auth-btn");
+  errEl.textContent = "";
+  if (!username || !password) { errEl.textContent = "Completa todos los campos."; return; }
+  btn.disabled = true; btn.textContent = "Entrando…";
+  try {
+    const r = await fetch(`${API}/chat/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.note || d.error || "Credenciales inválidas."; return; }
+    token = d.token;
+    localStorage.setItem("nd_token", token);
+    currentUser = { username: d.username, role: d.role };
+    await initApp();
+  } catch { errEl.textContent = "Error de conexión."; }
+  finally { btn.disabled = false; btn.textContent = "Entrar"; }
+}
+
+function logout() {
+  localStorage.removeItem("nd_token");
+  token = null; currentUser = null;
+  document.getElementById("app").classList.remove("visible");
+  document.getElementById("auth-screen").style.display = "flex";
+}
+
+async function checkToken() {
+  if (!token) return;
+  try {
+    const r = await fetch(`${API}/chat/me`, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) { localStorage.removeItem("nd_token"); token = null; return; }
+    const d = await r.json();
+    currentUser = { username: d.username, role: d.role };
+    await initApp();
+  } catch {}
+}
+
+async function initApp() {
+  document.getElementById("auth-screen").style.display = "none";
+  document.getElementById("app").classList.add("visible");
+  document.getElementById("sidebar-name").textContent = currentUser.username;
+  document.getElementById("sidebar-avatar").textContent = currentUser.username[0].toUpperCase();
+  await loadApps();
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  document.getElementById("nav-" + name).classList.add("active");
+}
+
+// ── Apps ──────────────────────────────────────────────────────────────────────
+async function loadApps() {
+  const list = document.getElementById("apps-list");
+  try {
+    const r = await fetch(`${API}/oauth/clients/me/list`, { headers: { Authorization: "Bearer " + token } });
+    myApps = await r.json();
+
+    // Plan banner
+    const balanceR = await fetch(`${API}/neat/points/balance`, { headers: { Authorization: "Bearer " + token } });
+    const balance = await balanceR.json();
+    const hasPlus = balance.neatPlus || currentUser.role === "admin";
+    const limit = hasPlus ? "∞" : `${myApps.length}/3`;
+    document.getElementById("plan-banner").innerHTML = `
+      <div class="plan-banner">
+        <div class="plan-icon">${hasPlus ? "⚡" : "○"}</div>
+        <div class="plan-info">
+          <div class="plan-name">${hasPlus ? "Neat Plus" : "Plan gratuito"}</div>
+          <div class="plan-detail">${hasPlus ? "Apps ilimitadas" : `${limit} apps · Apps extra: 75 NP c/u`}</div>
+        </div>
+      </div>`;
+
+    if (!myApps.length) {
+      list.innerHTML = `<div class="empty"><div class="empty-icon">⬡</div><p>No tienes apps aún.<br>Crea tu primera app OAuth2.</p></div>`;
+      return;
+    }
+
+    list.innerHTML = myApps.map(app => `
+      <div class="app-card">
+        <div class="app-card-header">
+          <div>
+            <div class="app-name">${esc(app.name)}</div>
+            <div class="app-created">${new Date(app.createdAt).toLocaleDateString('es')}</div>
+          </div>
+          <div class="app-actions">
+            <button class="btn-sm danger" onclick="deleteApp('${app.clientId}', '${esc(app.name)}')">Eliminar</button>
+          </div>
+        </div>
+        <div class="kv-row">
+          <div class="kv-label">client_id</div>
+          <div class="kv-value" onclick="copyText('${app.clientId}', 'Client ID copiado')" title="Clic para copiar">${app.clientId}</div>
+        </div>
+        <div class="kv-row">
+          <div class="kv-label">secret</div>
+          <div class="kv-value secret" id="secret-${app.clientId}" onclick="revealSecret('${app.clientId}', this)" title="Clic para revelar">••••••••••••••••</div>
+        </div>
+        <div class="kv-row">
+          <div class="kv-label">redirect</div>
+          <div class="kv-value" title="${(app.redirectUris||[]).join(', ')}">${(app.redirectUris||[]).join(', ')}</div>
+        </div>
+        <div style="margin-top:10px">
+          ${(app.scopes||[]).map(s => `<span class="tag">${s}</span>`).join('')}
+        </div>
+      </div>`).join('');
+  } catch { list.innerHTML = `<div class="empty"><p>Error cargando apps.</p></div>`; }
+}
+
+async function revealSecret(clientId, el) {
+  if (el.classList.contains("revealed")) {
+    copyText(el.textContent, "Secret copiado");
+    return;
+  }
+  try {
+    const r = await fetch(`${API}/oauth/clients/${clientId}/secret`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+    const d = await r.json();
+    el.textContent = d.clientSecret;
+    el.classList.add("revealed");
+    toast("Secret revelado — clic para copiar");
+  } catch { toast("Error obteniendo secret"); }
+}
+
+async function deleteApp(clientId, name) {
+  if (!confirm(`¿Eliminar "${name}"? Esto revocará todos los tokens activos.`)) return;
+  try {
+    await fetch(`${API}/oauth/clients/${clientId}`, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token }
+    });
+    toast("App eliminada");
+    loadApps();
+  } catch { toast("Error eliminando app"); }
+}
+
+function openCreateModal() {
+  document.getElementById("new-name").value = "";
+  document.getElementById("new-uris").value = "";
+  document.getElementById("new-scopes").value = "profile email";
+  document.getElementById("create-error").textContent = "";
+  document.getElementById("modal-create").classList.add("visible");
+}
+
+async function createApp() {
+  const name = document.getElementById("new-name").value.trim();
+  const uris = document.getElementById("new-uris").value.trim().split("\n").map(s => s.trim()).filter(Boolean);
+  const scopes = document.getElementById("new-scopes").value.trim().split(/\s+/).filter(Boolean);
+  const errEl = document.getElementById("create-error");
+  errEl.textContent = "";
+  if (!name) { errEl.textContent = "Ponle un nombre a tu app."; return; }
+  if (!uris.length) { errEl.textContent = "Agrega al menos un redirect URI."; return; }
+  try {
+    const r = await fetch(`${API}/oauth/clients`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ name, redirectUris: uris, scopes })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || "Error creando app."; return; }
+    closeModal("modal-create");
+    toast("App creada ✓");
+    loadApps();
+  } catch { errEl.textContent = "Error de conexión."; }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove("visible"); }
+
+function copyText(text, msg) {
+  navigator.clipboard?.writeText(text);
+  toast(msg || "Copiado");
+}
+
+function copyCode(btn) {
+  const block = btn.parentElement;
+  const text = block.textContent.replace("copiar", "").trim();
+  navigator.clipboard?.writeText(text);
+  btn.textContent = "✓";
+  setTimeout(() => btn.textContent = "copiar", 1500);
+}
+
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+if (token) checkToken();
+</script>
+</body>
+</html>
