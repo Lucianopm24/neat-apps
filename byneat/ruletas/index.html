@@ -250,38 +250,60 @@ function girar() {
 
   const opciones = ruletaActual.opciones;
   const idx = Math.floor(Math.random() * opciones.length);
+  const arc = (2 * Math.PI) / opciones.length;
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
-  const arc = (2 * Math.PI) / opciones.length;
 
-  let rot = 0;
-  const total = (Math.PI * 2 * 5) + (Math.PI * 3 / 2) - (arc * idx) - arc / 2;
+  // El segmento ganador debe quedar apuntando arriba (donde está el ▼)
+  const targetAngle = (Math.PI * 2 * 6) - (arc * idx) - arc / 2;
   let start = null;
-  const dur = 3000;
+  const dur = 3500;
 
   function step(ts) {
     if (!start) start = ts;
     const prog = Math.min((ts - start) / dur, 1);
     const ease = 1 - Math.pow(1 - prog, 4);
-    rot = total * ease;
+    const rot = targetAngle * ease;
 
     ctx.clearRect(0, 0, 300, 300);
-    ctx.save(); ctx.translate(150, 150); ctx.rotate(rot); ctx.translate(-150, -150);
-    dibujarRuleta(opciones, ruletaActual.colores);
+    ctx.save();
+    ctx.translate(150, 150);
+    ctx.rotate(rot);
+    ctx.translate(-150, -150);
+
+    // Dibujar sin rotación propia
+    const n = opciones.length;
+    opciones.forEach((op, i) => {
+      const ang = (2 * Math.PI / n) * i;
+      ctx.beginPath();
+      ctx.moveTo(150, 150);
+      ctx.arc(150, 150, 145, ang, ang + 2 * Math.PI / n);
+      ctx.fillStyle = (ruletaActual.colores && ruletaActual.colores[i]) || COLORES_DEFAULT[i % COLORES_DEFAULT.length];
+      ctx.fill();
+      ctx.strokeStyle = '#0f0f0f'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.save();
+      ctx.translate(150, 150);
+      ctx.rotate(ang + Math.PI / n);
+      ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+      ctx.font = `${Math.min(14, 120 / n)}px Inter`;
+      const txt = op.length > 12 ? op.slice(0, 12) + '…' : op;
+      ctx.fillText(txt, 135, 5);
+      ctx.restore();
+    });
+
     ctx.restore();
 
     if (prog < 1) { requestAnimationFrame(step); return; }
 
     girando = false;
     btn.disabled = false; btn.textContent = 'Girar';
-    const res = opciones[idx];
-    document.getElementById('resultado-valor').textContent = res;
+    document.getElementById('resultado-valor').textContent = opciones[idx];
     document.getElementById('resultado').style.display = '';
-    api('/ruletas/' + ruletaActual.ruletaId + '/girar', { method: 'POST', body: JSON.stringify({ resultado: res }) });
+    api('/ruletas/' + ruletaActual.ruletaId + '/girar', { method: 'POST', body: JSON.stringify({ resultado: opciones[idx] }) });
   }
   requestAnimationFrame(step);
 }
-
+  
 // ── Mis ruletas ───────────────────────────────────────────────────────────────
 async function cargarMisRuletas() {
   const lista = document.getElementById('mis-lista');
