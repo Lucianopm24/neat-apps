@@ -803,6 +803,37 @@ console.log(user.username, user.email);</div>
   </div>
 </div>
 
+<!-- Modal editar app -->
+<div class="modal-backdrop" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Editar app</h3>
+      <button class="btn-cancel" onclick="closeModal('modal-edit')" style="padding:4px 8px">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label>Nombre de la app</label>
+        <input type="text" id="edit-name">
+      </div>
+      <div class="modal-field">
+        <label>Redirect URIs</label>
+        <textarea id="edit-uris"></textarea>
+        <div class="modal-hint">Una URL por línea.</div>
+      </div>
+      <div class="modal-field">
+        <label>Scopes permitidos</label>
+        <input type="text" id="edit-scopes">
+        <div class="modal-hint">Separados por espacio.</div>
+      </div>
+      <div class="auth-error" id="edit-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modal-edit')">Cancelar</button>
+      <button class="btn-confirm" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -905,6 +936,7 @@ async function loadApps() {
             <div class="app-created">${new Date(app.createdAt).toLocaleDateString('es')}</div>
           </div>
           <div class="app-actions">
+            <button class="btn-sm" onclick="openEditModal('${app.clientId}')">Editar</button>
             <button class="btn-sm danger" onclick="deleteApp('${app.clientId}', '${esc(app.name)}')">Eliminar</button>
           </div>
         </div>
@@ -981,6 +1013,40 @@ async function createApp() {
     if (!r.ok) { errEl.textContent = d.error || "Error creando app."; return; }
     closeModal("modal-create");
     toast("App creada ✓");
+    loadApps();
+  } catch { errEl.textContent = "Error de conexión."; }
+}
+
+function openEditModal(clientId) {
+  const app = myApps.find(a => a.clientId === clientId);
+  if (!app) return;
+  document.getElementById("edit-name").value = app.name || "";
+  document.getElementById("edit-uris").value = (app.redirectUris || []).join("\n");
+  document.getElementById("edit-scopes").value = (app.scopes || []).join(" ");
+  document.getElementById("edit-error").textContent = "";
+  document.getElementById("modal-edit").dataset.clientId = clientId;
+  document.getElementById("modal-edit").classList.add("visible");
+}
+
+async function saveEdit() {
+  const clientId = document.getElementById("modal-edit").dataset.clientId;
+  const name = document.getElementById("edit-name").value.trim();
+  const uris = document.getElementById("edit-uris").value.trim().split("\n").map(s => s.trim()).filter(Boolean);
+  const scopes = document.getElementById("edit-scopes").value.trim().split(/\s+/).filter(Boolean);
+  const errEl = document.getElementById("edit-error");
+  errEl.textContent = "";
+  if (!name) { errEl.textContent = "Ponle un nombre a tu app."; return; }
+  if (!uris.length) { errEl.textContent = "Agrega al menos un redirect URI."; return; }
+  try {
+    const r = await fetch(`${API}/oauth/clients/${clientId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ name, redirectUris: uris, scopes })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || "Error guardando cambios."; return; }
+    closeModal("modal-edit");
+    toast("Cambios guardados ✓");
     loadApps();
   } catch { errEl.textContent = "Error de conexión."; }
 }
