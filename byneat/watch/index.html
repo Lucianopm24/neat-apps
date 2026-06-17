@@ -478,6 +478,8 @@
   <nav class="nav-tabs" id="main-nav">
     <button class="nav-tab active" onclick="showHome()">Inicio</button>
     <button class="nav-tab" onclick="showQuicks()">⚡ Quicks</button>
+    <button class="nav-tab" id="tab-historial" onclick="showHistorial()">🕐 Historial</button>
+    <button class="nav-tab" onclick="showListas()">📋 Listas</button>
   </nav>
 
   <!-- Main -->
@@ -517,6 +519,9 @@
           </button>
           <button class="action-btn" onclick="shareVideo()">
   <span class="icon">↗</span> Compartir
+</button>
+<button class="action-btn" onclick="añadirALista()" id="add-list-btn">
+  <span class="icon">＋</span> Lista
 </button>
 <button class="action-btn" id="delete-btn" onclick="deleteVideo()" style="display:none;color:#e05252">
   <span class="icon">🗑</span> Eliminar
@@ -612,6 +617,25 @@
       </div>
     </div>
 
+  <!-- Historial view -->
+    <div id="historial-view">
+      <div class="section"><div class="section-title">🕐 Historial</div><div id="historial-grid" class="video-grid"></div></div>
+    </div>
+    <!-- Listas view -->
+    <div id="listas-view">
+      <div class="section">
+        <div class="section-title">📋 Mis listas <button class="reload-btn" onclick="crearLista()" style="font-size:13px">+ Nueva</button></div>
+        <div id="listas-lista"></div>
+      </div>
+    </div>
+    <!-- Lista detalle view -->
+    <div id="lista-view">
+      <button class="back-btn" onclick="goBack()">← Volver</button>
+      <div class="section">
+        <div class="section-title" id="lista-titulo"></div>
+        <div class="video-grid" id="lista-grid"></div>
+      </div>
+    </div>
   </div><!-- /main -->
 
 <!-- DM Panel -->
@@ -753,7 +777,7 @@ function showApp() {
 }
 
 // ── Views ─────────────────────────────────────────────────────────────────────
-const views = ["home-view","quicks-view","video-view","channel-view","upload-view"];
+const views = ["home-view","quicks-view","video-view","channel-view","upload-view","historial-view","listas-view","lista-view"];
 
 function showView(name, pushHistory = true) {
   if (pushHistory && name !== "home") {
@@ -769,8 +793,7 @@ function showView(name, pushHistory = true) {
   if (name === "home") document.querySelectorAll(".nav-tab")[0]?.classList.add("active");
   if (name === "quicks") document.querySelectorAll(".nav-tab")[1]?.classList.add("active");
 
-  // Hide nav for video/channel/upload
-  document.getElementById("main-nav").style.display = ["video","channel","upload"].includes(name) ? "none" : "";
+  document.getElementById("main-nav").style.display = ["video","channel","upload","lista"].includes(name) ? "none" : "";
 }
 
 function goBack() {
@@ -934,6 +957,12 @@ loadChannelInfo(v.uploadedBy, v.uploaderUsername);
 
   // Comments
   loadComments();
+
+  if (token) fetch(`${API}/watch/history`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ videoId: v._id })
+  }).catch(() => {});
 }
 
 function updateLikeBtn(v) {
@@ -1322,6 +1351,8 @@ function formatDate(d) {
 // ── Deep link ─────────────────────────────────────────────────────────────────
 async function checkDeepLink() {
   const params = new URLSearchParams(location.search);
+ const lista = params.get("lista");
+  if (lista) { const r = await fetch(`${API}/watch/lists/${lista}`); if (r.ok) { const d = await r.json(); abrirLista(d.listId, d.nombre); } }
   const vid = params.get("v");
   if (vid) {
     try {
@@ -1471,6 +1502,116 @@ async function compressVideo(file) {
   ffmpeg.FS("unlink", inputName);
   ffmpeg.FS("unlink", "output.mp4");
   return new File([data.buffer], "video.mp4", { type: "video/mp4" });
+}
+
+// ── Historial ─────────────────────────────────────────────────────────────────
+async function showHistorial() {
+  if (!token) return toast("Inicia sesión", true);
+  showView("historial", false);
+  document.querySelectorAll(".nav-tab")[2].classList.add("active");
+  const grid = document.getElementById("historial-grid");
+  grid.innerHTML = '<div class="spinner"></div>';
+  const r = await fetch(`${API}/watch/history`, { headers:{"Authorization":"Bearer "+token} });
+  const data = await r.json();
+  if (data.error) { grid.innerHTML = `<div class="empty"><p>${data.error}</p></div>`; return; }
+  grid.innerHTML = data.length ? data.map(videoCard).join("") : '<div class="empty"><p>Sin historial todavía</p></div>';
+}
+
+// ── Listas ────────────────────────────────────────────────────────────────────
+let currentLista = null;
+
+async function showListas() {
+  if (!token) return toast("Inicia sesión", true);
+  showView("listas", false);
+  document.querySelectorAll(".nav-tab")[3].classList.add("active");
+  const box = document.getElementById("listas-lista");
+  box.innerHTML = '<div class="spinner"></div>';
+  const r = await fetch(`${API}/watch/lists/me/list`, { headers:{"Authorization":"Bearer "+token} });
+  const data = await r.json();
+  box.innerHTML = data.length ? data.map(l => `
+    <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="abrirLista('${l.listId}','${esc(l.nombre)}')">
+      <div>
+        <div style="font-weight:600;font-size:15px">${esc(l.nombre)}</div>
+        <div style="font-size:12px;color:var(--text2)">${l.videos?.length||0} videos</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="reload-btn" onclick="event.stopPropagation();compartirLista('${l.listId}')">↗</button>
+        <button class="reload-btn" style="color:#e05252" onclick="event.stopPropagation();eliminarLista('${l.listId}')">✕</button>
+      </div>
+    </div>`).join("") : '<div class="empty"><p>No tienes listas aún</p></div>';
+}
+
+async function crearLista() {
+  const nombre = prompt("Nombre de la lista:");
+  if (!nombre?.trim()) return;
+  const r = await fetch(`${API}/watch/lists`, {
+    method:"POST", headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+    body: JSON.stringify({ nombre: nombre.trim() })
+  });
+  const d = await r.json();
+  if (d.error) return toast(d.error, true);
+  toast("Lista creada"); showListas();
+}
+
+async function abrirLista(listId, nombre) {
+  currentLista = listId;
+  showView("lista");
+  document.getElementById("lista-titulo").textContent = nombre;
+  const grid = document.getElementById("lista-grid");
+  grid.innerHTML = '<div class="spinner"></div>';
+  const r = await fetch(`${API}/watch/lists/${listId}`);
+  const data = await r.json();
+  if (!data.videos?.length) { grid.innerHTML = '<div class="empty"><p>Lista vacía</p></div>'; return; }
+  
+  // Autoplay al terminar
+  let currentIdx = 0;
+  const listaVideos = data.videos;
+  grid.innerHTML = listaVideos.map((v,i) => `
+    <div style="position:relative">${videoCard(v)}
+      <button onclick="event.stopPropagation();quitarDeListaActual('${v._id}')" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px">✕</button>
+    </div>`).join("");
+
+  // Autoplay: al terminar cada video pasa al siguiente
+  document.getElementById("main-video").onended = () => {
+    currentIdx++;
+    if (currentIdx < listaVideos.length) openVideo(listaVideos[currentIdx]);
+  };
+}
+
+async function quitarDeListaActual(videoId) {
+  if (!currentLista) return;
+  await fetch(`${API}/watch/lists/${currentLista}/videos/${videoId}`, {
+    method:"DELETE", headers:{"Authorization":"Bearer "+token}
+  });
+  toast("Video quitado"); abrirLista(currentLista, document.getElementById("lista-titulo").textContent);
+}
+
+async function eliminarLista(listId) {
+  if (!confirm("¿Eliminar lista?")) return;
+  await fetch(`${API}/watch/lists/${listId}`, { method:"DELETE", headers:{"Authorization":"Bearer "+token} });
+  toast("Lista eliminada"); showListas();
+}
+
+function compartirLista(listId) {
+  const url = location.href.split("?")[0] + "?lista=" + listId;
+  navigator.clipboard?.writeText(url);
+  toast("Enlace copiado");
+}
+
+async function añadirALista() {
+  if (!token) return toast("Inicia sesión", true);
+  const r = await fetch(`${API}/watch/lists/me/list`, { headers:{"Authorization":"Bearer "+token} });
+  const listas = await r.json();
+  if (!listas.length) { if (confirm("No tienes listas. ¿Crear una?")) crearLista(); return; }
+  const nombres = listas.map((l,i) => `${i+1}. ${l.nombre}`).join("\n");
+  const idx = parseInt(prompt("Elige lista:\n" + nombres)) - 1;
+  if (isNaN(idx) || !listas[idx]) return;
+  const res = await fetch(`${API}/watch/lists/${listas[idx].listId}/videos`, {
+    method:"POST", headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+    body: JSON.stringify({ videoId: currentVideo._id })
+  });
+  const d = await res.json();
+  toast(d.error || "Añadido a la lista ✓");
 }
   
 init().then(checkDeepLink);
