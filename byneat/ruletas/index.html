@@ -255,7 +255,7 @@ function girar() {
   const arc = (2 * Math.PI) / opciones.length;
 
   let rot = 0;
-  const total = (Math.PI * 2 * 5) + (arc * idx) + arc / 2 + (Math.PI * 3 / 2);
+  const total = (Math.PI * 2 * 5) + (Math.PI * 3 / 2) - (arc * idx) - arc / 2;
   let start = null;
   const dur = 3000;
 
