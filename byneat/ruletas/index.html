@@ -105,6 +105,7 @@
     <div class="tab active" onclick="switchTab('girar')">🎡 Girar</div>
     <div class="tab" onclick="switchTab('mis')">📋 Mis ruletas</div>
     <div class="tab" onclick="switchTab('crear')">＋ Nueva</div>
+    <div class="tab" onclick="switchTab('historial')">📜 Historial</div>
   </div>
 
   <!-- GIRAR -->
@@ -140,6 +141,10 @@
       <button class="btn btn-accent" onclick="guardarRuleta()" style="flex:1">Guardar</button>
       <button class="btn btn-outline" onclick="cancelarEditar()" id="btn-cancelar" style="display:none">Cancelar</button>
     </div>
+  </div>
+<!-- HISTORIAL -->
+  <div class="view" id="view-historial">
+    <div id="historial-lista"></div>
   </div>
 </div>
 
@@ -200,11 +205,12 @@ function logout() {
 }
 
 function switchTab(t) {
-  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', ['girar','mis','crear'][i] === t));
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', ['girar','mis','crear','historial'][i] === t));
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.getElementById('view-' + t).classList.add('active');
   if (t === 'mis') cargarMisRuletas();
   if (t === 'crear' && !editandoId) resetCrear();
+  if (t === 'historial') cargarHistorial();
 }
 
 // ── Canvas ruleta ──────────────────────────────────────────────────────────────
@@ -407,6 +413,20 @@ async function guardarRuleta() {
   abrirRuleta(id);
 }
 
+async function cargarHistorial() {
+  const lista = document.getElementById('historial-lista');
+  if (!ruletaActual) { lista.innerHTML = '<div class="empty">Abre una ruleta primero</div>'; return; }
+  if (!hasPlus) { lista.innerHTML = '<div class="empty">Necesitas Neat Plus para ver el historial</div>'; return; }
+  lista.innerHTML = '<div class="empty">Cargando…</div>';
+  const data = await api('/ruletas/' + ruletaActual.ruletaId + '/historial');
+  if (data.error) { lista.innerHTML = `<div class="empty">${data.error}</div>`; return; }
+  if (!data.length) { lista.innerHTML = '<div class="empty">Sin resultados aún</div>'; return; }
+  lista.innerHTML = data.map(h => `
+    <div class="ruleta-card" style="cursor:default">
+      <div><h3>${h.resultado}</h3><span>${new Date(h.fecha).toLocaleString('es')}</span></div>
+    </div>`).join('');
+}
+  
 init();
 </script>
 </body>
