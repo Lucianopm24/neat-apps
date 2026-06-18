@@ -711,6 +711,17 @@ window.onload = async () => {
   document.getElementById("appNameHeader").textContent = clientInfo.name;
   document.getElementById("appNameSuccess").textContent = clientInfo.name;
 
+  // Badge de app verificada
+  if (clientInfo.verified) {
+    const badge = document.getElementById("appVerifiedBadge");
+    badge.innerHTML = `<img src="${VERIFIED_IMG}" alt="Verificada" title="App verificada">`;
+    badge.style.display = "inline-flex";
+    badge.style.cursor = "pointer";
+    badge.onclick = () => {
+      alert(`Neat verifico que "${clientInfo.name}" es legitima y que estos permisos no seran usados para fines maliciosos.`);
+    };
+  }
+
   renderScopes(requested);
 
   if (accounts.length === 0) {
@@ -847,11 +858,16 @@ function renderScopes(requested) {
 
 function toggleScope(scope, meta, el) {
   if (meta.sensitive && !activeScopes.has(scope)) {
-    // Activar sensible: confirmar
     if (meta.danger) {
-      if (!confirm(`⚠️ ADVERTENCIA\n\nEstás a punto de dar ACCESO COMPLETO a tu cuenta.\n\nEsto equivale a compartir tu contraseña. Solo hazlo si confías totalmente en "${clientInfo?.name}".\n\n¿Continuar?`)) return;
+      if (clientInfo?.verified) {
+        if (!confirm(`Esta app quiere acceder a tu cuenta completamente.\n\nEsta accion es poderosa y le da control total equivalente a tu contrasena. Sin embargo, Neat verifico que "${clientInfo.name}" es legitima y no usara este acceso con fines maliciosos.\n\n¿Continuar?`)) return;
+      } else {
+        if (!confirm(`⚠️ ADVERTENCIA\n\nEstas a punto de dar ACCESO COMPLETO a tu cuenta.\n\nEsto equivale a compartir tu contrasena. Solo hazlo si confias totalmente en "${clientInfo?.name}".\n\n¿Continuar?`)) return;
+      }
     } else {
-      if (!confirm(`¿Activar permiso "${meta.label}"?\n\nEsta app podrá ${meta.desc.toLowerCase()}. Solo continúa si confías en "${clientInfo?.name}".`)) return;
+      if (!clientInfo?.verified) {
+        if (!confirm(`¿Activar permiso "${meta.label}"?\n\nEsta app podra ${meta.desc.toLowerCase()}. Solo continua si confias en "${clientInfo?.name}".`)) return;
+      }
     }
   }
 
