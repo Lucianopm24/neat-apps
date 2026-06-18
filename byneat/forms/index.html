@@ -561,7 +561,7 @@ textarea{resize:vertical;min-height:80px}
       <h3>Tu identidad</h3>
       <div class="form-group" id="voter-name-group">
         <label>Tu nombre o alias</label>
-        <input type="text" id="voter-name-input" placeholder="Ej: Juan García" maxlength="40">
+        <input type="text" id="voter-name-input" placeholder="Ej: Juan García" maxlength="40" oninput="checkVoteReady()">
       </div>
       <div id="captcha-container">
         <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Verificación humana</div>
