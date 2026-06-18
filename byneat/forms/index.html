@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neat Forms</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <style>
 /* ── Reset & base ────────────────────────────────────────────── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -391,6 +392,21 @@ textarea{resize:vertical;min-height:80px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-center{display:flex;justify-content:center;padding:40px;color:var(--muted)}
 
+/* ── Markdown rendered ───────────────────────────────────────── */
+.md-render{font-size:14px;color:var(--text);line-height:1.6}
+.md-render p{margin-bottom:8px}
+.md-render p:last-child{margin-bottom:0}
+.md-render strong{font-weight:600;color:var(--accent2)}
+.md-render em{font-style:italic;color:var(--muted)}
+.md-render code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:12px;font-family:monospace}
+.md-render ul,.md-render ol{margin:6px 0 8px 20px}
+.md-render li{margin-bottom:3px}
+.md-render a{color:var(--accent);text-decoration:underline}
+.md-render h1,.md-render h2,.md-render h3{font-weight:600;margin-bottom:6px;margin-top:8px}
+.md-render h1{font-size:16px}.md-render h2{font-size:15px}.md-render h3{font-size:14px}
+.md-render blockquote{border-left:3px solid var(--accent);padding-left:12px;color:var(--muted);margin:6px 0}
+.md-render hr{border:none;border-top:1px solid var(--border);margin:10px 0}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media(max-width:600px){
   .q-header{flex-direction:column!important}
@@ -743,7 +759,6 @@ function showView(name) {
 // ── My polls ──────────────────────────────────────────────────────
 async function loadMyPolls() {
   if (!token) return;
-  showView("list");
   const c = document.getElementById("polls-container");
   c.innerHTML = `<div class="loading-center"><span class="spinner-sm"></span></div>`;
   try {
@@ -1015,7 +1030,8 @@ function renderVoteView(poll) {
 
   if (poll.description) {
     const descEl = document.getElementById("vote-desc");
-    descEl.textContent = poll.description;
+    descEl.className = "description md-render";
+    descEl.innerHTML = typeof marked !== 'undefined' ? marked.parse(poll.description) : escHtml(poll.description);
     descEl.style.display = "block";
   }
   document.getElementById("vote-creator").innerHTML = `Creado por <strong>${escHtml(poll.creatorUsername)}</strong>${poll.creatorVerified?' ✅':''}`;
