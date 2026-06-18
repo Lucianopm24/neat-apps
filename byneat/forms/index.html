@@ -643,12 +643,15 @@ window.addEventListener("load", () => {
 
   const hash = location.hash.replace("#","");
   if (hash.startsWith("vote/")) {
-    showVoteView(hash.replace("vote/",""));
+    const pollId = hash.replace("vote/","");
+    hideAuth();
+    showVoteView(pollId);
     return;
   }
   if (hash.startsWith("results/")) {
-    currentPollId = hash.replace("results/","");
-    showResultsView(currentPollId);
+    const pollId = hash.replace("results/","");
+    hideAuth();
+    showResultsView(pollId);
     return;
   }
 
@@ -733,6 +736,15 @@ function showAuth() {
 
 function enterAsGuest() {
   document.getElementById("auth-overlay").style.display = "none";
+  const hash = location.hash.replace("#","");
+  if (hash.startsWith("vote/")) {
+    showVoteView(hash.replace("vote/",""));
+    return;
+  }
+  if (hash.startsWith("results/")) {
+    showResultsView(hash.replace("results/",""));
+    return;
+  }
   document.getElementById("nav-tabs").style.display = "none";
   showView("list");
   document.getElementById("polls-container").innerHTML = `
