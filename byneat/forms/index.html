@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neat Forms</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & base ────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:        #1c1c24;
+  --surface:   #25252f;
+  --surface2:  #2e2e3a;
+  --border:    #3a3a4a;
+  --accent:    #e9b44c;
+  --accent2:   #f0c96a;
+  --text:      #e8e8f0;
+  --muted:     #8888aa;
+  --danger:    #e05c5c;
+  --green:     #5cb85c;
+  --radius:    8px;
+}
+html{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.5}
+body{min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:inherit;font-size:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:9px 12px;width:100%;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{background:var(--surface2)}
+textarea{resize:vertical;min-height:80px}
+
+/* ── Utility ─────────────────────────────────────────────────── */
+.hidden{display:none!important}
+.flex{display:flex}
+.gap8{gap:8px}
+.gap12{gap:12px}
+.mt8{margin-top:8px}
+.mt16{margin-top:16px}
+.muted{color:var(--muted);font-size:13px}
+
+/* ── Top bar ─────────────────────────────────────────────────── */
+#topbar{
+  height:56px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:100;
+}
+#topbar .logo{font-size:16px;font-weight:600;letter-spacing:-.3px;color:var(--text)}
+#topbar .logo span{color:var(--accent)}
+#topbar .nav-tabs{display:flex;gap:4px;margin-left:auto}
+.nav-tab{
+  padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;
+  background:transparent;color:var(--muted);transition:all .15s;border:1px solid transparent;
+}
+.nav-tab:hover{color:var(--text);background:var(--surface2)}
+.nav-tab.active{color:var(--accent);background:rgba(233,180,76,.1);border-color:rgba(233,180,76,.25)}
+#topbar .user-chip{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;
+  background:var(--surface2);border-radius:20px;font-size:13px;color:var(--muted);cursor:pointer;
+  border:1px solid var(--border);
+}
+#topbar .user-chip .avatar{
+  width:22px;height:22px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#000;
+}
+
+/* ── Auth overlay ────────────────────────────────────────────── */
+#auth-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
+}
+.auth-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:32px;width:360px;max-width:calc(100vw - 32px);
+}
+.auth-card h2{font-size:20px;font-weight:600;margin-bottom:4px}
+.auth-card p{color:var(--muted);font-size:13px;margin-bottom:24px}
+.auth-tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:500;background:transparent;color:var(--muted);transition:all .15s}
+.auth-tab.active{background:var(--accent);color:#000}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 20px;border-radius:var(--radius);font-size:14px;font-weight:500;
+  transition:all .15s;cursor:pointer;border:1px solid transparent;
+}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border)}
+.btn-ghost:hover{color:var(--text);background:var(--surface2)}
+.btn-danger{background:transparent;color:var(--danger);border-color:var(--danger)}
+.btn-danger:hover{background:rgba(224,92,92,.1)}
+.btn-full{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#auth-error{color:var(--danger);font-size:13px;margin-top:8px;display:none}
+
+/* ── Views ───────────────────────────────────────────────────── */
+.view{display:none}
+.view.active{display:block}
+
+/* ── My polls (dashboard) ────────────────────────────────────── */
+#view-list{padding:32px 24px;max-width:900px;margin:0 auto}
+#view-list h1{font-size:22px;font-weight:600;margin-bottom:4px}
+#view-list .sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+.polls-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.polls-header h2{font-size:15px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+.poll-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;
+  transition:border-color .15s;cursor:pointer;
+}
+.poll-card:hover{border-color:var(--accent)}
+.poll-card .pill{
+  font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;
+  background:rgba(233,180,76,.12);color:var(--accent);border:1px solid rgba(233,180,76,.2);
+  white-space:nowrap;
+}
+.poll-card .pill.closed{background:rgba(224,92,92,.1);color:var(--danger);border-color:rgba(224,92,92,.2)}
+.poll-card .poll-title{font-size:15px;font-weight:500;flex:1}
+.poll-card .poll-meta{font-size:12px;color:var(--muted)}
+.poll-card .actions{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
+.icon-btn{
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border-radius:6px;background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-size:14px;transition:all .15s;cursor:pointer;
+}
+.icon-btn:hover{color:var(--text);background:var(--surface2);border-color:var(--muted)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .icon{font-size:40px;margin-bottom:12px;opacity:.4}
+.empty-state p{font-size:14px;margin-bottom:20px}
+
+/* ── Create view ─────────────────────────────────────────────── */
+#view-create{padding:28px 24px;max-width:700px;margin:0 auto}
+.create-header{margin-bottom:28px}
+.create-header h1{font-size:20px;font-weight:600}
+.create-header p{color:var(--muted);font-size:13px;margin-top:3px}
+.form-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;margin-bottom:12px;
+}
+.form-card.title-card{border-left:3px solid var(--accent)}
+.section-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+#poll-title-input{font-size:18px;font-weight:500;background:transparent;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:6px 0}
+#poll-title-input:focus{border-bottom-color:var(--accent)}
+#poll-desc-input{background:transparent;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:6px 0;resize:none;min-height:50px}
+#poll-desc-input:focus{border-bottom-color:var(--accent)}
+
+/* settings card */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.settings-grid{grid-template-columns:1fr}}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.toggle-label{font-size:14px}
+.toggle-label small{display:block;font-size:11px;color:var(--muted)}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{
+  position:absolute;inset:0;border-radius:11px;background:var(--border);
+  transition:.2s;cursor:pointer;
+}
+.toggle-slider:before{
+  content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:#fff;bottom:3px;left:3px;transition:.2s;
+}
+.toggle input:checked + .toggle-slider{background:var(--accent)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(18px)}
+
+/* question cards */
+.question-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;margin-bottom:12px;transition:border-color .15s;
+  border-left:3px solid transparent;
+}
+.question-card:focus-within{border-left-color:var(--accent);border-color:var(--accent)}
+.question-card .q-header{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+.question-card .q-num{
+  width:26px;height:26px;border-radius:50%;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+  color:var(--muted);flex-shrink:0;margin-top:8px;
+}
+.question-card .q-input{flex:1}
+.question-card .q-type{width:180px;flex-shrink:0}
+.options-list{margin-top:10px}
+.option-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.option-row input{flex:1}
+.option-row .remove-opt{
+  width:26px;height:26px;border-radius:50%;background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+.option-row .remove-opt:hover{color:var(--danger);border-color:var(--danger)}
+.add-option-btn{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 10px;
+  border-radius:6px;font-size:13px;color:var(--muted);background:transparent;
+  border:1px dashed var(--border);cursor:pointer;transition:all .15s;margin-top:4px;
+}
+.add-option-btn:hover{color:var(--accent);border-color:var(--accent)}
+.remove-q-btn{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+.remove-q-btn:hover{color:var(--danger);border-color:var(--danger);background:rgba(224,92,92,.05)}
+.scale-preview{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.scale-btn-preview{
+  width:36px;height:36px;border-radius:50%;border:1px solid var(--border);
+  background:var(--surface2);color:var(--muted);font-size:13px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+}
+.scale-labels{display:flex;justify-content:space-between;margin-top:6px}
+.scale-labels input{width:120px}
+.grid-builder{margin-top:10px}
+.grid-builder .grid-section{margin-bottom:10px}
+.grid-builder .grid-section label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
+.add-q-bar{
+  display:flex;align-items:center;justify-content:center;padding:14px;
+  border:1px dashed var(--border);border-radius:var(--radius);cursor:pointer;
+  color:var(--muted);font-size:14px;gap:8px;transition:all .15s;margin-bottom:20px;
+}
+.add-q-bar:hover{border-color:var(--accent);color:var(--accent);background:rgba(233,180,76,.03)}
+.create-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:8px}
+
+/* ── Vote view ───────────────────────────────────────────────── */
+#view-vote{padding:40px 16px;max-width:640px;margin:0 auto}
+.vote-header{margin-bottom:32px}
+.vote-header h1{font-size:24px;font-weight:600;line-height:1.3}
+.vote-header .description{
+  margin-top:12px;padding:12px 16px;
+  border-left:3px solid var(--accent);background:rgba(233,180,76,.06);
+  border-radius:0 var(--radius) var(--radius) 0;font-size:14px;color:var(--text);
+}
+.vote-header .creator{font-size:12px;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:5px}
+.vote-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.meta-pill{
+  font-size:11px;padding:3px 10px;border-radius:20px;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);
+}
+.vote-q-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px 24px;margin-bottom:14px;border-left:3px solid transparent;
+  transition:border-left-color .2s;
+}
+.vote-q-card.answered{border-left-color:var(--accent)}
+.vote-q-card .q-title{font-size:16px;font-weight:500;margin-bottom:6px}
+.vote-q-card .q-hint{font-size:12px;color:var(--muted);margin-bottom:14px}
+
+/* Checkbox & radio styles */
+.choice-list{display:flex;flex-direction:column;gap:8px}
+.choice-item{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;
+  transition:all .15s;user-select:none;
+}
+.choice-item:hover{border-color:var(--accent);background:rgba(233,180,76,.04)}
+.choice-item.selected{border-color:var(--accent);background:rgba(233,180,76,.08)}
+.choice-box{
+  width:18px;height:18px;border:2px solid var(--border);border-radius:3px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;
+}
+.choice-item.selected .choice-box{background:var(--accent);border-color:var(--accent)}
+.choice-check{font-size:11px;color:#000;opacity:0;transition:opacity .1s}
+.choice-item.selected .choice-check{opacity:1}
+.choice-radio{border-radius:50%}
+.choice-item .choice-label{font-size:14px;flex:1}
+
+/* Scale */
+.scale-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.scale-opt{
+  width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--surface2);color:var(--muted);font-size:14px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;
+}
+.scale-opt:hover{border-color:var(--accent);color:var(--accent)}
+.scale-opt.selected{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+.scale-labels-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 4px}
+
+/* Grid */
+.grid-table{width:100%;border-collapse:collapse;margin-top:4px}
+.grid-table th,.grid-table td{padding:8px 12px;text-align:center;border:1px solid var(--border);font-size:13px}
+.grid-table th{background:var(--surface2);font-weight:500;color:var(--muted)}
+.grid-table td:first-child{text-align:left;color:var(--text);background:var(--surface2)}
+.grid-radio{
+  width:18px;height:18px;border:2px solid var(--border);border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;
+}
+.grid-radio.selected{background:var(--accent);border-color:var(--accent)}
+.grid-dot{width:8px;height:8px;border-radius:50%;background:#000;opacity:0}
+.grid-radio.selected .grid-dot{opacity:1}
+
+/* Voter name + captcha */
+.voter-section{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px 24px;margin-bottom:14px;
+}
+.voter-section h3{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+.captcha-wrap{
+  margin-top:14px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
+  height:76px;position:relative;background:transparent;
+}
+.captcha-wrap iframe{width:100%;height:100%;border:none;display:block;background:transparent}
+.captcha-status{
+  margin-top:6px;font-size:12px;display:flex;align-items:center;gap:5px;
+  color:var(--muted);
+}
+.captcha-status.ok{color:var(--green)}
+.vote-submit-area{padding-top:8px}
+#vote-error{color:var(--danger);font-size:13px;margin-bottom:10px;display:none}
+#vote-success{
+  background:rgba(92,184,92,.1);border:1px solid rgba(92,184,92,.3);border-radius:var(--radius);
+  padding:20px 24px;text-align:center;display:none;
+}
+#vote-success .icon{font-size:32px;margin-bottom:8px}
+#vote-success h3{font-size:16px;font-weight:600;color:var(--green);margin-bottom:4px}
+#vote-success p{font-size:13px;color:var(--muted)}
+
+/* ── Results view ────────────────────────────────────────────── */
+#view-results{padding:32px 16px;max-width:700px;margin:0 auto}
+.results-header{margin-bottom:28px}
+.results-header h1{font-size:22px;font-weight:600}
+.results-header .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-bottom:12px;background:transparent;border:none;cursor:pointer;padding:0}
+.results-header .back-btn:hover{color:var(--text)}
+.results-summary{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.summary-stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 18px;flex:1;min-width:120px;
+}
+.summary-stat .val{font-size:24px;font-weight:600;color:var(--accent)}
+.summary-stat .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.result-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px 24px;margin-bottom:14px;
+}
+.result-card h3{font-size:15px;font-weight:500;margin-bottom:14px}
+.bar-row{margin-bottom:10px}
+.bar-row .bar-label{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px}
+.bar-row .bar-label .opt-name{color:var(--text)}
+.bar-row .bar-label .opt-count{color:var(--muted)}
+.bar-track{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .5s}
+.text-responses{display:flex;flex-direction:column;gap:8px}
+.text-response{
+  background:var(--surface2);border-radius:6px;padding:10px 14px;
+  font-size:13px;color:var(--text);border-left:2px solid var(--border);
+}
+.scale-result{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px}
+.scale-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.scale-bar-col{
+  width:36px;background:rgba(233,180,76,.2);border-radius:4px 4px 0 0;
+  transition:height .5s;min-height:4px;position:relative;
+}
+.scale-bar-col.best{background:var(--accent)}
+.scale-bar-num{font-size:11px;color:var(--muted)}
+.scale-avg{font-size:13px;color:var(--muted);margin-top:8px}
+.scale-avg span{color:var(--accent);font-weight:600}
+.grid-result-table{width:100%;border-collapse:collapse}
+.grid-result-table th,.grid-result-table td{padding:7px 10px;text-align:center;border:1px solid var(--border);font-size:12px}
+.grid-result-table th{background:var(--surface2);color:var(--muted);font-weight:500}
+.grid-result-table td:first-child{text-align:left}
+.grid-cell-heat{font-weight:500}
+
+/* ── Expired/closed banner ───────────────────────────────────── */
+.status-banner{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  border-radius:var(--radius);margin-bottom:16px;font-size:13px;
+}
+.status-banner.closed{background:rgba(224,92,92,.1);border:1px solid rgba(224,92,92,.2);color:var(--danger)}
+.status-banner.expired{background:rgba(136,136,170,.1);border:1px solid rgba(136,136,170,.2);color:var(--muted)}
+
+/* ── Share modal ─────────────────────────────────────────────── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);
+}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:28px;width:420px;max-width:calc(100vw - 32px);
+}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:6px}
+.modal p{color:var(--muted);font-size:13px;margin-bottom:18px}
+.copy-row{display:flex;gap:8px}
+.copy-row input{flex:1;font-size:13px}
+.copy-row .btn{flex-shrink:0;padding:9px 14px}
+
+/* ── Loading ─────────────────────────────────────────────────── */
+.spinner-sm{
+  width:16px;height:16px;border:2px solid rgba(255,255,255,.2);
+  border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-center{display:flex;justify-content:center;padding:40px;color:var(--muted)}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:600px){
+  .q-header{flex-direction:column!important}
+  .q-type{width:100%!important}
+  #view-vote,#view-create,#view-list,#view-results{padding:20px 12px}
+  .vote-header h1{font-size:19px}
+  .poll-card{flex-direction:column;align-items:flex-start}
+  .poll-card .actions{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────────────────── -->
+<div id="topbar">
+  <div class="logo">Neat <span>Forms</span></div>
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="nav-tab active" onclick="showView('list')">Mis encuestas</button>
+    <button class="nav-tab" onclick="showView('create')">Nueva</button>
+  </div>
+  <div class="user-chip" id="user-chip" onclick="showAuth()">
+    <div class="avatar" id="user-avatar">?</div>
+    <span id="user-label">Entrar</span>
+  </div>
+</div>
+
+<!-- ── Auth overlay ──────────────────────────────────────────────── -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <h2>Neat Forms</h2>
+    <p>Inicia sesión para crear y gestionar encuestas</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+    <div id="auth-login-form">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="auth-username" placeholder="tu_usuario" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="auth-password" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar</button>
+    </div>
+    <div id="auth-register-form" class="hidden">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="reg-username" placeholder="tu_usuario" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Crear cuenta</button>
+    </div>
+    <div id="auth-error"></div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="enterAsGuest()">Continuar como invitado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── My polls ──────────────────────────────────────────────────── -->
+<div id="view-list" class="view">
+  <h1>Mis encuestas</h1>
+  <p class="sub">Crea y gestiona tus encuestas de Neat Forms</p>
+  <div class="polls-header">
+    <div class="polls-header h2">ENCUESTAS</div>
+    <button class="btn btn-primary" onclick="showView('create')">+ Nueva encuesta</button>
+  </div>
+  <div id="polls-container">
+    <div class="loading-center"><span class="spinner-sm"></span></div>
+  </div>
+</div>
+
+<!-- ── Create view ───────────────────────────────────────────────── -->
+<div id="view-create" class="view">
+  <div class="create-header">
+    <h1>Nueva encuesta</h1>
+    <p>Configura tu encuesta y compártela con quien quieras</p>
+  </div>
+
+  <!-- Title & description -->
+  <div class="form-card title-card">
+    <div class="section-label">Encuesta</div>
+    <input type="text" id="poll-title-input" placeholder="Título de la encuesta…">
+    <textarea id="poll-desc-input" placeholder="Descripción o instrucciones (opcional)…" style="margin-top:12px"></textarea>
+  </div>
+
+  <!-- Settings -->
+  <div class="form-card">
+    <div class="section-label">Configuración</div>
+    <div class="settings-grid">
+      <div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Acceso</label>
+          <select id="poll-access">
+            <option value="public">Público (cualquiera con el link)</option>
+            <option value="neat_only">Solo usuarios de Neat</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Expiración (opcional)</label>
+          <input type="datetime-local" id="poll-expires">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="toggle-row">
+        <div class="toggle-label">Anónimo <small>Oculta el nombre del votante en resultados</small></div>
+        <label class="toggle"><input type="checkbox" id="poll-anon"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">Permitir múltiples votos <small>El mismo usuario puede votar varias veces</small></div>
+        <label class="toggle"><input type="checkbox" id="poll-multi"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Questions -->
+  <div id="questions-container"></div>
+
+  <div class="add-q-bar" onclick="addQuestion()">
+    <span>＋</span> Añadir pregunta
+  </div>
+
+  <div class="create-actions">
+    <button class="btn btn-ghost" onclick="showView('list')">Cancelar</button>
+    <button class="btn btn-primary" onclick="createPoll()" id="create-btn">Publicar encuesta</button>
+  </div>
+</div>
+
+<!-- ── Vote view ─────────────────────────────────────────────────── -->
+<div id="view-vote" class="view">
+  <div id="vote-loading" class="loading-center"><span class="spinner-sm"></span></div>
+  <div id="vote-content" class="hidden">
+    <div class="vote-header">
+      <h1 id="vote-title"></h1>
+      <div class="vote-meta" id="vote-meta"></div>
+      <div class="description" id="vote-desc" style="display:none"></div>
+      <div class="creator" id="vote-creator"></div>
+    </div>
+    <div id="vote-status-banner"></div>
+    <div id="vote-questions"></div>
+
+    <!-- voter section -->
+    <div class="voter-section" id="voter-section">
+      <h3>Tu identidad</h3>
+      <div class="form-group" id="voter-name-group">
+        <label>Tu nombre o alias</label>
+        <input type="text" id="voter-name-input" placeholder="Ej: Juan García" maxlength="40">
+      </div>
+      <div id="captcha-container">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Verificación humana</div>
+        <div class="captcha-wrap">
+          <iframe id="captcha-frame" src="https://own-net.vercel.app/projects/1fa8c976-34d5-4411-9c52-8eb9dab0b80e/" allow="*" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+        </div>
+        <div class="captcha-status" id="captcha-status">
+          <span>🔒</span> Completa la verificación para enviar
+        </div>
+      </div>
+    </div>
+
+    <div id="vote-error"></div>
+    <div id="vote-success" class="hidden">
+      <div class="icon">✅</div>
+      <h3>¡Respuesta enviada!</h3>
+      <p>Tu voto ha sido registrado correctamente.</p>
+      <button class="btn btn-ghost" style="margin-top:14px" onclick="goToResults()">Ver resultados</button>
+    </div>
+
+    <div class="vote-submit-area" id="vote-submit-area">
+      <button class="btn btn-primary btn-full" id="vote-btn" onclick="submitVote()" disabled>
+        Enviar respuesta
+      </button>
+      <p class="muted" style="text-align:center;margin-top:8px;font-size:12px">
+        Completa la verificación para poder enviar
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Results view ──────────────────────────────────────────────── -->
+<div id="view-results" class="view">
+  <div class="results-header">
+    <button class="back-btn" onclick="goBack()">← Volver</button>
+    <h1 id="results-title">Resultados</h1>
+    <div class="results-summary" id="results-summary"></div>
+  </div>
+  <div id="results-container">
+    <div class="loading-center"><span class="spinner-sm"></span></div>
+  </div>
+</div>
+
+<!-- ── Share modal ───────────────────────────────────────────────── -->
+<div class="modal-bg hidden" id="share-modal">
+  <div class="modal">
+    <h3>Compartir encuesta</h3>
+    <p>Cualquiera con este link puede responder tu encuesta</p>
+    <div class="copy-row">
+      <input type="text" id="share-url-input" readonly>
+      <button class="btn btn-primary" onclick="copyShareUrl()">Copiar</button>
+    </div>
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn btn-ghost" onclick="closeShareModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────
+const API = "https://neat-apps-b.vercel.app";
+let token = localStorage.getItem("nf_token") || null;
+let currentUser = JSON.parse(localStorage.getItem("nf_user") || "null");
+let captchaToken = null;
+let currentPollId = null;
+let currentPoll = null;
+
+// ── Init ──────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  // listen for captcha
+  window.addEventListener("message", (e) => {
+    if (e.data?.type === "captcha-solved") {
+      captchaToken = e.data.token;
+      document.getElementById("captcha-status").className = "captcha-status ok";
+      document.getElementById("captcha-status").innerHTML = "<span>✅</span> Verificación completada";
+      checkVoteReady();
+    }
+  });
+
+  const hash = location.hash.replace("#","");
+  if (hash.startsWith("vote/")) {
+    showVoteView(hash.replace("vote/",""));
+    return;
+  }
+  if (hash.startsWith("results/")) {
+    currentPollId = hash.replace("results/","");
+    showResultsView(currentPollId);
+    return;
+  }
+
+  if (token) {
+    hideAuth();
+    loadMyPolls();
+  }
+  // else auth stays visible
+});
+
+// ── Auth ──────────────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.querySelectorAll(".auth-tab").forEach((t,i) => t.classList.toggle("active", (tab==="login"?i===0:i===1)));
+  document.getElementById("auth-login-form").classList.toggle("hidden", tab!=="login");
+  document.getElementById("auth-register-form").classList.toggle("hidden", tab!=="register");
+  document.getElementById("auth-error").style.display = "none";
+}
+
+async function doLogin() {
+  const username = document.getElementById("auth-username").value.trim();
+  const password = document.getElementById("auth-password").value;
+  if (!username || !password) return showAuthError("Completa todos los campos");
+  try {
+    const r = await fetch(`${API}/chat/login`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+    const d = await r.json();
+    if (!r.ok) return showAuthError(d.error || "Error al entrar");
+    saveSession(d);
+    hideAuth();
+    loadMyPolls();
+  } catch { showAuthError("Error de conexión"); }
+}
+
+async function doRegister() {
+  const username = document.getElementById("reg-username").value.trim();
+  const password = document.getElementById("reg-password").value;
+  if (!username || !password) return showAuthError("Completa todos los campos");
+  try {
+    const r = await fetch(`${API}/chat/register`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+    const d = await r.json();
+    if (!r.ok) return showAuthError(d.error || "Error al registrarse");
+    saveSession(d);
+    hideAuth();
+    loadMyPolls();
+  } catch { showAuthError("Error de conexión"); }
+}
+
+function saveSession(d) {
+  token = d.token;
+  currentUser = {username: d.username, role: d.role};
+  localStorage.setItem("nf_token", token);
+  localStorage.setItem("nf_user", JSON.stringify(currentUser));
+  const av = document.getElementById("user-avatar");
+  av.textContent = d.username[0].toUpperCase();
+  document.getElementById("user-label").textContent = d.username;
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById("auth-error");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function hideAuth() {
+  document.getElementById("auth-overlay").style.display = "none";
+  if (currentUser) {
+    document.getElementById("user-avatar").textContent = currentUser.username[0].toUpperCase();
+    document.getElementById("user-label").textContent = currentUser.username;
+  }
+}
+
+function showAuth() {
+  if (currentUser) {
+    if (confirm("¿Cerrar sesión?")) {
+      token = null; currentUser = null;
+      localStorage.removeItem("nf_token"); localStorage.removeItem("nf_user");
+      location.reload();
+    }
+  } else {
+    document.getElementById("auth-overlay").style.display = "flex";
+  }
+}
+
+function enterAsGuest() {
+  document.getElementById("auth-overlay").style.display = "none";
+  document.getElementById("nav-tabs").style.display = "none";
+  showView("list");
+  document.getElementById("polls-container").innerHTML = `
+    <div class="empty-state">
+      <div class="icon">🔒</div>
+      <p>Inicia sesión para ver y crear encuestas</p>
+      <button class="btn btn-primary" onclick="showAuth()">Entrar</button>
+    </div>`;
+}
+
+// ── Views ─────────────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-"+name).classList.add("active");
+  document.querySelectorAll(".nav-tab").forEach((t,i) => {
+    t.classList.toggle("active", (name==="list"&&i===0)||(name==="create"&&i===1));
+  });
+  const navShow = ["list","create"].includes(name);
+  document.getElementById("nav-tabs").style.display = navShow ? "" : "none";
+  if (name==="create") initCreateView();
+  if (name==="list") loadMyPolls();
+}
+
+// ── My polls ──────────────────────────────────────────────────────
+async function loadMyPolls() {
+  if (!token) return;
+  showView("list");
+  const c = document.getElementById("polls-container");
+  c.innerHTML = `<div class="loading-center"><span class="spinner-sm"></span></div>`;
+  try {
+    const r = await fetch(`${API}/forms/polls/me/list`, {headers:{Authorization:`Bearer ${token}`}});
+    const polls = await r.json();
+    if (!polls.length) {
+      c.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>Aún no tienes encuestas. Crea la primera.</p><button class="btn btn-primary" onclick="showView('create')">+ Crear encuesta</button></div>`;
+      return;
+    }
+    c.innerHTML = polls.map(p => `
+      <div class="poll-card" onclick="showResultsView('${p.pollId}')">
+        <span class="pill ${p.closed?'closed':''}">${p.closed?'Cerrada':p.questionType}</span>
+        <div>
+          <div class="poll-title">${escHtml(p.title)}</div>
+          <div class="poll-meta">${p.accessMode==='neat_only'?'Solo Neat':'Público'} · ${new Date(p.createdAt).toLocaleDateString()}</div>
+        </div>
+        <div class="actions" onclick="event.stopPropagation()">
+          <button class="icon-btn" title="Compartir" onclick="shareModal('${p.pollId}')">🔗</button>
+          <button class="icon-btn" title="Resultados" onclick="showResultsView('${p.pollId}')">📊</button>
+          <button class="icon-btn" title="Cerrar" onclick="closePoll('${p.pollId}')">🔒</button>
+          <button class="icon-btn" title="Eliminar" onclick="deletePoll('${p.pollId}')">🗑</button>
+        </div>
+      </div>`).join("");
+  } catch { c.innerHTML = `<div class="empty-state"><p>Error cargando encuestas</p></div>`; }
+}
+
+async function closePoll(id) {
+  if (!confirm("¿Cerrar esta encuesta? Ya no aceptará votos.")) return;
+  await fetch(`${API}/forms/polls/${id}/close`, {method:"PUT",headers:{Authorization:`Bearer ${token}`}});
+  loadMyPolls();
+}
+
+async function deletePoll(id) {
+  if (!confirm("¿Eliminar esta encuesta y todos sus votos? Esta acción no se puede deshacer.")) return;
+  await fetch(`${API}/forms/polls/${id}`, {method:"DELETE",headers:{Authorization:`Bearer ${token}`}});
+  loadMyPolls();
+}
+
+// ── Create ────────────────────────────────────────────────────────
+let questions = [];
+let qCounter = 0;
+
+function initCreateView() {
+  questions = [];
+  qCounter = 0;
+  document.getElementById("poll-title-input").value = "";
+  document.getElementById("poll-desc-input").value = "";
+  document.getElementById("poll-access").value = "public";
+  document.getElementById("poll-expires").value = "";
+  document.getElementById("poll-anon").checked = false;
+  document.getElementById("poll-multi").checked = false;
+  document.getElementById("questions-container").innerHTML = "";
+  addQuestion();
+}
+
+function addQuestion() {
+  const id = ++qCounter;
+  const idx = questions.length;
+  questions.push({id, type:"multiple_choice", text:"", options:["Opción 1","Opción 2"]});
+  renderQuestion(id, idx);
+}
+
+function renderQuestion(id, idx) {
+  const q = questions.find(q=>q.id===id);
+  if (!q) return;
+  const num = questions.indexOf(q) + 1;
+  const container = document.getElementById("questions-container");
+
+  let existing = document.getElementById("q-card-"+id);
+  if (existing) existing.remove();
+
+  const card = document.createElement("div");
+  card.className = "question-card";
+  card.id = "q-card-"+id;
+  card.innerHTML = `
+    <div class="q-header flex gap8">
+      <div class="q-num">${num}</div>
+      <div class="q-input">
+        <input type="text" value="${escHtml(q.text)}" placeholder="Escribe la pregunta…"
+          oninput="updateQText(${id}, this.value)">
+      </div>
+      <select class="q-type" onchange="updateQType(${id}, this.value)" style="width:180px">
+        <option value="multiple_choice" ${q.type==='multiple_choice'?'selected':''}>Opción múltiple</option>
+        <option value="checkboxes" ${q.type==='checkboxes'?'selected':''}>Casillas</option>
+        <option value="text" ${q.type==='text'?'selected':''}>Respuesta corta</option>
+        <option value="paragraph" ${q.type==='paragraph'?'selected':''}>Párrafo</option>
+        <option value="linear_scale" ${q.type==='linear_scale'?'selected':''}>Escala lineal</option>
+        <option value="grid" ${q.type==='grid'?'selected':''}>Cuadrícula</option>
+      </select>
+      <button class="remove-q-btn" onclick="removeQuestion(${id})" title="Eliminar pregunta">✕</button>
+    </div>
+    <div id="q-body-${id}">${renderQBody(q)}</div>
+  `;
+  container.appendChild(card);
+}
+
+function renderQBody(q) {
+  if (["multiple_choice","checkboxes"].includes(q.type)) {
+    const opts = (q.options||[]).map((o,i)=>`
+      <div class="option-row">
+        <input type="text" value="${escHtml(o)}" placeholder="Opción ${i+1}"
+          oninput="updateOption(${q.id},${i},this.value)">
+        <button class="remove-opt" onclick="removeOption(${q.id},${i})">✕</button>
+      </div>`).join("");
+    return `<div class="options-list">${opts}</div>
+      <button class="add-option-btn" onclick="addOption(${q.id})">＋ Añadir opción</button>`;
+  }
+  if (q.type==="text") return `<div class="muted" style="padding:10px 0;font-style:italic;font-size:13px">Campo de respuesta corta</div>`;
+  if (q.type==="paragraph") return `<div class="muted" style="padding:10px 0;font-style:italic;font-size:13px">Campo de respuesta larga</div>`;
+  if (q.type==="linear_scale") {
+    const min = q.scaleMin||1, max = q.scaleMax||5;
+    const btns = Array.from({length:max-min+1},(_,i)=>`<div class="scale-btn-preview">${min+i}</div>`).join("");
+    return `
+      <div class="settings-grid" style="margin-bottom:10px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Mínimo</label>
+          <input type="number" value="${min}" min="0" max="9" oninput="updateScale(${q.id},'min',this.value)">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Máximo</label>
+          <input type="number" value="${max}" min="2" max="10" oninput="updateScale(${q.id},'max',this.value)">
+        </div>
+      </div>
+      <div class="scale-preview">${btns}</div>
+      <div class="scale-labels" style="margin-top:8px">
+        <input type="text" value="${q.scaleMinLabel||''}" placeholder="Etiqueta mínimo" style="width:180px"
+          oninput="updateScaleLabel(${q.id},'min',this.value)">
+        <input type="text" value="${q.scaleMaxLabel||''}" placeholder="Etiqueta máximo" style="width:180px"
+          oninput="updateScaleLabel(${q.id},'max',this.value)">
+      </div>`;
+  }
+  if (q.type==="grid") {
+    const rows = q.gridRows||["Fila 1"];
+    const cols = q.gridColumns||["Columna 1","Columna 2"];
+    const rowInputs = rows.map((r,i)=>`<div class="option-row">
+      <input type="text" value="${escHtml(r)}" placeholder="Fila ${i+1}" oninput="updateGridRow(${q.id},${i},this.value)">
+      <button class="remove-opt" onclick="removeGridRow(${q.id},${i})">✕</button>
+    </div>`).join("");
+    const colInputs = cols.map((c,i)=>`<div class="option-row">
+      <input type="text" value="${escHtml(c)}" placeholder="Col ${i+1}" oninput="updateGridCol(${q.id},${i},this.value)">
+      <button class="remove-opt" onclick="removeGridCol(${q.id},${i})">✕</button>
+    </div>`).join("");
+    return `
+      <div class="grid-builder">
+        <div class="grid-section"><label>Filas</label>${rowInputs}
+          <button class="add-option-btn" onclick="addGridRow(${q.id})">＋ Fila</button></div>
+        <div class="grid-section"><label>Columnas</label>${colInputs}
+          <button class="add-option-btn" onclick="addGridCol(${q.id})">＋ Columna</button></div>
+      </div>`;
+  }
+  return "";
+}
+
+function refreshQBody(id) {
+  const q = questions.find(q=>q.id===id);
+  if (!q) return;
+  document.getElementById("q-body-"+id).innerHTML = renderQBody(q);
+}
+
+function updateQText(id,v){questions.find(q=>q.id===id).text=v}
+function updateQType(id,v){
+  const q=questions.find(q=>q.id===id);q.type=v;
+  if(["multiple_choice","checkboxes"].includes(v)&&!q.options?.length) q.options=["Opción 1","Opción 2"];
+  if(v==="linear_scale"){q.scaleMin=1;q.scaleMax=5;q.scaleMinLabel="";q.scaleMaxLabel="";}
+  if(v==="grid"){q.gridRows=["Fila 1"];q.gridColumns=["Columna 1","Columna 2"];}
+  refreshQBody(id);
+}
+function updateOption(id,i,v){questions.find(q=>q.id===id).options[i]=v}
+function addOption(id){const q=questions.find(q=>q.id===id);q.options.push("Opción "+(q.options.length+1));refreshQBody(id)}
+function removeOption(id,i){const q=questions.find(q=>q.id===id);if(q.options.length<=2)return;q.options.splice(i,1);refreshQBody(id)}
+function updateScale(id,minmax,v){const q=questions.find(q=>q.id===id);if(minmax==='min')q.scaleMin=parseInt(v);else q.scaleMax=parseInt(v);refreshQBody(id)}
+function updateScaleLabel(id,minmax,v){const q=questions.find(q=>q.id===id);if(minmax==='min')q.scaleMinLabel=v;else q.scaleMaxLabel=v}
+function updateGridRow(id,i,v){questions.find(q=>q.id===id).gridRows[i]=v}
+function updateGridCol(id,i,v){questions.find(q=>q.id===id).gridColumns[i]=v}
+function addGridRow(id){questions.find(q=>q.id===id).gridRows.push("Fila "+(questions.find(q=>q.id===id).gridRows.length+1));refreshQBody(id)}
+function addGridCol(id){questions.find(q=>q.id===id).gridColumns.push("Col "+(questions.find(q=>q.id===id).gridColumns.length+1));refreshQBody(id)}
+function removeGridRow(id,i){const q=questions.find(q=>q.id===id);if(q.gridRows.length<=1)return;q.gridRows.splice(i,1);refreshQBody(id)}
+function removeGridCol(id,i){const q=questions.find(q=>q.id===id);if(q.gridColumns.length<=1)return;q.gridColumns.splice(i,1);refreshQBody(id)}
+function removeQuestion(id){
+  if(questions.length<=1)return alert("La encuesta necesita al menos 1 pregunta.");
+  questions=questions.filter(q=>q.id!==id);
+  document.getElementById("q-card-"+id)?.remove();
+  // renumber
+  questions.forEach((q,i)=>{const n=document.querySelector(`#q-card-${q.id} .q-num`);if(n)n.textContent=i+1;});
+}
+
+async function createPoll() {
+  if (!token) return alert("Inicia sesión para crear encuestas.");
+  const title = document.getElementById("poll-title-input").value.trim();
+  if (!title) return alert("El título es obligatorio.");
+  if (!questions.length) return alert("Añade al menos una pregunta.");
+
+  // For now we support one question per poll (matching backend structure)
+  // We'll send the first question's type/options; multi-question support can be a v2 feature
+  // Actually the backend handles 1 question per poll. We'll submit each as separate polls or just use first q.
+  // Use first question as the poll's question type for now, with a note.
+  const q = questions[0];
+
+  const body = {
+    title,
+    description: document.getElementById("poll-desc-input").value.trim(),
+    questionType: q.type,
+    options: ["multiple_choice","checkboxes","datetime"].includes(q.type) ? q.options : undefined,
+    scaleMin: q.scaleMin,
+    scaleMax: q.scaleMax,
+    scaleMinLabel: q.scaleMinLabel||"",
+    scaleMaxLabel: q.scaleMaxLabel||"",
+    gridRows: q.gridRows,
+    gridColumns: q.gridColumns,
+    accessMode: document.getElementById("poll-access").value,
+    anonymous: document.getElementById("poll-anon").checked,
+    allowMultipleVotes: document.getElementById("poll-multi").checked,
+    expiresAt: document.getElementById("poll-expires").value || undefined,
+  };
+
+  const btn = document.getElementById("create-btn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-sm"></span> Publicando…`;
+  try {
+    const r = await fetch(`${API}/forms/polls`, {
+      method:"POST",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) { alert(d.error || "Error al crear"); return; }
+    shareModal(d.pollId);
+    loadMyPolls();
+  } catch { alert("Error de conexión"); }
+  finally { btn.disabled=false; btn.textContent="Publicar encuesta"; }
+}
+
+// ── Vote view ─────────────────────────────────────────────────────
+async function showVoteView(pollId) {
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-vote").classList.add("active");
+  document.getElementById("nav-tabs").style.display = "none";
+  document.getElementById("vote-loading").classList.remove("hidden");
+  document.getElementById("vote-content").classList.add("hidden");
+  currentPollId = pollId;
+  captchaToken = null;
+
+  try {
+    const r = await fetch(`${API}/forms/polls/${pollId}`);
+    currentPoll = await r.json();
+    if (!r.ok) {
+      document.getElementById("vote-loading").innerHTML = `<p style="color:var(--danger)">${currentPoll.error||"Encuesta no encontrada"}</p>`;
+      return;
+    }
+    renderVoteView(currentPoll);
+  } catch {
+    document.getElementById("vote-loading").innerHTML = `<p style="color:var(--danger)">Error de conexión</p>`;
+  }
+}
+
+function renderVoteView(poll) {
+  document.getElementById("vote-loading").classList.add("hidden");
+  document.getElementById("vote-content").classList.remove("hidden");
+
+  document.getElementById("vote-title").textContent = poll.title;
+
+  // Meta pills
+  const meta = document.getElementById("vote-meta");
+  meta.innerHTML = "";
+  meta.innerHTML += `<span class="meta-pill">${typeLabel(poll.questionType)}</span>`;
+  if (poll.accessMode==="neat_only") meta.innerHTML += `<span class="meta-pill">🔐 Solo Neat</span>`;
+  if (poll.anonymous) meta.innerHTML += `<span class="meta-pill">👤 Anónimo</span>`;
+  if (poll.expiresAt) meta.innerHTML += `<span class="meta-pill">⏰ Expira ${new Date(poll.expiresAt).toLocaleDateString()}</span>`;
+
+  if (poll.description) {
+    const descEl = document.getElementById("vote-desc");
+    descEl.textContent = poll.description;
+    descEl.style.display = "block";
+  }
+  document.getElementById("vote-creator").innerHTML = `Creado por <strong>${escHtml(poll.creatorUsername)}</strong>${poll.creatorVerified?' ✅':''}`;
+
+  // Status banner
+  const banner = document.getElementById("vote-status-banner");
+  banner.innerHTML = "";
+  if (poll.closed) {
+    banner.innerHTML = `<div class="status-banner closed">🔒 Esta encuesta está cerrada y ya no acepta respuestas.</div>`;
+    lockVoteForm();
+  } else if (poll.expired) {
+    banner.innerHTML = `<div class="status-banner expired">⏰ Esta encuesta ha expirado.</div>`;
+    lockVoteForm();
+  }
+
+  // Render question
+  const qc = document.getElementById("vote-questions");
+  qc.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "vote-q-card";
+  card.id = "vq-0";
+  card.innerHTML = `
+    <div class="q-title">${escHtml(poll.title)}</div>
+    <div class="q-hint">${questionHint(poll)}</div>
+    <div id="vq-body-0">${renderVoteQuestion(poll, 0)}</div>
+  `;
+  qc.appendChild(card);
+
+  // Voter section: hide name if neat_only (we use logged-in user)
+  if (poll.accessMode === "neat_only") {
+    document.getElementById("voter-name-group").style.display = "none";
+    if (token) {
+      document.getElementById("captcha-container").style.display = "none";
+      captchaToken = "neat_user"; // neat_only doesn't need captcha
+    }
+  }
+
+  checkVoteReady();
+}
+
+function renderVoteQuestion(poll, idx) {
+  const type = poll.questionType;
+  if (["multiple_choice","checkboxes","datetime"].includes(type)) {
+    return `<div class="choice-list" id="choices-${idx}">
+      ${poll.options.map((o,i)=>`
+        <div class="choice-item" id="choice-${idx}-${i}" onclick="selectChoice(${idx},${i},'${type}')">
+          <div class="choice-box ${type!=='multiple_choice'?'choice-radio':''}">
+            <span class="choice-check">✓</span>
+          </div>
+          <span class="choice-label">${escHtml(o)}</span>
+        </div>`).join("")}
+    </div>`;
+  }
+  if (type==="text") return `<input type="text" id="text-ans-${idx}" placeholder="Tu respuesta…" oninput="checkVoteReady()" maxlength="500">`;
+  if (type==="paragraph") return `<textarea id="text-ans-${idx}" placeholder="Tu respuesta…" oninput="checkVoteReady()" maxlength="5000"></textarea>`;
+  if (type==="linear_scale") {
+    const btns = Array.from({length:poll.scaleMax-poll.scaleMin+1},(_,i)=>`
+      <div class="scale-opt" id="scale-${idx}-${poll.scaleMin+i}" onclick="selectScale(${idx},${poll.scaleMin+i})">${poll.scaleMin+i}</div>`
+    ).join("");
+    return `<div class="scale-row" id="scale-row-${idx}">${btns}</div>
+      <div class="scale-labels-row">
+        <span>${escHtml(poll.scaleMinLabel||'')}</span>
+        <span>${escHtml(poll.scaleMaxLabel||'')}</span>
+      </div>`;
+  }
+  if (type==="grid") {
+    const header = `<tr><th></th>${poll.gridColumns.map(c=>`<th>${escHtml(c)}</th>`).join("")}</tr>`;
+    const rows = poll.gridRows.map((r,ri)=>`<tr>
+      <td>${escHtml(r)}</td>
+      ${poll.gridColumns.map((c,ci)=>`<td>
+        <div class="grid-radio" id="gr-${idx}-${ri}-${ci}" onclick="selectGrid(${idx},${ri},${ci})">
+          <div class="grid-dot"></div>
+        </div>
+      </td>`).join("")}
+    </tr>`).join("");
+    return `<table class="grid-table"><thead>${header}</thead><tbody>${rows}</tbody></table>`;
+  }
+  return "";
+}
+
+// Vote selection state
+const voteState = {};
+
+function selectChoice(qIdx, optIdx, type) {
+  if (type==="multiple_choice") {
+    voteState[qIdx] = [optIdx];
+    document.querySelectorAll(`#choices-${qIdx} .choice-item`).forEach(el=>el.classList.remove("selected"));
+  } else {
+    if (!voteState[qIdx]) voteState[qIdx] = [];
+    const pos = voteState[qIdx].indexOf(optIdx);
+    if (pos>=0) voteState[qIdx].splice(pos,1);
+    else voteState[qIdx].push(optIdx);
+  }
+  if (type==="multiple_choice") {
+    document.getElementById(`choice-${qIdx}-${optIdx}`)?.classList.add("selected");
+  } else {
+    document.querySelectorAll(`#choices-${qIdx} .choice-item`).forEach((el,i)=>{
+      el.classList.toggle("selected", voteState[qIdx].includes(i));
+    });
+  }
+  document.getElementById("vq-0")?.classList.add("answered");
+  checkVoteReady();
+}
+
+function selectScale(qIdx, val) {
+  voteState[qIdx] = val;
+  document.querySelectorAll(`[id^="scale-${qIdx}-"]`).forEach(el=>el.classList.remove("selected"));
+  document.getElementById(`scale-${qIdx}-${val}`)?.classList.add("selected");
+  document.getElementById("vq-0")?.classList.add("answered");
+  checkVoteReady();
+}
+
+function selectGrid(qIdx, rowIdx, colIdx) {
+  if (!voteState[qIdx]) voteState[qIdx] = {};
+  const row = currentPoll.gridRows[rowIdx];
+  const col = currentPoll.gridColumns[colIdx];
+  voteState[qIdx][row] = col;
+  // reset row radio buttons
+  currentPoll.gridColumns.forEach((_,ci)=>{
+    document.getElementById(`gr-${qIdx}-${rowIdx}-${ci}`)?.classList.remove("selected");
+  });
+  document.getElementById(`gr-${qIdx}-${rowIdx}-${colIdx}`)?.classList.add("selected");
+  checkVoteReady();
+}
+
+function checkVoteReady() {
+  const poll = currentPoll;
+  if (!poll) return;
+  let answered = false;
+  const type = poll.questionType;
+  if (["multiple_choice","checkboxes"].includes(type)) {
+    answered = !!(voteState[0]?.length);
+  } else if (type==="text"||type==="paragraph") {
+    answered = !!(document.getElementById("text-ans-0")?.value.trim());
+  } else if (type==="linear_scale") {
+    answered = voteState[0] !== undefined;
+  } else if (type==="grid") {
+    answered = poll.gridRows.every(r => voteState[0]?.[r]);
+  }
+
+  const needsCaptcha = poll.accessMode !== "neat_only";
+  const captchaOk = !needsCaptcha || !!captchaToken;
+  const voterOk = poll.accessMode === "neat_only" || !!document.getElementById("voter-name-input")?.value.trim();
+
+  const ready = answered && captchaOk && voterOk && !poll.closed && !poll.expired;
+  const btn = document.getElementById("vote-btn");
+  if (btn) {
+    btn.disabled = !ready;
+    const hint = document.querySelector(".vote-submit-area p");
+    if (hint) hint.style.display = ready ? "none" : "";
+  }
+}
+
+function lockVoteForm() {
+  document.getElementById("voter-section")?.style && (document.getElementById("voter-section").style.display = "none");
+  document.getElementById("vote-submit-area")?.style && (document.getElementById("vote-submit-area").style.display = "none");
+}
+
+async function submitVote() {
+  const poll = currentPoll;
+  const errEl = document.getElementById("vote-error");
+  errEl.style.display = "none";
+
+  const body = {};
+  const type = poll.questionType;
+
+  if (["multiple_choice","checkboxes"].includes(type)) {
+    body.selections = voteState[0] || [];
+  } else if (type==="text"||type==="paragraph") {
+    body.text = document.getElementById("text-ans-0")?.value.trim();
+  } else if (type==="linear_scale") {
+    body.scaleValue = voteState[0];
+  } else if (type==="grid") {
+    body.gridSelections = Object.entries(voteState[0]||{}).map(([row,column])=>({row,column}));
+  }
+
+  if (poll.accessMode !== "neat_only") {
+    body.voterName = document.getElementById("voter-name-input")?.value.trim();
+    body.voterToken = captchaToken;
+  }
+
+  const btn = document.getElementById("vote-btn");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-sm"></span> Enviando…`;
+
+  const headers = {"Content-Type":"application/json"};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const r = await fetch(`${API}/forms/polls/${poll.pollId}/vote`, {method:"POST",headers,body:JSON.stringify(body)});
+    const d = await r.json();
+    if (!r.ok) {
+      errEl.textContent = d.error || "Error al enviar";
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Enviar respuesta";
+      return;
+    }
+    document.getElementById("vote-submit-area").style.display = "none";
+    document.getElementById("voter-section").style.display = "none";
+    document.getElementById("vote-success").classList.remove("hidden");
+    document.getElementById("vote-success").style.display = "block";
+  } catch {
+    errEl.textContent = "Error de conexión";
+    errEl.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "Enviar respuesta";
+  }
+}
+
+function goToResults() {
+  showResultsView(currentPollId);
+}
+
+// ── Results ────────────────────────────────────────────────────────
+async function showResultsView(pollId) {
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-results").classList.add("active");
+  document.getElementById("nav-tabs").style.display = token ? "" : "none";
+  currentPollId = pollId;
+
+  const container = document.getElementById("results-container");
+  container.innerHTML = `<div class="loading-center"><span class="spinner-sm"></span></div>`;
+
+  try {
+    const headers = token ? {Authorization:`Bearer ${token}`} : {};
+    const [pollRes, resultsRes] = await Promise.all([
+      fetch(`${API}/forms/polls/${pollId}`),
+      fetch(`${API}/forms/polls/${pollId}/results`, {headers})
+    ]);
+    const poll = await pollRes.json();
+    const results = await resultsRes.json();
+
+    document.getElementById("results-title").textContent = poll.title;
+
+    // Summary
+    const total = results.totalVotes || results.totalResponses || 0;
+    document.getElementById("results-summary").innerHTML = `
+      <div class="summary-stat"><div class="val">${total}</div><div class="lbl">respuestas</div></div>
+      <div class="summary-stat"><div class="val">${poll.closed?'Cerrada':'Abierta'}</div><div class="lbl">estado</div></div>
+      <div class="summary-stat"><div class="val">${typeLabel(poll.questionType)}</div><div class="lbl">tipo</div></div>
+    `;
+
+    container.innerHTML = "";
+
+    // Share button
+    const shareBar = document.createElement("div");
+    shareBar.style="display:flex;gap:8px;margin-bottom:16px;justify-content:flex-end";
+    shareBar.innerHTML = `
+      <button class="btn btn-ghost" onclick="shareModal('${pollId}')">🔗 Compartir</button>
+      ${!poll.closed && token ? `<button class="btn btn-danger" onclick="closePoll('${pollId}')">🔒 Cerrar encuesta</button>` : ''}
+    `;
+    container.appendChild(shareBar);
+
+    const card = document.createElement("div");
+    card.className = "result-card";
+    card.innerHTML = `<h3>${escHtml(poll.title)}</h3>${renderResults(poll, results)}`;
+    container.appendChild(card);
+
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><p>Error cargando resultados</p></div>`;
+  }
+}
+
+function renderResults(poll, results) {
+  const type = poll.questionType;
+
+  if (["multiple_choice","checkboxes","datetime"].includes(type)) {
+    const total = results.totalVotes || 1;
+    return results.counts.map(c => {
+      const pct = Math.round((c.count/total)*100);
+      return `<div class="bar-row">
+        <div class="bar-label"><span class="opt-name">${escHtml(c.option)}</span><span class="opt-count">${c.count} voto${c.count!==1?'s':''} · ${pct}%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join("");
+  }
+
+  if (type==="text"||type==="paragraph") {
+    if (!results.responses) return `<p class="muted">Solo el creador puede ver las respuestas.</p>`;
+    return `<div class="text-responses">${results.responses.map(r=>`
+      <div class="text-response">
+        ${escHtml(r.value)}
+        ${r.voter?`<div class="muted" style="margin-top:4px;font-size:11px">— ${escHtml(r.voter)}</div>`:''}
+      </div>`).join("")}</div>`;
+  }
+
+  if (type==="linear_scale") {
+    const counts = results.counts;
+    const max = Math.max(...Object.values(counts), 1);
+    const bars = Object.entries(counts).map(([v,c])=>`
+      <div class="scale-bar-wrap">
+        <div class="scale-bar-col ${c===max?'best':''}" style="height:${Math.max(8,Math.round((c/max)*80))}px"></div>
+        <div class="scale-bar-num">${v}</div>
+      </div>`).join("");
+    return `<div class="scale-result">${bars}</div>
+      <div class="scale-avg">Promedio: <span>${results.average?.toFixed(1)||'-'}</span></div>`;
+  }
+
+  if (type==="grid") {
+    const grid = results.grid;
+    const rows = Object.keys(grid);
+    const cols = rows.length ? Object.keys(grid[rows[0]]) : [];
+    const maxVal = Math.max(...rows.flatMap(r=>cols.map(c=>grid[r][c])), 1);
+    const header = `<tr><th></th>${cols.map(c=>`<th>${escHtml(c)}</th>`).join("")}</tr>`;
+    const tableRows = rows.map(r=>`<tr>
+      <td>${escHtml(r)}</td>
+      ${cols.map(c=>{
+        const v=grid[r][c]; const heat=Math.round((v/maxVal)*80);
+        return `<td class="grid-cell-heat" style="background:rgba(233,180,76,${(v/maxVal)*0.4})">${v}</td>`;
+      }).join("")}
+    </tr>`).join("");
+    return `<table class="grid-result-table"><thead>${header}</thead><tbody>${tableRows}</tbody></table>`;
+  }
+  return "";
+}
+
+function goBack() {
+  if (token) { showView("list"); } else { history.back(); }
+}
+
+// ── Share modal ────────────────────────────────────────────────────
+function shareModal(pollId) {
+  const url = `${location.origin}${location.pathname}#vote/${pollId}`;
+  document.getElementById("share-url-input").value = url;
+  document.getElementById("share-modal").classList.remove("hidden");
+}
+function closeShareModal() { document.getElementById("share-modal").classList.add("hidden"); }
+function copyShareUrl() {
+  const input = document.getElementById("share-url-input");
+  input.select();
+  navigator.clipboard.writeText(input.value).then(()=>{
+    const btn = input.nextElementSibling;
+    btn.textContent = "¡Copiado!";
+    setTimeout(()=>btn.textContent="Copiar", 2000);
+  });
+}
+
+// ── Helpers ────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function typeLabel(t) {
+  return {multiple_choice:"Opción múltiple",checkboxes:"Casillas",text:"Respuesta corta",
+    paragraph:"Párrafo",linear_scale:"Escala",grid:"Cuadrícula",datetime:"Fecha/Hora",file_upload:"Archivo"}[t]||t;
+}
+function questionHint(poll) {
+  if (poll.questionType==="multiple_choice") return "Elige una opción";
+  if (poll.questionType==="checkboxes") return "Puedes elegir varias opciones";
+  if (poll.questionType==="linear_scale") return `Escala de ${poll.scaleMin} a ${poll.scaleMax}`;
+  if (poll.questionType==="grid") return "Selecciona una opción por fila";
+  return "";
+}
+</script>
+</body>
+</html>
