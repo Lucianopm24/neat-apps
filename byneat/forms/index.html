@@ -654,7 +654,7 @@ window.addEventListener("load", () => {
 
   if (token) {
     hideAuth();
-    loadMyPolls();
+    showView("list");
   }
   // else auth stays visible
 });
@@ -677,7 +677,7 @@ async function doLogin() {
     if (!r.ok) return showAuthError(d.error || "Error al entrar");
     saveSession(d);
     hideAuth();
-    loadMyPolls();
+    showView("list");
   } catch { showAuthError("Error de conexión"); }
 }
 
@@ -691,7 +691,7 @@ async function doRegister() {
     if (!r.ok) return showAuthError(d.error || "Error al registrarse");
     saveSession(d);
     hideAuth();
-    loadMyPolls();
+    showView("list");
   } catch { showAuthError("Error de conexión"); }
 }
 
