@@ -497,13 +497,21 @@ async function loadOAuth() {
   const r = await api("/oauth/clients");
   const clients = await r.json();
   const tb = document.getElementById("oauthTable");
-  if (!clients.length) { tb.innerHTML = `<tr><td colspan="4" class="empty">Sin apps OAuth</td></tr>`; return; }
+  if (!clients.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">Sin apps OAuth</td></tr>`; return; }
   tb.innerHTML = clients.map(c => `<tr>
-    <td><strong>${c.name}</strong></td>
+    <td><strong>${c.name}</strong> ${c.verified ? '<span title="App verificada" style="color:#1a73e8;font-size:13px">&#10003;</span>' : ''}</td>
     <td><span class="copy-id" onclick="copyId('${c.clientId}')">${c.clientId.slice(0,12)}…</span></td>
     <td style="color:var(--muted)">${(c.scopes||[]).join(", ")}</td>
     <td style="color:var(--muted)">${new Date(c.createdAt).toLocaleDateString("es")}</td>
+    <td><button class="btn btn-sm ${c.verified ? 'btn-ghost' : 'btn-primary'}" onclick="toggleVerifyApp('${c.clientId}', ${!c.verified})">${c.verified ? 'Desverificar' : 'Verificar'}</button></td>
   </tr>`).join("");
+}
+
+async function toggleVerifyApp(clientId, verify) {
+  const r = await api(`/oauth/clients/${clientId}/verify`, {method:"PUT", body: JSON.stringify({verified: verify})});
+  if (!r.ok) { const d = await r.json(); toast(d.error || "Error", "err"); return; }
+  toast(verify ? "App verificada" : "Verificacion removida");
+  loadOAuth();
 }
 
 function openOAuthModal() {
