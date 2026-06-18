@@ -634,7 +634,7 @@
         <button class="upload-mode-btn" id="mode-own-btn" onclick="setUploadMode('own')">
           <span class="mode-icon">🔗</span>
           <span>URL propia</span>
-          <span class="mode-sub">Tú eliges dónde hospedar</span>
+          <span class="mode-sub">Dropbox u otro servicio</span>
         </button>
       </div>
 
@@ -667,7 +667,7 @@
             <span style="font-size:12px;color:var(--text2)">¿Video mayor a 20MB?</span>
             <button class="upload-mode-btn" id="mode-fb-btn" onclick="setUploadMode('filebrowser')"
               style="flex:none;padding:7px 14px;font-size:12px;border-radius:8px">
-              <span>📁 Subir a Filebrowser</span>
+              <span>☁️ Servidores extendidos</span>
               <span class="upload-plus-badge">Plus</span>
             </button>
           </div>
@@ -678,7 +678,7 @@
       <div class="upload-mode-panel" id="panel-own">
         <div class="upload-info-box" id="own-info-box">
           <strong>¿Cómo consigo una raw URL?</strong>
-          <p style="margin-top:6px">Necesitas hospedar el video en algún lugar y obtener un enlace directo al archivo (termina en <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">.mp4</code> o similar).</p>
+          <p style="margin-top:6px">Es un enlace directo al archivo de video (normalmente termina en <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">.mp4</code>, <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">.mov</code>, etc.) que cualquier reproductor puede cargar sin pasar por una página web.</p>
           <p style="margin-top:8px"><strong>Opción gratuita — Dropbox:</strong></p>
           <ol>
             <li>Sube el video a <a href="https://dropbox.com" target="_blank">Dropbox</a></li>
@@ -692,9 +692,9 @@
         <!-- Panel Plus: opción Filebrowser en lugar de instrucciones -->
         <div class="upload-info-box" id="own-plus-box" style="display:none">
           <strong>Opciones disponibles para ti <span class="upload-plus-badge">Plus</span></strong>
-          <p style="margin-top:8px">Puedes pegar una raw URL de Dropbox u otro servicio, <strong>o</strong> subir directamente a tu Filebrowser personal desde el panel de Neat.</p>
+          <p style="margin-top:8px">Puedes pegar una raw URL de Dropbox u otro servicio, <strong>o</strong> usar los Servidores Extendidos de Neat para subir sin límite de tamaño.</p>
           <button onclick="setUploadMode('filebrowser')" style="margin-top:10px;background:var(--yellow);color:#000;padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;font-family:'Space Grotesk',sans-serif">
-            📁 Subir a Filebrowser
+            ☁️ Usar Servidores Extendidos
           </button>
         </div>
         <div class="upload-field">
@@ -716,8 +716,8 @@
       <!-- Panel: Filebrowser (Plus) -->
       <div class="upload-mode-panel" id="panel-filebrowser">
         <div class="upload-info-box">
-          <strong>📁 Filebrowser personal <span class="upload-plus-badge">Plus</span></strong>
-          <p style="margin-top:6px">El archivo se sube directamente a tu servidor vía Filebrowser. El video puede ser de cualquier tamaño, pero la velocidad depende de tu conexión.</p>
+          <strong>☁️ Servidores Extendidos de Neat <span class="upload-plus-badge">Plus</span></strong>
+          <p style="margin-top:6px">Sube videos de cualquier tamaño a los servidores extendidos de Neat. Sin límite de tamaño, disponible solo para miembros Plus.</p>
           <p style="margin-top:6px;color:var(--yellow)" id="fb-warning" style="display:none">⚠️ Puede ser inestable si tu servidor no está disponible.</p>
         </div>
         <div class="upload-field">
@@ -1413,7 +1413,7 @@ async function doUpload() {
   // ── Modo: Filebrowser (Plus) ──
   if (uploadMode === "filebrowser") {
     if (!selectedVideoFb) { btn.disabled = false; return toast("Selecciona un video", true); }
-    toast("📤 Subiendo a Filebrowser...");
+    toast("📤 Subiendo a Servidores Extendidos...");
     btn.textContent = "Subiendo...";
     try {
       const duration = await getVideoDuration(selectedVideoFb);
@@ -1448,7 +1448,7 @@ async function doUpload() {
     const mb = (selectedVideo.size / 1024 / 1024).toFixed(1);
     const isPlus = currentUser?.neatPlus;
     if (isPlus) {
-      toast(`❌ El video pesa ${mb}MB. Usa "Filebrowser" o una URL propia.`, true);
+      toast(`❌ El video pesa ${mb}MB. Usa Servidores Extendidos o una URL propia.`, true);
     } else {
       toast(`❌ El video pesa ${mb}MB (máx. 20MB). Usa una URL propia o actualiza a Plus.`, true);
     }
