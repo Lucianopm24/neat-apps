@@ -360,6 +360,35 @@
   .upload-progress-bar { height:100%; background:var(--yellow); width:0; transition:width .3s; border-radius:20px; }
   .upload-submit { margin-top:8px; }
 
+  /* ── Upload mode selector ── */
+  .upload-mode-selector { display:flex; gap:8px; margin-bottom:24px; }
+  .upload-mode-btn {
+    flex:1; padding:14px 12px; border-radius:var(--radius-lg);
+    border:2px solid var(--bg4); background:var(--bg2);
+    color:var(--text2); font-size:14px; font-weight:600;
+    font-family:'Space Grotesk',sans-serif; transition:.2s; text-align:center; cursor:pointer;
+  }
+  .upload-mode-btn:hover { border-color:var(--bg4); color:var(--text); background:var(--bg3); }
+  .upload-mode-btn.active { border-color:var(--yellow); color:var(--yellow); background:var(--yellow-glow); }
+  .upload-mode-btn .mode-icon { font-size:22px; display:block; margin-bottom:4px; }
+  .upload-mode-btn .mode-sub { font-size:11px; color:var(--text3); font-weight:400; margin-top:2px; }
+  .upload-mode-btn.active .mode-sub { color:var(--yellow-dim); }
+  .upload-mode-panel { display:none; }
+  .upload-mode-panel.active { display:block; }
+  .upload-info-box {
+    background:var(--bg2); border:1px solid var(--bg3);
+    border-radius:var(--radius-lg); padding:16px; margin-bottom:18px;
+    font-size:13px; color:var(--text2); line-height:1.7;
+  }
+  .upload-info-box strong { color:var(--text); }
+  .upload-info-box a { color:var(--yellow); text-decoration:underline; }
+  .upload-info-box ol { padding-left:18px; margin-top:8px; }
+  .upload-info-box li { margin-bottom:4px; }
+  .upload-plus-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    background:var(--yellow); color:#000; font-size:11px; font-weight:700;
+    padding:2px 8px; border-radius:4px; margin-left:6px; vertical-align:middle;
+  }
   /* ── Empty states ── */
   .empty { text-align:center; padding:60px 20px; color:var(--text3); }
   .empty .empty-icon { font-size:48px; margin-bottom:12px; }
@@ -568,8 +597,11 @@
     </div>
 
     <!-- Upload view -->
+    <!-- Upload view -->
     <div id="upload-view">
       <div class="upload-title">Subir video</div>
+
+      <!-- Campos comunes: título, desc, categoría -->
       <div class="upload-field">
         <label>Título</label>
         <input id="up-title" type="text" placeholder="Título del video">
@@ -591,27 +623,126 @@
           <option value="otro">Otro</option>
         </select>
       </div>
-      <div class="upload-field">
-        <label>Video</label>
-        <div class="file-drop" id="video-drop">
-          <input type="file" id="up-video" accept="video/*" onchange="fileSelected(this,'video')">
-          <div class="drop-icon">🎬</div>
-          <div class="drop-text">Arrastra tu video o <strong>haz clic</strong></div>
-          <div class="file-selected" id="video-name"></div>
+
+      <!-- Selector de modo -->
+      <div class="upload-mode-selector">
+        <button class="upload-mode-btn active" id="mode-neat-btn" onclick="setUploadMode('neat')">
+          <span class="mode-icon">☁️</span>
+          <span>Servidores de Neat</span>
+          <span class="mode-sub">Hasta 20MB · Gratis</span>
+        </button>
+        <button class="upload-mode-btn" id="mode-own-btn" onclick="setUploadMode('own')">
+          <span class="mode-icon">🔗</span>
+          <span>URL propia</span>
+          <span class="mode-sub">Tú eliges dónde hospedar</span>
+        </button>
+      </div>
+
+      <!-- Panel: Servidores de Neat -->
+      <div class="upload-mode-panel active" id="panel-neat">
+        <div class="upload-field">
+          <label>Video <span style="color:var(--text3);font-weight:400;font-size:11px">(máx. 20MB)</span></label>
+          <div class="file-drop" id="video-drop">
+            <input type="file" id="up-video" accept="video/*" onchange="fileSelected(this,'video')">
+            <div class="drop-icon">🎬</div>
+            <div class="drop-text">Arrastra tu video o <strong>haz clic</strong></div>
+            <div class="file-selected" id="video-name"></div>
+          </div>
+          <div class="upload-progress" id="video-progress">
+            <div class="upload-progress-bar" id="video-bar"></div>
+          </div>
         </div>
-        <div class="upload-progress" id="video-progress">
-          <div class="upload-progress-bar" id="video-bar"></div>
+        <div class="upload-field">
+          <label>Thumbnail (opcional)</label>
+          <div class="file-drop" id="thumb-drop">
+            <input type="file" id="up-thumb" accept="image/*" onchange="fileSelected(this,'thumb')">
+            <div class="drop-icon">🖼️</div>
+            <div class="drop-text">Imagen de portada o <strong>haz clic</strong></div>
+            <div class="file-selected" id="thumb-name"></div>
+          </div>
+        </div>
+        <!-- Panel Plus: Filebrowser (solo visible si isPlus) -->
+        <div id="neat-plus-extra" style="display:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:12px;color:var(--text2)">¿Video mayor a 20MB?</span>
+            <button class="upload-mode-btn" id="mode-fb-btn" onclick="setUploadMode('filebrowser')"
+              style="flex:none;padding:7px 14px;font-size:12px;border-radius:8px">
+              <span>📁 Subir a Filebrowser</span>
+              <span class="upload-plus-badge">Plus</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div class="upload-field">
-        <label>Thumbnail (opcional)</label>
-        <div class="file-drop" id="thumb-drop">
-          <input type="file" id="up-thumb" accept="image/*" onchange="fileSelected(this,'thumb')">
-          <div class="drop-icon">🖼️</div>
-          <div class="drop-text">Imagen de portada o <strong>haz clic</strong></div>
-          <div class="file-selected" id="thumb-name"></div>
+
+      <!-- Panel: URL propia -->
+      <div class="upload-mode-panel" id="panel-own">
+        <div class="upload-info-box" id="own-info-box">
+          <strong>¿Cómo consigo una raw URL?</strong>
+          <p style="margin-top:6px">Necesitas hospedar el video en algún lugar y obtener un enlace directo al archivo (termina en <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">.mp4</code> o similar).</p>
+          <p style="margin-top:8px"><strong>Opción gratuita — Dropbox:</strong></p>
+          <ol>
+            <li>Sube el video a <a href="https://dropbox.com" target="_blank">Dropbox</a></li>
+            <li>Click derecho → <strong>Compartir</strong> → <strong>Crear enlace</strong></li>
+            <li>Copia el enlace — termina en <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">?dl=0</code></li>
+            <li>Cambia el <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">dl=0</code> por <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">dl=1</code></li>
+            <li>Pega esa URL abajo ↓</li>
+          </ol>
+          <p style="margin-top:10px;color:var(--text3)">También puedes usar cualquier otro servidor que sirva el archivo directamente.</p>
+        </div>
+        <!-- Panel Plus: opción Filebrowser en lugar de instrucciones -->
+        <div class="upload-info-box" id="own-plus-box" style="display:none">
+          <strong>Opciones disponibles para ti <span class="upload-plus-badge">Plus</span></strong>
+          <p style="margin-top:8px">Puedes pegar una raw URL de Dropbox u otro servicio, <strong>o</strong> subir directamente a tu Filebrowser personal desde el panel de Neat.</p>
+          <button onclick="setUploadMode('filebrowser')" style="margin-top:10px;background:var(--yellow);color:#000;padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;font-family:'Space Grotesk',sans-serif">
+            📁 Subir a Filebrowser
+          </button>
+        </div>
+        <div class="upload-field">
+          <label>Raw URL del video</label>
+          <input id="up-raw-url" type="url" placeholder="https://dl.dropboxusercontent.com/..." oninput="checkRawUrl()">
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">El reproductor cargará el video directamente desde esta URL.</div>
+        </div>
+        <div class="upload-field">
+          <label>Thumbnail (opcional)</label>
+          <div class="file-drop" id="thumb-drop-own">
+            <input type="file" id="up-thumb-own" accept="image/*" onchange="fileSelected(this,'thumb-own')">
+            <div class="drop-icon">🖼️</div>
+            <div class="drop-text">Imagen de portada o <strong>haz clic</strong></div>
+            <div class="file-selected" id="thumb-name-own"></div>
+          </div>
         </div>
       </div>
+
+      <!-- Panel: Filebrowser (Plus) -->
+      <div class="upload-mode-panel" id="panel-filebrowser">
+        <div class="upload-info-box">
+          <strong>📁 Filebrowser personal <span class="upload-plus-badge">Plus</span></strong>
+          <p style="margin-top:6px">El archivo se sube directamente a tu servidor vía Filebrowser. El video puede ser de cualquier tamaño, pero la velocidad depende de tu conexión.</p>
+          <p style="margin-top:6px;color:var(--yellow)" id="fb-warning" style="display:none">⚠️ Puede ser inestable si tu servidor no está disponible.</p>
+        </div>
+        <div class="upload-field">
+          <label>Video</label>
+          <div class="file-drop" id="video-drop-fb">
+            <input type="file" id="up-video-fb" accept="video/*" onchange="fileSelected(this,'video-fb')">
+            <div class="drop-icon">🎬</div>
+            <div class="drop-text">Arrastra tu video o <strong>haz clic</strong></div>
+            <div class="file-selected" id="video-name-fb"></div>
+          </div>
+          <div class="upload-progress" id="video-progress-fb">
+            <div class="upload-progress-bar" id="video-bar-fb"></div>
+          </div>
+        </div>
+        <div class="upload-field">
+          <label>Thumbnail (opcional)</label>
+          <div class="file-drop" id="thumb-drop-fb">
+            <input type="file" id="up-thumb-fb" accept="image/*" onchange="fileSelected(this,'thumb-fb')">
+            <div class="drop-icon">🖼️</div>
+            <div class="drop-text">Imagen de portada o <strong>haz clic</strong></div>
+            <div class="file-selected" id="thumb-name-fb"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="upload-submit">
         <button class="btn-primary" id="upload-btn" onclick="doUpload()">Publicar video</button>
       </div>
@@ -904,7 +1035,7 @@ async function showQuicks() {
 function quickItem(v) {
   return `
     <div class="quick-item" data-id="${v._id}">
-      <video src="${CDN}/${v.fileId}" loop playsinline></video>
+      <video src="${v.rawUrl || (API+'/watch/stream/'+v.fileId)}" loop playsinline></video>
       <div class="quick-overlay">
         <div class="quick-title">${esc(v.title)}</div>
          <div class="quick-uploader">@${esc(v.uploaderUsername)}${verifiedBadge(v.uploaderVerified)}</div>
@@ -937,7 +1068,7 @@ async function openVideo(v) {
   currentVideo = v;
   showView("video");
 
-  document.getElementById("main-video").src = `${CDN}/${v.fileId}`;
+  document.getElementById("main-video").src = v.rawUrl || `${API}/watch/stream/${v.fileId}`;
   document.getElementById("vd-title").textContent = v.title;
   document.getElementById("vd-views").textContent = `${(v.views||0)+1} vistas`;
   document.getElementById("vd-date").textContent = formatDate(v.createdAt);
@@ -1137,7 +1268,17 @@ async function deleteComment(id) {
 }
 
 // ── Upload ────────────────────────────────────────────────────────────────────
-let selectedVideo = null, selectedThumb = null;
+let selectedVideo = null, selectedThumb = null, selectedVideoFb = null, selectedThumbOwn = null, selectedThumbFb = null;
+let uploadMode = "neat"; // neat | own | filebrowser
+
+function setUploadMode(mode) {
+  uploadMode = mode;
+  document.getElementById("mode-neat-btn").classList.toggle("active", mode === "neat");
+  document.getElementById("mode-own-btn").classList.toggle("active", mode === "own");
+  document.getElementById("panel-neat").classList.toggle("active", mode === "neat");
+  document.getElementById("panel-own").classList.toggle("active", mode === "own");
+  document.getElementById("panel-filebrowser").classList.toggle("active", mode === "filebrowser");
+}
 
 function fileSelected(input, type) {
   const file = input.files[0];
@@ -1145,30 +1286,79 @@ function fileSelected(input, type) {
   if (type === "video") {
     selectedVideo = file;
     document.getElementById("video-name").textContent = file.name;
-  } else {
+  } else if (type === "thumb") {
     selectedThumb = file;
     document.getElementById("thumb-name").textContent = file.name;
+  } else if (type === "thumb-own") {
+    selectedThumbOwn = file;
+    document.getElementById("thumb-name-own").textContent = file.name;
+  } else if (type === "video-fb") {
+    selectedVideoFb = file;
+    document.getElementById("video-name-fb").textContent = file.name;
+  } else if (type === "thumb-fb") {
+    selectedThumbFb = file;
+    document.getElementById("thumb-name-fb").textContent = file.name;
   }
 }
 
-async function uploadToCDN(file, progressEl, barEl) {
+function checkRawUrl() {
+  // noop — solo para futura validación si se necesita
+}
+
+async function uploadToNeat(file, progressId, barId) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${CDN}/upload`);
+    xhr.open("POST", `${API}/watch/upload`);
     xhr.setRequestHeader("Authorization", "Bearer " + token);
+    const progressEl = document.getElementById(progressId);
+    const barEl = document.getElementById(barId);
     if (progressEl) progressEl.classList.add("show");
     xhr.upload.onprogress = e => {
       if (e.lengthComputable && barEl) barEl.style.width = (e.loaded/e.total*100)+"%";
     };
     xhr.onload = () => {
       try { resolve(JSON.parse(xhr.responseText)); }
-      catch { reject(new Error("Respuesta inválida del CDN")); }
+      catch { reject(new Error("Respuesta inválida del servidor")); }
     };
     xhr.onerror = () => reject(new Error("Error de red"));
     xhr.send(form);
   });
+}
+
+async function uploadToFilebrowser(file, progressId, barId) {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append("file", file);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API}/watch/upload?provider=filebrowser`);
+    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    const progressEl = document.getElementById(progressId);
+    const barEl = document.getElementById(barId);
+    if (progressEl) progressEl.classList.add("show");
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable && barEl) barEl.style.width = (e.loaded/e.total*100)+"%";
+    };
+    xhr.onload = () => {
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch { reject(new Error("Respuesta inválida del servidor")); }
+    };
+    xhr.onerror = () => reject(new Error("Error de red"));
+    xhr.send(form);
+  });
+}
+
+async function uploadThumbToNeat(file) {
+  const form = new FormData();
+  form.append("file", file);
+  const r = await fetch(`${API}/watch/upload`, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token },
+    body: form,
+  });
+  const d = await r.json();
+  return d;
 }
 
 async function getVideoDuration(file) {
@@ -1185,83 +1375,142 @@ async function doUpload() {
   if (!token) return toast("Inicia sesión", true);
   const title = document.getElementById("up-title").value.trim();
   if (!title) return toast("El título es obligatorio", true);
-  if (!selectedVideo) return toast("Selecciona un video", true);
 
-  const btn = document.getElementById("upload-btn");
-  btn.disabled = true;
-
-  // Lanzar compresión en background — usuario puede seguir usando la app
-  toast("⚙️ Comprimiendo video... puedes seguir navegando");
-  btn.textContent = "Comprimiendo...";
-
-  // Guardamos los valores del form ahora por si el usuario los cambia
   const formData = {
     title,
     description: document.getElementById("up-desc").value.trim(),
     category: document.getElementById("up-cat").value,
   };
-  const thumbFile = selectedThumb;
-  const videoFile = selectedVideo;
 
-  // Limpiar form inmediatamente para que el usuario pueda seguir
-  selectedVideo = null; selectedThumb = null;
-  document.getElementById("up-title").value = "";
-  document.getElementById("up-desc").value = "";
-  document.getElementById("video-name").textContent = "";
-  document.getElementById("thumb-name").textContent = "";
-  btn.disabled = false;
-  btn.textContent = "Publicar video";
+  const btn = document.getElementById("upload-btn");
+  btn.disabled = true;
+
+  // ── Modo: URL propia ──
+  if (uploadMode === "own") {
+    const rawUrl = document.getElementById("up-raw-url").value.trim();
+    if (!rawUrl) { btn.disabled = false; return toast("Ingresa la raw URL del video", true); }
+    try {
+      btn.textContent = "Publicando...";
+      let thumbnailFileId = null;
+      if (selectedThumbOwn) {
+        const thumbRes = await uploadThumbToNeat(selectedThumbOwn);
+        if (thumbRes.ok) thumbnailFileId = thumbRes.fileId;
+      }
+      const r = await fetch(`${API}/watch/videos`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, rawUrl, thumbnailFileId }),
+      });
+      if (!r.ok) throw new Error("Error guardando video");
+      toast("🎉 ¡Video publicado!");
+      resetUploadForm(); showHome(); loadHome();
+    } catch(err) {
+      toast("❌ " + (err.message || "Error al publicar"), true);
+    } finally { btn.disabled = false; btn.textContent = "Publicar video"; }
+    return;
+  }
+
+  // ── Modo: Filebrowser (Plus) ──
+  if (uploadMode === "filebrowser") {
+    if (!selectedVideoFb) { btn.disabled = false; return toast("Selecciona un video", true); }
+    toast("📤 Subiendo a Filebrowser...");
+    btn.textContent = "Subiendo...";
+    try {
+      const duration = await getVideoDuration(selectedVideoFb);
+      const videoRes = await uploadToFilebrowser(selectedVideoFb, "video-progress-fb", "video-bar-fb");
+      if (!videoRes.ok) throw new Error(videoRes.error || "Error subiendo video");
+
+      let thumbnailFileId = null;
+      if (selectedThumbFb) {
+        const thumbRes = await uploadThumbToNeat(selectedThumbFb);
+        if (thumbRes.ok) thumbnailFileId = thumbRes.fileId;
+      }
+      const r = await fetch(`${API}/watch/videos`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, rawUrl: videoRes.url, thumbnailFileId, duration }),
+      });
+      if (!r.ok) throw new Error("Error guardando video");
+      toast("🎉 ¡Video publicado!");
+      resetUploadForm(); showHome(); loadHome();
+    } catch(err) {
+      toast("❌ " + (err.message || "Error al publicar"), true);
+    } finally { btn.disabled = false; btn.textContent = "Publicar video"; document.getElementById("video-progress-fb").classList.remove("show"); }
+    return;
+  }
+
+  // ── Modo: Servidores de Neat (Telegram ≤20MB) ──
+  if (!selectedVideo) { btn.disabled = false; return toast("Selecciona un video", true); }
+
+  const LIMIT = 20 * 1024 * 1024;
+  if (selectedVideo.size > LIMIT) {
+    btn.disabled = false;
+    const mb = (selectedVideo.size / 1024 / 1024).toFixed(1);
+    const isPlus = currentUser?.neatPlus;
+    if (isPlus) {
+      toast(`❌ El video pesa ${mb}MB. Usa "Filebrowser" o una URL propia.`, true);
+    } else {
+      toast(`❌ El video pesa ${mb}MB (máx. 20MB). Usa una URL propia o actualiza a Plus.`, true);
+    }
+    return;
+  }
+
+  toast("⚙️ Comprimiendo video...");
+  btn.textContent = "Comprimiendo...";
+
+  const videoFile = selectedVideo;
+  const thumbFile = selectedThumb;
+  resetUploadForm();
+  btn.disabled = false; btn.textContent = "Publicar video";
   showHome();
 
-  // Procesar en background
   (async () => {
     try {
-      // Comprimir
       let compressed;
-      try {
-        compressed = await compressVideo(videoFile);
-      } catch(e) {
-        toast("⚠️ No se pudo comprimir, subiendo original...");
-        compressed = videoFile;
+      try { compressed = await compressVideo(videoFile); }
+      catch { toast("⚠️ No se pudo comprimir, subiendo original..."); compressed = videoFile; }
+
+      if (compressed.size > LIMIT) {
+        return toast(`❌ Video demasiado grande incluso comprimido (${(compressed.size/1024/1024).toFixed(1)}MB)`, true);
       }
 
-      // Verificar tamaño
-      if (compressed.size > 20 * 1024 * 1024) {
-        return toast("❌ Video demasiado grande incluso comprimido (" + (compressed.size/1024/1024).toFixed(1) + "MB)", true);
-      }
-
-      toast("📤 Subiendo video comprimido...");
+      toast("📤 Subiendo video...");
       const duration = await getVideoDuration(compressed);
+      const videoRes = await uploadToNeat(compressed, "video-progress", "video-bar");
 
-      const progressEl = document.getElementById("video-progress");
-      const barEl = document.getElementById("video-bar");
-      const videoRes = await uploadToCDN(compressed, progressEl, barEl);
-      if (!videoRes.success) throw new Error(videoRes.error || "Error subiendo video");
+      if (!videoRes.ok) {
+        if (videoRes.error === "too_large") return toast("❌ " + videoRes.message, true);
+        throw new Error(videoRes.error || "Error subiendo video");
+      }
 
-      // Thumbnail opcional
       let thumbnailFileId = null;
       if (thumbFile) {
-        const thumbRes = await uploadToCDN(thumbFile);
-        if (thumbRes.success) thumbnailFileId = thumbRes.fileId;
+        const thumbRes = await uploadThumbToNeat(thumbFile);
+        if (thumbRes.ok) thumbnailFileId = thumbRes.fileId;
       }
 
-      // Guardar en backend
       const r = await fetch(`${API}/watch/videos`, {
-        method:"POST",
-        headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-        body: JSON.stringify({ ...formData, fileId: videoRes.fileId, thumbnailFileId, duration })
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, fileId: videoRes.fileId, thumbnailFileId, duration }),
       });
       if (!r.ok) throw new Error("Error guardando video");
 
-      progressEl.classList.remove("show");
-      toast("🎉 ¡Video publicado!");
-      loadHome();
+      document.getElementById("video-progress").classList.remove("show");
+      toast("🎉 ¡Video publicado!"); loadHome();
     } catch(err) {
       toast("❌ " + (err.message || "Error al publicar"), true);
     }
   })();
 }
-  
+
+function resetUploadForm() {
+  selectedVideo = null; selectedThumb = null; selectedVideoFb = null; selectedThumbOwn = null; selectedThumbFb = null;
+  ["up-title","up-desc","up-raw-url"].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  ["video-name","thumb-name","video-name-fb","thumb-name-fb","thumb-name-own"].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = ""; });
+  setUploadMode("neat");
+}
+
 // ── Search ────────────────────────────────────────────────────────────────────
 let searchTimeout;
 async function handleSearch(q) {
@@ -1614,7 +1863,17 @@ async function añadirALista() {
   toast(d.error || "Añadido a la lista ✓");
 }
   
-init().then(checkDeepLink);
+function updateUploadPlusUI() {
+  const isPlus = currentUser?.neatPlus === true;
+  const neatPlusExtra = document.getElementById("neat-plus-extra");
+  const ownInfoBox = document.getElementById("own-info-box");
+  const ownPlusBox = document.getElementById("own-plus-box");
+  if (neatPlusExtra) neatPlusExtra.style.display = isPlus ? "block" : "none";
+  if (ownInfoBox) ownInfoBox.style.display = isPlus ? "none" : "block";
+  if (ownPlusBox) ownPlusBox.style.display = isPlus ? "block" : "none";
+}
+
+init().then(() => { checkDeepLink(); updateUploadPlusUI(); });
 </script>
 </body>
 </html>
