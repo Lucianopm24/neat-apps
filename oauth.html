@@ -182,6 +182,53 @@
     vertical-align: middle;
   }
 
+  /* App verificada (header) */
+  #appVerifiedBadge {
+    display: inline-block;
+    position: relative;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  #appVerifiedBadge img {
+    width: 18px;
+    height: auto;
+    vertical-align: middle;
+    cursor: pointer;
+  }
+
+  .verified-tooltip {
+    display: none;
+    position: absolute;
+    top: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240px;
+    background: var(--gray-900);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+    text-align: left;
+  }
+
+  .verified-tooltip.visible { display: block; }
+
+  .verified-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid var(--gray-900);
+  }
+
   .account-email {
     font-size: 12px;
     color: var(--gray-600);
@@ -538,7 +585,7 @@
         <div class="neat-logo-icon">N</div>
         <span class="neat-logo-text">Neat</span>
       </div>
-      <h1>Iniciar sesión en <span class="app-name" id="appNameHeader"></span></h1>
+      <h1>Iniciar sesión en <span class="app-name" id="appNameHeader"></span><span id="appVerifiedBadge" style="display:none"></span></h1>
       <p>Elige una cuenta para continuar</p>
     </div>
     <div class="card-body">
@@ -626,6 +673,7 @@ const SCOPE_META = {
   profile: { label: "Perfil",           desc: "Nombre de usuario, bio, avatar y verificación",       sensitive: false },
   email:   { label: "Email",            desc: "Tu dirección de correo electrónico",                  sensitive: false },
   forums:  { label: "Neat Forums",      desc: "Leer, crear y comentar posts en Neat Forums",         sensitive: true  },
+  forms:   { label: "Neat Forms",       desc: "Crear encuestas y ver respuestas en Neat Forms",      sensitive: true  },
   watch:   { label: "Neat Watch",       desc: "Ver y subir videos en Neat Watch",                    sensitive: true  },
   points:  { label: "Neat Points",      desc: "Ver tu saldo y transferir Neat Points",               sensitive: true  },
   chatter: { label: "Neat Chatter",     desc: "Leer y enviar mensajes en Neat Chatter",              sensitive: true  },
