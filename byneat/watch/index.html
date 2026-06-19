@@ -127,6 +127,7 @@
   }
   .header-btn:hover { background:var(--bg4); color:var(--text); }
   .header-btn.active { background:var(--yellow-glow); color:var(--yellow); }
+  .search-toggle-btn { display:none; }
 
   /* ── Nav tabs ── */
   .nav-tabs {
@@ -443,6 +444,10 @@
   @media (max-width:600px) {
     .video-grid { grid-template-columns:1fr 1fr; gap:10px; }
     .header-search { display:none; }
+    .header-search.mobile-active { display:block; max-width:none; }
+    .header.search-active .header-logo { display:none; }
+    .header.search-active .header-actions .header-btn:not(.search-toggle-btn) { display:none; }
+    .search-toggle-btn { display:flex; }
   }
   @media (max-width:400px) {
     .video-grid { grid-template-columns:1fr; }
@@ -496,8 +501,9 @@
   <!-- Header -->
   <header class="header">
     <div class="header-logo">neat<span class="dot">▶</span></div>
-    <input class="header-search" type="search" placeholder="Buscar videos..." oninput="handleSearch(this.value)">
+    <input class="header-search" id="header-search-input" type="search" placeholder="Buscar videos..." oninput="handleSearch(this.value)">
     <div class="header-actions">
+      <button class="header-btn search-toggle-btn" id="search-toggle-btn" onclick="toggleMobileSearch()" title="Buscar">🔍</button>
       <button class="header-btn" onclick="showView('upload')" title="Subir video">＋</button>
       <button class="header-btn" id="profile-btn" onclick="toggleProfile()" title="Perfil">👤</button>
     </div>
@@ -1515,6 +1521,21 @@ function resetUploadForm() {
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────
+function toggleMobileSearch() {
+  const input = document.getElementById("header-search-input");
+  const header = document.querySelector(".header");
+  const btn = document.getElementById("search-toggle-btn");
+  const isActive = input.classList.toggle("mobile-active");
+  header.classList.toggle("search-active", isActive);
+  if (isActive) {
+    btn.textContent = "✕";
+    input.focus();
+  } else {
+    btn.textContent = "🔍";
+    if (input.value) { input.value = ""; handleSearch(""); }
+  }
+}
+
 let searchTimeout;
 async function handleSearch(q) {
   clearTimeout(searchTimeout);
@@ -1525,15 +1546,10 @@ async function handleSearch(q) {
     document.getElementById("quicks-preview").innerHTML = "";
     grid.innerHTML = '<div class="spinner"></div>';
     try {
-      const r = await fetch(`${API}/watch/videos?limit=50`);
-      const all = await r.json();
-      const filtered = all.filter(v =>
-        v.title.toLowerCase().includes(q.toLowerCase()) ||
-        v.uploaderUsername.toLowerCase().includes(q.toLowerCase()) ||
-        (v.description||"").toLowerCase().includes(q.toLowerCase())
-      );
-      grid.innerHTML = filtered.length
-        ? `<div class="section-title">Resultados para "${esc(q)}"</div><div class="video-grid">${filtered.map(videoCard).join("")}</div>`
+      const r = await fetch(`${API}/watch/videos?limit=50&q=${encodeURIComponent(q)}`);
+      const results = await r.json();
+      grid.innerHTML = results.length
+        ? `<div class="section-title">Resultados para "${esc(q)}"</div><div class="video-grid">${results.map(videoCard).join("")}</div>`
         : `<div class="empty"><div class="empty-icon">🔍</div><p>Sin resultados para "${esc(q)}"</p></div>`;
     } catch { grid.innerHTML = '<div class="empty">Error al buscar</div>'; }
   }, 400);
