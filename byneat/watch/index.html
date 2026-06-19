@@ -805,6 +805,7 @@
 <script>
 const API = "https://neat-apps-b.vercel.app";
 const CDN = "https://cdn.neat.qzz.io";
+const WORKER = "https://neat-watch.luciano24pm.workers.dev";
 
 let token = localStorage.getItem("nw_token");
 let currentUser = null;
@@ -1314,7 +1315,7 @@ async function uploadToNeat(file, progressId, barId) {
     const form = new FormData();
     form.append("file", file);
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API}/watch/upload`);
+    xhr.open("POST", WORKER);
     xhr.setRequestHeader("Authorization", "Bearer " + token);
     const progressEl = document.getElementById(progressId);
     const barEl = document.getElementById(barId);
@@ -1336,7 +1337,7 @@ async function uploadToFilebrowser(file, progressId, barId) {
     const form = new FormData();
     form.append("file", file);
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API}/watch/upload?provider=filebrowser`);
+    xhr.open("POST", WORKER);
     xhr.setRequestHeader("Authorization", "Bearer " + token);
     const progressEl = document.getElementById(progressId);
     const barEl = document.getElementById(barId);
