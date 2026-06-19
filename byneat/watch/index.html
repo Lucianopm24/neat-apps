@@ -1312,11 +1312,10 @@ function checkRawUrl() {
 
 async function uploadToNeat(file, progressId, barId) {
   return new Promise((resolve, reject) => {
-    const form = new FormData();
-    form.append("file", file);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", WORKER);
     xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.setRequestHeader("X-Filename", file.name);
     const progressEl = document.getElementById(progressId);
     const barEl = document.getElementById(barId);
     if (progressEl) progressEl.classList.add("show");
@@ -1328,17 +1327,16 @@ async function uploadToNeat(file, progressId, barId) {
       catch { reject(new Error("Respuesta inválida del servidor")); }
     };
     xhr.onerror = () => reject(new Error("Error de red"));
-    xhr.send(form);
+    xhr.send(file); // archivo crudo — el Worker espera el body sin FormData
   });
 }
 
 async function uploadToFilebrowser(file, progressId, barId) {
   return new Promise((resolve, reject) => {
-    const form = new FormData();
-    form.append("file", file);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", WORKER);
     xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.setRequestHeader("X-Filename", file.name);
     const progressEl = document.getElementById(progressId);
     const barEl = document.getElementById(barId);
     if (progressEl) progressEl.classList.add("show");
@@ -1350,7 +1348,7 @@ async function uploadToFilebrowser(file, progressId, barId) {
       catch { reject(new Error("Respuesta inválida del servidor")); }
     };
     xhr.onerror = () => reject(new Error("Error de red"));
-    xhr.send(form);
+    xhr.send(file); // archivo crudo — el Worker espera el body sin FormData
   });
 }
 
