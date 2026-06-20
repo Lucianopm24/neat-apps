@@ -917,10 +917,67 @@ async function deletePoll(id) {
 // ── Create ────────────────────────────────────────────────────────
 let questions = [];
 let qCounter = 0;
+let sections = [];
+let sCounter = 0;
+
+function renderSections() {
+  const container = document.getElementById("sections-container");
+  container.innerHTML = sections.map((s, i) => `
+    <div class="section-block" id="s-block-${s.id}">
+      <div class="section-block-header">
+        <span class="muted" style="font-size:12px;min-width:16px">${i+1}.</span>
+        <input type="text" value="${escHtml(s.title)}" placeholder="Título de la sección…"
+          oninput="updateSectionTitle(${s.id}, this.value)">
+        <button class="remove-q-btn" onclick="removeSection(${s.id})" title="Eliminar sección">✕</button>
+      </div>
+    </div>`).join("");
+  // refresh every question's section selector since options changed
+  questions.forEach(q => refreshSectionSelect(q.id));
+}
+
+function addSection() {
+  const id = ++sCounter;
+  sections.push({ id, title: `Sección ${sections.length+1}` });
+  renderSections();
+}
+
+function updateSectionTitle(id, v) {
+  const s = sections.find(s=>s.id===id);
+  if (s) s.title = v;
+  // update label in any question's select without a full re-render
+  questions.forEach(q => refreshSectionSelect(q.id));
+}
+
+function removeSection(id) {
+  if (!confirm("¿Eliminar esta sección? Las preguntas asignadas pasarán a 'Sin sección'.")) return;
+  sections = sections.filter(s=>s.id!==id);
+  questions.forEach(q => { if (q.sectionId===id) q.sectionId = null; });
+  renderSections();
+}
+
+function sectionOptionsHtml(selectedId) {
+  let opts = `<option value="" ${!selectedId?'selected':''}>Sin sección</option>`;
+  opts += sections.map((s,i) => `<option value="${s.id}" ${selectedId===s.id?'selected':''}>${escHtml(s.title||'Sección '+(i+1))}</option>`).join("");
+  return opts;
+}
+
+function refreshSectionSelect(qId) {
+  const el = document.getElementById("q-section-"+qId);
+  if (!el) return;
+  const q = questions.find(q=>q.id===qId);
+  el.innerHTML = sectionOptionsHtml(q?.sectionId || null);
+}
+
+function updateQSection(qId, v) {
+  const q = questions.find(q=>q.id===qId);
+  if (q) q.sectionId = v ? Number(v) : null;
+}
 
 function initCreateView() {
   questions = [];
   qCounter = 0;
+  sections = [];
+  sCounter = 0;
   document.getElementById("poll-title-input").value = "";
   document.getElementById("poll-desc-input").value = "";
   document.getElementById("poll-access").value = "public";
@@ -929,6 +986,9 @@ function initCreateView() {
   document.getElementById("poll-multi").checked = false;
   document.getElementById("poll-public-results").checked = false;
   document.getElementById("questions-container").innerHTML = "";
+  document.getElementById("sections-container").innerHTML = "";
+  document.getElementById("sections-locked").classList.toggle("hidden", hasPlus());
+  document.getElementById("sections-unlocked").classList.toggle("hidden", !hasPlus());
   addQuestion();
 }
 
@@ -967,9 +1027,13 @@ function renderQuestion(id, idx) {
         <option value="grid" ${q.type==='grid'?'selected':''}>Cuadrícula</option>
         <option value="file_upload" ${q.type==='file_upload'?'selected':''}>Subir archivo</option>
       </select>
-      <label class="toggle" title="Obligatoria" style="margin:0 4px">
+      ${sections.length ? `<select class="q-type section-q-select" id="q-section-${id}" onchange="updateQSection(${id}, this.value)" title="Sección">
+        ${sectionOptionsHtml(q.sectionId || null)}
+      </select>` : ''}
+      <label class="toggle" title="Obligatoria" style="margin:0 4px;display:flex;align-items:center;gap:6px;white-space:nowrap">
         <input type="checkbox" ${q.required!==false?'checked':''} onchange="updateQRequired(${id}, this.checked)">
         <span class="toggle-slider"></span>
+        <span style="font-size:12px;color:var(--muted)">Obligatoria</span>
       </label>
       <button class="remove-q-btn" onclick="removeQuestion(${id})" title="Eliminar pregunta">✕</button>
     </div>
@@ -1078,6 +1142,14 @@ async function createPoll() {
   for (const q of questions) {
     if (!q.text || !q.text.trim()) return alert("Todas las preguntas necesitan un texto.");
   }
+  if (hasPlus() && sections.some(s => !s.title || !s.title.trim())) {
+    return alert("Todas las secciones necesitan un título.");
+  }
+
+  // Mapea sectionId local -> índice en el array que se manda (el orden
+  // importa, es lo que el backend usa para emparejar sectionIndex)
+  const sectionIdToIndex = {};
+  sections.forEach((s, i) => sectionIdToIndex[s.id] = i);
 
   const body = {
     title,
@@ -1093,7 +1165,10 @@ async function createPoll() {
       scaleMaxLabel: q.scaleMaxLabel||"",
       gridRows: q.gridRows,
       gridColumns: q.gridColumns,
+      sectionIndex: (hasPlus() && q.sectionId != null && sectionIdToIndex[q.sectionId] !== undefined)
+        ? sectionIdToIndex[q.sectionId] : undefined,
     })),
+    sections: (hasPlus() && sections.length) ? sections.map(s => ({ title: s.title.trim() })) : undefined,
     accessMode: document.getElementById("poll-access").value,
     anonymous: document.getElementById("poll-anon").checked,
     allowMultipleVotes: document.getElementById("poll-multi").checked,
@@ -1127,6 +1202,8 @@ async function showVoteView(pollId) {
   document.getElementById("vote-content").classList.add("hidden");
   currentPollId = pollId;
   captchaToken = null;
+  Object.keys(voteState).forEach(k => delete voteState[k]);
+  currentStep = 0;
 
   try {
     const r = await fetch(`${API}/forms/polls/${pollId}`);
@@ -1139,6 +1216,27 @@ async function showVoteView(pollId) {
   } catch {
     document.getElementById("vote-loading").innerHTML = `<p style="color:var(--danger)">Error de conexión</p>`;
   }
+}
+
+// ── Sectioned voting state ──────────────────────────────────────────
+let voteSteps = [];       // array of {sectionId, title, questions: [{q, idx}]}
+let currentStep = 0;
+
+function buildVoteSteps(poll) {
+  if (!poll.sections || !poll.sections.length) {
+    voteSteps = [{ sectionId: null, title: null, questions: poll.questions.map((q,idx)=>({q,idx})) }];
+    return;
+  }
+  const general = poll.questions
+    .map((q,idx)=>({q,idx}))
+    .filter(p => !p.q.sectionId);
+  const steps = [];
+  if (general.length) steps.push({ sectionId: null, title: null, questions: general });
+  poll.sections.forEach(s => {
+    const qs = poll.questions.map((q,idx)=>({q,idx})).filter(p => p.q.sectionId === s.id);
+    if (qs.length) steps.push({ sectionId: s.id, title: s.title, questions: qs });
+  });
+  voteSteps = steps.length ? steps : [{ sectionId: null, title: null, questions: poll.questions.map((q,idx)=>({q,idx})) }];
 }
 
 function renderVoteView(poll) {
@@ -1174,20 +1272,9 @@ function renderVoteView(poll) {
     lockVoteForm();
   }
 
-  // Render questions
-  const qc = document.getElementById("vote-questions");
-  qc.innerHTML = "";
-  poll.questions.forEach((q, idx) => {
-    const card = document.createElement("div");
-    card.className = "vote-q-card";
-    card.id = "vq-"+idx;
-    card.innerHTML = `
-      <div class="q-title">${idx+1}. ${escHtml(q.title)}${q.required ? ' <span style="color:var(--danger)">*</span>' : ''}</div>
-      <div class="q-hint">${questionHint(q)}</div>
-      <div id="vq-body-${idx}">${renderVoteQuestion(q, idx)}</div>
-    `;
-    qc.appendChild(card);
-  });
+  buildVoteSteps(poll);
+  currentStep = 0;
+  renderVoteStep();
 
   // Voter section: hide name if neat_only (we use logged-in user)
   if (poll.accessMode === "neat_only") {
@@ -1197,8 +1284,157 @@ function renderVoteView(poll) {
       captchaToken = "neat_user"; // neat_only doesn't need captcha
     }
   }
+}
+
+function renderVoteStep() {
+  const poll = currentPoll;
+  const lockedClosed = poll.closed || poll.expired;
+  const multiStep = voteSteps.length > 1 && !lockedClosed;
+  const isReview = multiStep && currentStep === voteSteps.length;
+
+  document.getElementById("review-screen").classList.toggle("hidden", !isReview);
+  document.getElementById("vote-questions").classList.toggle("hidden", isReview);
+  document.getElementById("section-title-banner").classList.toggle("hidden", !multiStep || isReview);
+  document.getElementById("section-progress").classList.toggle("hidden", !multiStep);
+  document.getElementById("section-nav").classList.toggle("hidden", !multiStep);
+
+  const showFinalArea = (!multiStep || isReview) && !poll.closed && !poll.expired;
+  document.getElementById("voter-section").style.display = showFinalArea ? "" : "none";
+  document.getElementById("vote-submit-area").style.display = showFinalArea ? "" : "none";
+
+  if (multiStep) {
+    // Progress dots: one per real step (sections), not counting review
+    document.getElementById("section-progress").innerHTML = voteSteps.map((_,i)=>
+      `<div class="dot ${i===currentStep?'current':(i<currentStep?'done':'')}"></div>`
+    ).join("");
+  }
+
+  if (isReview) {
+    renderReviewScreen();
+    return;
+  }
+
+  const step = lockedClosed
+    ? { sectionId: null, title: null, questions: voteSteps.flatMap(s => s.questions) }
+    : voteSteps[currentStep];
+  if (multiStep) {
+    document.getElementById("section-title-banner").innerHTML = step.title
+      ? `Sección ${currentStep+1} de ${voteSteps.length}<b>${escHtml(step.title)}</b>`
+      : `Paso ${currentStep+1} de ${voteSteps.length}<b>General</b>`;
+  }
+
+  const qc = document.getElementById("vote-questions");
+  qc.innerHTML = "";
+  step.questions.forEach(({q, idx}) => {
+    const card = document.createElement("div");
+    card.className = "vote-q-card";
+    card.id = "vq-"+idx;
+    card.innerHTML = `
+      <div class="q-title">${idx+1}. ${escHtml(q.title)}${q.required ? ' <span style="color:var(--danger)">*</span>' : ''}</div>
+      <div class="q-hint">${questionHint(q)}</div>
+      <div id="vq-body-${idx}">${renderVoteQuestion(q, idx)}</div>
+    `;
+    qc.appendChild(card);
+    // restore any prior selection visually when navigating back
+    restoreVoteStateUI(q, idx);
+  });
+
+  if (multiStep) {
+    document.getElementById("section-back-btn").disabled = currentStep === 0;
+    document.getElementById("section-next-btn").textContent = (currentStep === voteSteps.length-1) ? "Revisar →" : "Siguiente →";
+  }
 
   checkVoteReady();
+}
+
+function restoreVoteStateUI(q, idx) {
+  const val = voteState[idx];
+  if (val === undefined) return;
+  if (["multiple_choice","checkboxes","datetime"].includes(q.questionType)) {
+    (val||[]).forEach(i => document.getElementById(`choice-${idx}-${i}`)?.classList.add("selected"));
+  } else if (q.questionType==="text"||q.questionType==="paragraph") {
+    const el = document.getElementById("text-ans-"+idx);
+    if (el) el.value = val;
+  } else if (q.questionType==="linear_scale") {
+    document.getElementById(`scale-${idx}-${val}`)?.classList.add("selected");
+  } else if (q.questionType==="grid") {
+    q.gridRows.forEach((row, ri) => {
+      if (val[row]) {
+        const ci = q.gridColumns.indexOf(val[row]);
+        if (ci>=0) document.getElementById(`gr-${idx}-${ri}-${ci}`)?.classList.add("selected");
+      }
+    });
+  } else if (q.questionType==="file_upload" && val.fileName) {
+    const statusEl = document.getElementById("file-status-"+idx);
+    if (statusEl) statusEl.textContent = `✅ ${val.fileName}`;
+  }
+}
+
+function stepIsAnswered(q, idx) {
+  if (!q.required) return true;
+  if (["multiple_choice","checkboxes"].includes(q.questionType)) return !!(voteState[idx]?.length);
+  if (q.questionType==="text"||q.questionType==="paragraph") {
+    const liveEl = document.getElementById("text-ans-"+idx);
+    const liveVal = liveEl ? liveEl.value.trim() : "";
+    if (liveEl && liveVal) voteState[idx] = liveVal;
+    return !!(liveVal || (typeof voteState[idx]==="string" && voteState[idx].trim()));
+  }
+  if (q.questionType==="linear_scale") return voteState[idx] !== undefined;
+  if (q.questionType==="grid") return q.gridRows.every(r => voteState[idx]?.[r]);
+  if (q.questionType==="file_upload") return !!voteState[idx]?.fileId;
+  return true;
+}
+
+function sectionNext() {
+  const step = voteSteps[currentStep];
+  const missing = step.questions.find(({q,idx}) => !stepIsAnswered(q,idx));
+  if (missing) {
+    alert(`Falta responder: ${missing.q.title}`);
+    return;
+  }
+  currentStep++;
+  renderVoteStep();
+  document.getElementById("vote-content").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function sectionBack() {
+  if (currentStep === 0) return;
+  currentStep--;
+  renderVoteStep();
+  document.getElementById("vote-content").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function renderReviewScreen() {
+  const container = document.getElementById("review-sections");
+  container.innerHTML = voteSteps.map((step, i) => {
+    const total = step.questions.length;
+    const answered = step.questions.filter(({q,idx}) => {
+      const v = voteState[idx];
+      if (["multiple_choice","checkboxes"].includes(q.questionType)) return !!(v?.length);
+      if (q.questionType==="text"||q.questionType==="paragraph") return !!((typeof v==="string" && v.trim()) || document.getElementById("text-ans-"+idx)?.value.trim());
+      if (q.questionType==="linear_scale") return v !== undefined;
+      if (q.questionType==="grid") return q.gridRows.every(r => v?.[r]);
+      if (q.questionType==="file_upload") return !!v?.fileId;
+      return false;
+    }).length;
+    const requiredCount = step.questions.filter(({q}) => q.required).length;
+    const requiredAnswered = step.questions.filter(({q,idx}) => q.required && stepIsAnswered(q, idx)).length;
+    const incomplete = requiredAnswered < requiredCount;
+    const label = step.title || "General";
+    return `<div class="review-section" onclick="goToStep(${i})">
+      <div>
+        <div class="name">${escHtml(label)}</div>
+        <div class="count ${incomplete?'incomplete':''}">${answered} de ${total} preguntas respondidas${incomplete?' · falta algo obligatorio':''}</div>
+      </div>
+      <span class="muted">Editar →</span>
+    </div>`;
+  }).join("");
+}
+
+function goToStep(i) {
+  currentStep = i;
+  renderVoteStep();
+  document.getElementById("vote-content").scrollIntoView({behavior:"smooth", block:"start"});
 }
 
 function renderVoteQuestion(q, idx) {
@@ -1265,7 +1501,7 @@ function selectChoice(qIdx, optIdx, type) {
       el.classList.toggle("selected", voteState[qIdx].includes(i));
     });
   }
-  document.getElementById("vq-0")?.classList.add("answered");
+  document.getElementById("vq-"+qIdx)?.classList.add("answered");
   checkVoteReady();
 }
 
@@ -1273,7 +1509,7 @@ function selectScale(qIdx, val) {
   voteState[qIdx] = val;
   document.querySelectorAll(`[id^="scale-${qIdx}-"]`).forEach(el=>el.classList.remove("selected"));
   document.getElementById(`scale-${qIdx}-${val}`)?.classList.add("selected");
-  document.getElementById("vq-0")?.classList.add("answered");
+  document.getElementById("vq-"+qIdx)?.classList.add("answered");
   checkVoteReady();
 }
 
@@ -1327,7 +1563,10 @@ function checkVoteReady() {
     if (["multiple_choice","checkboxes"].includes(q.questionType)) {
       qAnswered = !!(voteState[idx]?.length);
     } else if (q.questionType==="text"||q.questionType==="paragraph") {
-      qAnswered = !!(document.getElementById("text-ans-"+idx)?.value.trim());
+      const liveEl = document.getElementById("text-ans-"+idx);
+      const liveVal = liveEl ? liveEl.value.trim() : "";
+      if (liveEl && liveVal) voteState[idx] = liveVal;
+      qAnswered = !!(liveVal || (typeof voteState[idx]==="string" && voteState[idx].trim()));
     } else if (q.questionType==="linear_scale") {
       qAnswered = voteState[idx] !== undefined;
     } else if (q.questionType==="grid") {
@@ -1366,7 +1605,8 @@ async function submitVote() {
     if (["multiple_choice","checkboxes","datetime"].includes(q.questionType)) {
       if (voteState[idx]?.length) answers.push({ questionId: q.id, selections: voteState[idx] });
     } else if (q.questionType==="text"||q.questionType==="paragraph") {
-      const v = document.getElementById("text-ans-"+idx)?.value.trim();
+      const liveEl = document.getElementById("text-ans-"+idx);
+      const v = (liveEl ? liveEl.value.trim() : "") || (typeof voteState[idx]==="string" ? voteState[idx].trim() : "");
       if (v) answers.push({ questionId: q.id, text: v });
     } else if (q.questionType==="linear_scale") {
       if (voteState[idx] !== undefined) answers.push({ questionId: q.id, scaleValue: voteState[idx] });
@@ -1406,6 +1646,11 @@ async function submitVote() {
     }
     document.getElementById("vote-submit-area").style.display = "none";
     document.getElementById("voter-section").style.display = "none";
+    document.getElementById("review-screen").classList.add("hidden");
+    document.getElementById("section-progress").classList.add("hidden");
+    document.getElementById("section-nav").classList.add("hidden");
+    document.getElementById("section-title-banner").classList.add("hidden");
+    document.getElementById("vote-questions").classList.add("hidden");
     document.getElementById("vote-success").classList.remove("hidden");
     document.getElementById("vote-success").style.display = "block";
   } catch {
