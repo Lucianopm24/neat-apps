@@ -67,8 +67,9 @@ textarea{resize:vertical;min-height:80px}
 
 /* ── Auth overlay ────────────────────────────────────────────── */
 #auth-overlay{
+  display:none;
   position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
-  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;backdrop-filter:blur(4px);
 }
 .auth-card{
   background:var(--surface);border:1px solid var(--border);border-radius:12px;
@@ -221,6 +222,57 @@ textarea{resize:vertical;min-height:80px}
 }
 .add-q-bar:hover{border-color:var(--accent);color:var(--accent);background:rgba(233,180,76,.03)}
 .create-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:8px}
+
+/* ── Plus badge ──────────────────────────────────────────────── */
+.plus-badge{
+  display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#000;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle;margin-left:6px;
+}
+.plus-locked{
+  text-align:center;padding:18px;color:var(--muted);font-size:13px;
+  border:1px dashed var(--border);border-radius:var(--radius);
+}
+.plus-locked .plus-badge{margin:0 0 8px 0}
+
+/* ── Sections (create view) ─────────────────────────────────── */
+.section-block{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:14px;
+}
+.section-block-header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.section-block-header input{font-size:15px;font-weight:500;background:transparent;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:5px 0}
+.section-block-header input:focus{border-bottom-color:var(--accent)}
+.section-q-select{width:auto;font-size:12px;padding:4px 8px}
+.add-section-bar{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 14px;
+  border-radius:6px;font-size:13px;color:var(--muted);background:transparent;
+  border:1px dashed var(--border);cursor:pointer;transition:all .15s;margin-bottom:14px;
+}
+.add-section-bar:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ── Sectioned vote view ────────────────────────────────────── */
+.section-progress{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.section-progress .dot{
+  flex:1;min-width:24px;height:5px;border-radius:3px;background:var(--surface2);
+  transition:background .2s;
+}
+.section-progress .dot.current{background:var(--accent)}
+.section-progress .dot.done{background:rgba(233,180,76,.5)}
+.section-title-banner{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.section-title-banner b{color:var(--text);text-transform:none;letter-spacing:0;font-size:16px;display:block;margin-top:2px}
+.section-nav{display:flex;justify-content:space-between;gap:10px;padding-top:8px;margin-bottom:14px}
+
+/* ── Review screen ──────────────────────────────────────────── */
+.review-section{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:border-color .15s;
+}
+.review-section:hover{border-color:var(--accent)}
+.review-section .name{font-size:14px;font-weight:500}
+.review-section .count{font-size:13px;color:var(--muted)}
+.review-section .count.incomplete{color:var(--danger)}
 
 /* ── Vote view ───────────────────────────────────────────────── */
 #view-vote{padding:40px 16px;max-width:640px;margin:0 auto}
@@ -437,7 +489,7 @@ textarea{resize:vertical;min-height:80px}
 <div id="auth-overlay">
   <div class="auth-card">
     <h2>Neat Forms</h2>
-    <p>Inicia sesión para crear y gestionar encuestas</p>
+    <p id="auth-subtitle">Inicia sesión para crear y gestionar encuestas</p>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
       <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
@@ -465,7 +517,7 @@ textarea{resize:vertical;min-height:80px}
       <button class="btn btn-primary btn-full" onclick="doRegister()">Crear cuenta</button>
     </div>
     <div id="auth-error"></div>
-    <div style="text-align:center;margin-top:14px">
+    <div style="text-align:center;margin-top:14px" id="auth-guest-row">
       <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="enterAsGuest()">Continuar como invitado</button>
     </div>
   </div>
@@ -527,6 +579,24 @@ textarea{resize:vertical;min-height:80px}
         <div class="toggle-label">Permitir múltiples votos <small>El mismo usuario puede votar varias veces</small></div>
         <label class="toggle"><input type="checkbox" id="poll-multi"><span class="toggle-slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <div class="toggle-label">Resultados públicos <small>Cualquiera con el link puede ver los resultados, no solo tú</small></div>
+        <label class="toggle"><input type="checkbox" id="poll-public-results"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sections (Plus) -->
+  <div class="form-card" id="sections-card">
+    <div class="section-label">Secciones <span class="plus-badge">Plus</span></div>
+    <div id="sections-locked" class="plus-locked hidden">
+      <div class="plus-badge">Plus</div>
+      <p>Organiza tu encuesta en secciones (como Google Forms) con Neat Plus.</p>
+    </div>
+    <div id="sections-unlocked" class="hidden">
+      <p class="muted" style="margin-bottom:12px">Agrupa preguntas en secciones. Quien responda verá una sección a la vez y un resumen antes de enviar.</p>
+      <div id="sections-container"></div>
+      <button class="add-section-bar" type="button" onclick="addSection()">＋ Añadir sección</button>
     </div>
   </div>
 
@@ -554,7 +624,19 @@ textarea{resize:vertical;min-height:80px}
       <div class="creator" id="vote-creator"></div>
     </div>
     <div id="vote-status-banner"></div>
+    <div id="section-progress" class="section-progress hidden"></div>
+    <div id="section-title-banner" class="section-title-banner hidden"></div>
     <div id="vote-questions"></div>
+    <div id="section-nav" class="section-nav hidden">
+      <button class="btn btn-ghost" id="section-back-btn" onclick="sectionBack()">← Atrás</button>
+      <button class="btn btn-primary" id="section-next-btn" onclick="sectionNext()">Siguiente →</button>
+    </div>
+
+    <!-- Review screen (sectioned polls only) -->
+    <div id="review-screen" class="hidden">
+      <div class="section-label" style="margin-bottom:14px">Revisa antes de enviar</div>
+      <div id="review-sections"></div>
+    </div>
 
     <!-- voter section -->
     <div class="voter-section" id="voter-section">
@@ -643,24 +725,43 @@ window.addEventListener("load", () => {
 
   const hash = location.hash.replace("#","");
   if (hash.startsWith("vote/")) {
-    const pollId = hash.replace("vote/","");
-    hideAuth();
-    showVoteView(pollId);
+    showVoteView(hash.replace("vote/",""));
     return;
   }
   if (hash.startsWith("results/")) {
-    const pollId = hash.replace("results/","");
-    hideAuth();
-    showResultsView(pollId);
+    showResultsView(hash.replace("results/",""));
     return;
   }
 
   if (token) {
     hideAuth();
-    showView("list");
+    refreshMe().then(() => showView("list"));
+  } else {
+    document.getElementById("auth-overlay").style.display = "flex";
   }
-  // else auth stays visible
 });
+
+function hasPlus() {
+  return !!(currentUser && (currentUser.role === "admin" || currentUser.neatPlus));
+}
+
+async function refreshMe() {
+  if (!token) return;
+  try {
+    const r = await fetch(`${API}/chat/me`, {headers:{Authorization:`Bearer ${token}`}});
+    if (!r.ok) return;
+    const me = await r.json();
+    currentUser = {...currentUser, neatPlus: !!me.neatPlus, role: me.role || currentUser?.role};
+    localStorage.setItem("nf_user", JSON.stringify(currentUser));
+  } catch {}
+}
+
+function postAuthRedirect() {
+  const hash = location.hash.replace("#","");
+  if (hash.startsWith("vote/")) { showVoteView(hash.replace("vote/","")); return; }
+  if (hash.startsWith("results/")) { showResultsView(hash.replace("results/","")); return; }
+  showView("list");
+}
 
 // ── Auth ──────────────────────────────────────────────────────────
 function switchAuthTab(tab) {
@@ -782,7 +883,7 @@ async function loadMyPolls() {
     }
     c.innerHTML = polls.map(p => `
       <div class="poll-card" onclick="showResultsView('${p.pollId}')">
-        <span class="pill ${p.closed?'closed':''}">${p.closed?'Cerrada':p.questionType}</span>
+        <span class="pill ${p.closed?'closed':''}">${p.closed?'Cerrada':(p.questions?.length||0)+' pregunta'+(p.questions?.length!==1?'s':'')}</span>
         <div>
           <div class="poll-title">${escHtml(p.title)}</div>
           <div class="poll-meta">${p.accessMode==='neat_only'?'Solo Neat':'Público'} · ${new Date(p.createdAt).toLocaleDateString()}</div>
@@ -800,7 +901,11 @@ async function loadMyPolls() {
 async function closePoll(id) {
   if (!confirm("¿Cerrar esta encuesta? Ya no aceptará votos.")) return;
   await fetch(`${API}/forms/polls/${id}/close`, {method:"PUT",headers:{Authorization:`Bearer ${token}`}});
-  loadMyPolls();
+  if (document.getElementById("view-results").classList.contains("active")) {
+    showResultsView(id);
+  } else {
+    loadMyPolls();
+  }
 }
 
 async function deletePoll(id) {
@@ -822,6 +927,7 @@ function initCreateView() {
   document.getElementById("poll-expires").value = "";
   document.getElementById("poll-anon").checked = false;
   document.getElementById("poll-multi").checked = false;
+  document.getElementById("poll-public-results").checked = false;
   document.getElementById("questions-container").innerHTML = "";
   addQuestion();
 }
@@ -829,7 +935,7 @@ function initCreateView() {
 function addQuestion() {
   const id = ++qCounter;
   const idx = questions.length;
-  questions.push({id, type:"multiple_choice", text:"", options:["Opción 1","Opción 2"]});
+  questions.push({id, type:"multiple_choice", text:"", options:["Opción 1","Opción 2"], required:true});
   renderQuestion(id, idx);
 }
 
@@ -859,7 +965,12 @@ function renderQuestion(id, idx) {
         <option value="paragraph" ${q.type==='paragraph'?'selected':''}>Párrafo</option>
         <option value="linear_scale" ${q.type==='linear_scale'?'selected':''}>Escala lineal</option>
         <option value="grid" ${q.type==='grid'?'selected':''}>Cuadrícula</option>
+        <option value="file_upload" ${q.type==='file_upload'?'selected':''}>Subir archivo</option>
       </select>
+      <label class="toggle" title="Obligatoria" style="margin:0 4px">
+        <input type="checkbox" ${q.required!==false?'checked':''} onchange="updateQRequired(${id}, this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
       <button class="remove-q-btn" onclick="removeQuestion(${id})" title="Eliminar pregunta">✕</button>
     </div>
     <div id="q-body-${id}">${renderQBody(q)}</div>
@@ -880,6 +991,7 @@ function renderQBody(q) {
   }
   if (q.type==="text") return `<div class="muted" style="padding:10px 0;font-style:italic;font-size:13px">Campo de respuesta corta</div>`;
   if (q.type==="paragraph") return `<div class="muted" style="padding:10px 0;font-style:italic;font-size:13px">Campo de respuesta larga</div>`;
+  if (q.type==="file_upload") return `<div class="muted" style="padding:10px 0;font-style:italic;font-size:13px">Quien responda podrá subir un archivo (máx. 10-20MB según plan)</div>`;
   if (q.type==="linear_scale") {
     const min = q.scaleMin||1, max = q.scaleMax||5;
     const btns = Array.from({length:max-min+1},(_,i)=>`<div class="scale-btn-preview">${min+i}</div>`).join("");
@@ -931,6 +1043,7 @@ function refreshQBody(id) {
 }
 
 function updateQText(id,v){questions.find(q=>q.id===id).text=v}
+function updateQRequired(id,v){questions.find(q=>q.id===id).required=v}
 function updateQType(id,v){
   const q=questions.find(q=>q.id===id);q.type=v;
   if(["multiple_choice","checkboxes"].includes(v)&&!q.options?.length) q.options=["Opción 1","Opción 2"];
@@ -962,28 +1075,30 @@ async function createPoll() {
   const title = document.getElementById("poll-title-input").value.trim();
   if (!title) return alert("El título es obligatorio.");
   if (!questions.length) return alert("Añade al menos una pregunta.");
-
-  // For now we support one question per poll (matching backend structure)
-  // We'll send the first question's type/options; multi-question support can be a v2 feature
-  // Actually the backend handles 1 question per poll. We'll submit each as separate polls or just use first q.
-  // Use first question as the poll's question type for now, with a note.
-  const q = questions[0];
+  for (const q of questions) {
+    if (!q.text || !q.text.trim()) return alert("Todas las preguntas necesitan un texto.");
+  }
 
   const body = {
     title,
     description: document.getElementById("poll-desc-input").value.trim(),
-    questionType: q.type,
-    options: ["multiple_choice","checkboxes","datetime"].includes(q.type) ? q.options : undefined,
-    scaleMin: q.scaleMin,
-    scaleMax: q.scaleMax,
-    scaleMinLabel: q.scaleMinLabel||"",
-    scaleMaxLabel: q.scaleMaxLabel||"",
-    gridRows: q.gridRows,
-    gridColumns: q.gridColumns,
+    questions: questions.map(q => ({
+      questionType: q.type,
+      title: q.text,
+      required: q.required !== false,
+      options: ["multiple_choice","checkboxes","datetime"].includes(q.type) ? q.options : undefined,
+      scaleMin: q.scaleMin,
+      scaleMax: q.scaleMax,
+      scaleMinLabel: q.scaleMinLabel||"",
+      scaleMaxLabel: q.scaleMaxLabel||"",
+      gridRows: q.gridRows,
+      gridColumns: q.gridColumns,
+    })),
     accessMode: document.getElementById("poll-access").value,
     anonymous: document.getElementById("poll-anon").checked,
     allowMultipleVotes: document.getElementById("poll-multi").checked,
     expiresAt: document.getElementById("poll-expires").value || undefined,
+    publicResults: document.getElementById("poll-public-results")?.checked || false,
   };
 
   const btn = document.getElementById("create-btn");
@@ -1035,7 +1150,7 @@ function renderVoteView(poll) {
   // Meta pills
   const meta = document.getElementById("vote-meta");
   meta.innerHTML = "";
-  meta.innerHTML += `<span class="meta-pill">${typeLabel(poll.questionType)}</span>`;
+  meta.innerHTML += `<span class="meta-pill">${poll.questions.length} pregunta${poll.questions.length!==1?'s':''}</span>`;
   if (poll.accessMode==="neat_only") meta.innerHTML += `<span class="meta-pill">🔐 Solo Neat</span>`;
   if (poll.anonymous) meta.innerHTML += `<span class="meta-pill">👤 Anónimo</span>`;
   if (poll.expiresAt) meta.innerHTML += `<span class="meta-pill">⏰ Expira ${new Date(poll.expiresAt).toLocaleDateString()}</span>`;
@@ -1059,18 +1174,20 @@ function renderVoteView(poll) {
     lockVoteForm();
   }
 
-  // Render question
+  // Render questions
   const qc = document.getElementById("vote-questions");
   qc.innerHTML = "";
-  const card = document.createElement("div");
-  card.className = "vote-q-card";
-  card.id = "vq-0";
-  card.innerHTML = `
-    <div class="q-title">${escHtml(poll.title)}</div>
-    <div class="q-hint">${questionHint(poll)}</div>
-    <div id="vq-body-0">${renderVoteQuestion(poll, 0)}</div>
-  `;
-  qc.appendChild(card);
+  poll.questions.forEach((q, idx) => {
+    const card = document.createElement("div");
+    card.className = "vote-q-card";
+    card.id = "vq-"+idx;
+    card.innerHTML = `
+      <div class="q-title">${idx+1}. ${escHtml(q.title)}${q.required ? ' <span style="color:var(--danger)">*</span>' : ''}</div>
+      <div class="q-hint">${questionHint(q)}</div>
+      <div id="vq-body-${idx}">${renderVoteQuestion(q, idx)}</div>
+    `;
+    qc.appendChild(card);
+  });
 
   // Voter section: hide name if neat_only (we use logged-in user)
   if (poll.accessMode === "neat_only") {
@@ -1084,11 +1201,11 @@ function renderVoteView(poll) {
   checkVoteReady();
 }
 
-function renderVoteQuestion(poll, idx) {
-  const type = poll.questionType;
+function renderVoteQuestion(q, idx) {
+  const type = q.questionType;
   if (["multiple_choice","checkboxes","datetime"].includes(type)) {
     return `<div class="choice-list" id="choices-${idx}">
-      ${poll.options.map((o,i)=>`
+      ${q.options.map((o,i)=>`
         <div class="choice-item" id="choice-${idx}-${i}" onclick="selectChoice(${idx},${i},'${type}')">
           <div class="choice-box ${type!=='multiple_choice'?'choice-radio':''}">
             <span class="choice-check">✓</span>
@@ -1100,26 +1217,30 @@ function renderVoteQuestion(poll, idx) {
   if (type==="text") return `<input type="text" id="text-ans-${idx}" placeholder="Tu respuesta…" oninput="checkVoteReady()" maxlength="500">`;
   if (type==="paragraph") return `<textarea id="text-ans-${idx}" placeholder="Tu respuesta…" oninput="checkVoteReady()" maxlength="5000"></textarea>`;
   if (type==="linear_scale") {
-    const btns = Array.from({length:poll.scaleMax-poll.scaleMin+1},(_,i)=>`
-      <div class="scale-opt" id="scale-${idx}-${poll.scaleMin+i}" onclick="selectScale(${idx},${poll.scaleMin+i})">${poll.scaleMin+i}</div>`
+    const btns = Array.from({length:q.scaleMax-q.scaleMin+1},(_,i)=>`
+      <div class="scale-opt" id="scale-${idx}-${q.scaleMin+i}" onclick="selectScale(${idx},${q.scaleMin+i})">${q.scaleMin+i}</div>`
     ).join("");
     return `<div class="scale-row" id="scale-row-${idx}">${btns}</div>
       <div class="scale-labels-row">
-        <span>${escHtml(poll.scaleMinLabel||'')}</span>
-        <span>${escHtml(poll.scaleMaxLabel||'')}</span>
+        <span>${escHtml(q.scaleMinLabel||'')}</span>
+        <span>${escHtml(q.scaleMaxLabel||'')}</span>
       </div>`;
   }
   if (type==="grid") {
-    const header = `<tr><th></th>${poll.gridColumns.map(c=>`<th>${escHtml(c)}</th>`).join("")}</tr>`;
-    const rows = poll.gridRows.map((r,ri)=>`<tr>
+    const header = `<tr><th></th>${q.gridColumns.map(c=>`<th>${escHtml(c)}</th>`).join("")}</tr>`;
+    const rows = q.gridRows.map((r,ri)=>`<tr>
       <td>${escHtml(r)}</td>
-      ${poll.gridColumns.map((c,ci)=>`<td>
+      ${q.gridColumns.map((c,ci)=>`<td>
         <div class="grid-radio" id="gr-${idx}-${ri}-${ci}" onclick="selectGrid(${idx},${ri},${ci})">
           <div class="grid-dot"></div>
         </div>
       </td>`).join("")}
     </tr>`).join("");
     return `<table class="grid-table"><thead>${header}</thead><tbody>${rows}</tbody></table>`;
+  }
+  if (type==="file_upload") {
+    return `<input type="file" id="file-ans-${idx}" onchange="handleVoteFileSelect(${idx}, this)">
+      <div id="file-status-${idx}" class="muted" style="font-size:13px;margin-top:6px"></div>`;
   }
   return "";
 }
@@ -1158,31 +1279,64 @@ function selectScale(qIdx, val) {
 
 function selectGrid(qIdx, rowIdx, colIdx) {
   if (!voteState[qIdx]) voteState[qIdx] = {};
-  const row = currentPoll.gridRows[rowIdx];
-  const col = currentPoll.gridColumns[colIdx];
+  const q = currentPoll.questions[qIdx];
+  const row = q.gridRows[rowIdx];
+  const col = q.gridColumns[colIdx];
   voteState[qIdx][row] = col;
   // reset row radio buttons
-  currentPoll.gridColumns.forEach((_,ci)=>{
+  q.gridColumns.forEach((_,ci)=>{
     document.getElementById(`gr-${qIdx}-${rowIdx}-${ci}`)?.classList.remove("selected");
   });
   document.getElementById(`gr-${qIdx}-${rowIdx}-${colIdx}`)?.classList.add("selected");
   checkVoteReady();
 }
 
+async function handleVoteFileSelect(idx, input) {
+  const file = input.files[0];
+  const statusEl = document.getElementById("file-status-"+idx);
+  if (!file) return;
+  const q = currentPoll.questions[idx];
+  statusEl.textContent = "Subiendo…";
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const headers = token ? {Authorization:`Bearer ${token}`} : {};
+    const r = await fetch(`${API}/forms/polls/${currentPoll.pollId}/upload?questionId=${q.id}`, {
+      method:"POST", headers, body: fd
+    });
+    const d = await r.json();
+    if (!r.ok) { statusEl.textContent = d.error || "Error al subir"; statusEl.style.color = "var(--danger)"; return; }
+    voteState[idx] = { fileId: d.fileId, fileName: d.fileName };
+    statusEl.textContent = `✅ ${d.fileName}`;
+    statusEl.style.color = "";
+  } catch {
+    statusEl.textContent = "Error de conexión";
+    statusEl.style.color = "var(--danger)";
+  }
+  checkVoteReady();
+}
+
 function checkVoteReady() {
   const poll = currentPoll;
   if (!poll) return;
-  let answered = false;
-  const type = poll.questionType;
-  if (["multiple_choice","checkboxes"].includes(type)) {
-    answered = !!(voteState[0]?.length);
-  } else if (type==="text"||type==="paragraph") {
-    answered = !!(document.getElementById("text-ans-0")?.value.trim());
-  } else if (type==="linear_scale") {
-    answered = voteState[0] !== undefined;
-  } else if (type==="grid") {
-    answered = poll.gridRows.every(r => voteState[0]?.[r]);
-  }
+
+  let answered = true;
+  poll.questions.forEach((q, idx) => {
+    if (!q.required) return;
+    let qAnswered = false;
+    if (["multiple_choice","checkboxes"].includes(q.questionType)) {
+      qAnswered = !!(voteState[idx]?.length);
+    } else if (q.questionType==="text"||q.questionType==="paragraph") {
+      qAnswered = !!(document.getElementById("text-ans-"+idx)?.value.trim());
+    } else if (q.questionType==="linear_scale") {
+      qAnswered = voteState[idx] !== undefined;
+    } else if (q.questionType==="grid") {
+      qAnswered = q.gridRows.every(r => voteState[idx]?.[r]);
+    } else if (q.questionType==="file_upload") {
+      qAnswered = !!voteState[idx]?.fileId;
+    }
+    if (!qAnswered) answered = false;
+  });
 
   const needsCaptcha = poll.accessMode !== "neat_only";
   const captchaOk = !needsCaptcha || !!captchaToken;
@@ -1207,18 +1361,26 @@ async function submitVote() {
   const errEl = document.getElementById("vote-error");
   errEl.style.display = "none";
 
-  const body = {};
-  const type = poll.questionType;
+  const answers = [];
+  poll.questions.forEach((q, idx) => {
+    if (["multiple_choice","checkboxes","datetime"].includes(q.questionType)) {
+      if (voteState[idx]?.length) answers.push({ questionId: q.id, selections: voteState[idx] });
+    } else if (q.questionType==="text"||q.questionType==="paragraph") {
+      const v = document.getElementById("text-ans-"+idx)?.value.trim();
+      if (v) answers.push({ questionId: q.id, text: v });
+    } else if (q.questionType==="linear_scale") {
+      if (voteState[idx] !== undefined) answers.push({ questionId: q.id, scaleValue: voteState[idx] });
+    } else if (q.questionType==="grid") {
+      if (voteState[idx]) {
+        const gridSelections = Object.entries(voteState[idx]).map(([row,column])=>({row,column}));
+        if (gridSelections.length) answers.push({ questionId: q.id, gridSelections });
+      }
+    } else if (q.questionType==="file_upload") {
+      if (voteState[idx]?.fileId) answers.push({ questionId: q.id, fileId: voteState[idx].fileId });
+    }
+  });
 
-  if (["multiple_choice","checkboxes"].includes(type)) {
-    body.selections = voteState[0] || [];
-  } else if (type==="text"||type==="paragraph") {
-    body.text = document.getElementById("text-ans-0")?.value.trim();
-  } else if (type==="linear_scale") {
-    body.scaleValue = voteState[0];
-  } else if (type==="grid") {
-    body.gridSelections = Object.entries(voteState[0]||{}).map(([row,column])=>({row,column}));
-  }
+  const body = { answers };
 
   if (poll.accessMode !== "neat_only") {
     body.voterName = document.getElementById("voter-name-input")?.value.trim();
@@ -1277,43 +1439,57 @@ async function showResultsView(pollId) {
     const poll = await pollRes.json();
     const results = await resultsRes.json();
 
+    if (!pollRes.ok) {
+      container.innerHTML = `<div class="empty-state"><p>${escHtml(poll.error||"Encuesta no encontrada")}</p></div>`;
+      return;
+    }
+
     document.getElementById("results-title").textContent = poll.title;
 
+    if (!resultsRes.ok) {
+      document.getElementById("results-summary").innerHTML = "";
+      container.innerHTML = `<div class="empty-state"><p>${results.private ? "🔒 Los resultados de esta encuesta son privados." : escHtml(results.error||"No se pudieron cargar los resultados.")}</p></div>`;
+      return;
+    }
+
     // Summary
-    const total = results.totalVotes || results.totalResponses || 0;
+    const total = results.totalResponses || 0;
     document.getElementById("results-summary").innerHTML = `
       <div class="summary-stat"><div class="val">${total}</div><div class="lbl">respuestas</div></div>
       <div class="summary-stat"><div class="val">${poll.closed?'Cerrada':'Abierta'}</div><div class="lbl">estado</div></div>
-      <div class="summary-stat"><div class="val">${typeLabel(poll.questionType)}</div><div class="lbl">tipo</div></div>
+      <div class="summary-stat"><div class="val">${poll.questions.length}</div><div class="lbl">preguntas</div></div>
     `;
 
     container.innerHTML = "";
 
     // Share button
+    const isCreator = currentUser && currentUser.username === poll.creatorUsername;
     const shareBar = document.createElement("div");
     shareBar.style="display:flex;gap:8px;margin-bottom:16px;justify-content:flex-end";
     shareBar.innerHTML = `
       <button class="btn btn-ghost" onclick="shareModal('${pollId}')">🔗 Compartir</button>
-      ${!poll.closed && token ? `<button class="btn btn-danger" onclick="closePoll('${pollId}')">🔒 Cerrar encuesta</button>` : ''}
+      ${!poll.closed && isCreator ? `<button class="btn btn-danger" onclick="closePoll('${pollId}')">🔒 Cerrar encuesta</button>` : ''}
     `;
     container.appendChild(shareBar);
 
-    const card = document.createElement("div");
-    card.className = "result-card";
-    card.innerHTML = `<h3>${escHtml(poll.title)}</h3>${renderResults(poll, results)}`;
-    container.appendChild(card);
+    results.questions.forEach((qResult, idx) => {
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.innerHTML = `<h3>${idx+1}. ${escHtml(qResult.title)}</h3>${renderResults(qResult)}`;
+      container.appendChild(card);
+    });
 
   } catch(e) {
     container.innerHTML = `<div class="empty-state"><p>Error cargando resultados</p></div>`;
   }
 }
 
-function renderResults(poll, results) {
-  const type = poll.questionType;
+function renderResults(qResult) {
+  const type = qResult.questionType;
 
   if (["multiple_choice","checkboxes","datetime"].includes(type)) {
-    const total = results.totalVotes || 1;
-    return results.counts.map(c => {
+    const total = qResult.totalVotes || 1;
+    return qResult.counts.map(c => {
       const pct = Math.round((c.count/total)*100);
       return `<div class="bar-row">
         <div class="bar-label"><span class="opt-name">${escHtml(c.option)}</span><span class="opt-count">${c.count} voto${c.count!==1?'s':''} · ${pct}%</span></div>
@@ -1323,16 +1499,27 @@ function renderResults(poll, results) {
   }
 
   if (type==="text"||type==="paragraph") {
-    if (!results.responses) return `<p class="muted">Solo el creador puede ver las respuestas.</p>`;
-    return `<div class="text-responses">${results.responses.map(r=>`
+    if (!qResult.responses) return `<p class="muted">${qResult.totalResponses} respuesta${qResult.totalResponses!==1?'s':''} · solo el creador puede ver el contenido.</p>`;
+    if (!qResult.responses.length) return `<p class="muted">Aún no hay respuestas.</p>`;
+    return `<div class="text-responses">${qResult.responses.map(r=>`
       <div class="text-response">
         ${escHtml(r.value)}
         ${r.voter?`<div class="muted" style="margin-top:4px;font-size:11px">— ${escHtml(r.voter)}</div>`:''}
       </div>`).join("")}</div>`;
   }
 
+  if (type==="file_upload") {
+    if (!qResult.responses) return `<p class="muted">${qResult.totalResponses} respuesta${qResult.totalResponses!==1?'s':''} · solo el creador puede ver los archivos.</p>`;
+    if (!qResult.responses.length) return `<p class="muted">Aún no hay archivos.</p>`;
+    return `<div class="text-responses">${qResult.responses.map(r=>`
+      <div class="text-response">
+        📎 ${escHtml(r.value)}
+        ${r.voter?`<div class="muted" style="margin-top:4px;font-size:11px">— ${escHtml(r.voter)}</div>`:''}
+      </div>`).join("")}</div>`;
+  }
+
   if (type==="linear_scale") {
-    const counts = results.counts;
+    const counts = qResult.counts;
     const max = Math.max(...Object.values(counts), 1);
     const bars = Object.entries(counts).map(([v,c])=>`
       <div class="scale-bar-wrap">
@@ -1340,11 +1527,11 @@ function renderResults(poll, results) {
         <div class="scale-bar-num">${v}</div>
       </div>`).join("");
     return `<div class="scale-result">${bars}</div>
-      <div class="scale-avg">Promedio: <span>${results.average?.toFixed(1)||'-'}</span></div>`;
+      <div class="scale-avg">Promedio: <span>${qResult.average?.toFixed(1)||'-'}</span></div>`;
   }
 
   if (type==="grid") {
-    const grid = results.grid;
+    const grid = qResult.grid;
     const rows = Object.keys(grid);
     const cols = rows.length ? Object.keys(grid[rows[0]]) : [];
     const maxVal = Math.max(...rows.flatMap(r=>cols.map(c=>grid[r][c])), 1);
@@ -1352,7 +1539,7 @@ function renderResults(poll, results) {
     const tableRows = rows.map(r=>`<tr>
       <td>${escHtml(r)}</td>
       ${cols.map(c=>{
-        const v=grid[r][c]; const heat=Math.round((v/maxVal)*80);
+        const v=grid[r][c];
         return `<td class="grid-cell-heat" style="background:rgba(233,180,76,${(v/maxVal)*0.4})">${v}</td>`;
       }).join("")}
     </tr>`).join("");
@@ -1390,11 +1577,12 @@ function typeLabel(t) {
   return {multiple_choice:"Opción múltiple",checkboxes:"Casillas",text:"Respuesta corta",
     paragraph:"Párrafo",linear_scale:"Escala",grid:"Cuadrícula",datetime:"Fecha/Hora",file_upload:"Archivo"}[t]||t;
 }
-function questionHint(poll) {
-  if (poll.questionType==="multiple_choice") return "Elige una opción";
-  if (poll.questionType==="checkboxes") return "Puedes elegir varias opciones";
-  if (poll.questionType==="linear_scale") return `Escala de ${poll.scaleMin} a ${poll.scaleMax}`;
-  if (poll.questionType==="grid") return "Selecciona una opción por fila";
+function questionHint(q) {
+  if (q.questionType==="multiple_choice") return "Elige una opción";
+  if (q.questionType==="checkboxes") return "Puedes elegir varias opciones";
+  if (q.questionType==="linear_scale") return `Escala de ${q.scaleMin} a ${q.scaleMax}`;
+  if (q.questionType==="grid") return "Selecciona una opción por fila";
+  if (q.questionType==="file_upload") return "Sube un archivo";
   return "";
 }
 </script>
