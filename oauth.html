@@ -677,6 +677,11 @@ const SCOPE_META = {
   watch:   { label: "Neat Watch",       desc: "Ver y subir videos en Neat Watch",                    sensitive: true  },
   points:  { label: "Neat Points",      desc: "Ver tu saldo y transferir Neat Points",               sensitive: true  },
   chatter: { label: "Neat Chatter",     desc: "Leer y enviar mensajes en Neat Chatter",              sensitive: true  },
+  notes:   { label: "Neat Notes",       desc: "Crear, editar y borrar tus notas",                    sensitive: true  },
+  ruletas: { label: "Neat Ruletas",     desc: "Crear, editar y borrar tus ruletas",                  sensitive: true  },
+  web:     { label: "Página personal",  desc: "Publicar y modificar tu página web personalizada",    sensitive: true  },
+  ntfy:    { label: "Notificaciones",   desc: "Activar y leer tu canal de notificaciones push",      sensitive: true  },
+  kv:      { label: "Exportar mis datos", desc: "Leer un resumen completo de tus datos en Neat (notas, ruletas, puntos, chats y más, según los demás permisos otorgados)", sensitive: true },
   account: { label: "Acceso completo",  desc: "Control total de tu cuenta, equivalente a tu contraseña", sensitive: true, danger: true },
 };
 
@@ -810,15 +815,15 @@ async function doLogin() {
     if (!r.ok) { showErr(errEl, d.note || d.error || "Credenciales inválidas."); return; }
 
     // Obtener info del perfil
-    let email = "", verified = false, avatarFileId = null;
+    let email = "", verified = false, avatarFileId = null, sub = null;
     try {
       const pr = await fetch(`${API}/oauth/userinfo`, { headers: { Authorization: "Bearer " + d.token } });
-      if (pr.ok) { const pd = await pr.json(); email = pd.email || ""; verified = !!pd.verified; avatarFileId = pd.avatarFileId || null; }
+      if (pr.ok) { const pd = await pr.json(); email = pd.email || ""; verified = !!pd.verified; avatarFileId = pd.avatarFileId || null; sub = pd.sub || null; }
     } catch {}
 
     // Evitar duplicados
     const existing = accounts.findIndex(a => a.username.toLowerCase() === username.toLowerCase());
-    const acc = { username: d.username || username, email, verified, avatarFileId, token: d.token };
+    const acc = { username: d.username || username, sub, email, verified, avatarFileId, token: d.token };
     if (existing >= 0) { accounts[existing] = acc; selectedIdx = existing; }
     else { accounts.push(acc); selectedIdx = accounts.length - 1; }
 
@@ -902,7 +907,13 @@ async function authorize() {
     const r = await fetch(`${API}/oauth/authorize`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + acc.token },
-      body: JSON.stringify({ clientId: params.client_id, redirectUri, scopes: [...activeScopes] })
+      body: JSON.stringify({
+        clientId: params.client_id,
+        redirectUri,
+        scopes: [...activeScopes],
+        codeChallenge: params.code_challenge || null,
+        codeChallengeMethod: params.code_challenge_method || "S256"
+      })
     });
     const d = await r.json();
     if (!r.ok) { showErr(errEl, d.note || d.error || "Error al autorizar."); return; }
