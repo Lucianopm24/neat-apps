@@ -473,6 +473,50 @@ body {
   margin-top: 4px;
 }
 
+.toggle-label {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-transform: none !important;
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+}
+
+.toggle-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.pkce-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+  background: rgba(62,207,142,0.12);
+  color: var(--green);
+  border: 1px solid rgba(62,207,142,0.25);
+  vertical-align: middle;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--accent2);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover { color: var(--text); }
+
 /* ── Docs ── */
 .doc-section { margin-bottom: 40px; }
 
@@ -719,6 +763,58 @@ Authorization: Bearer ACCESS_TOKEN</div>
       </div>
 
       <div class="doc-section">
+        <h2>PKCE — apps públicas (sin secret)<span class="pkce-badge">recomendado para SPA / móvil</span></h2>
+        <p>Si tu app no puede guardar un <code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">client_secret</code> de forma segura — por ejemplo una SPA donde cualquiera puede abrir el código fuente, o una app móvil donde alguien podría inspeccionarla — usa PKCE en vez de mandar el secret. Marcá tu app como "pública" al crearla en el panel y seguí estos pasos en tu código:</p>
+        <h3>1. Generar un code_verifier y su code_challenge</h3>
+        <p>Antes de redirigir al usuario, tu app genera un secreto aleatorio de un solo uso (<code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">code_verifier</code>) y lo guarda en memoria. Calcula su hash (<code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">code_challenge</code>) y manda solo el hash a Neat — el secreto original nunca viaja por la red en este paso.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+function base64url(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function randomVerifier(len = 64) {
+  const bytes = crypto.getRandomValues(new Uint8Array(len));
+  return base64url(bytes);
+}
+
+async function challengeFromVerifier(verifier) {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return base64url(hash);
+}
+
+const codeVerifier = randomVerifier();
+const codeChallenge = await challengeFromVerifier(codeVerifier);
+
+// Guarda codeVerifier en memoria (ej. sessionStorage) — lo necesitas en el paso 3
+sessionStorage.setItem('pkce_verifier', codeVerifier);</div>
+        <h3>2. Redirigir al usuario con el code_challenge</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+GET https://neat.qzz.io/oauth.html
+  ?client_id=TU_CLIENT_ID
+  &redirect_uri=https://tu-app.com/callback
+  &scope=profile email
+  &state=RANDOM_STRING
+  &code_challenge=EL_CODE_CHALLENGE
+  &code_challenge_method=S256</div>
+        <h3>3. Intercambiar el code por token (sin secret)</h3>
+        <p>En vez de <code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">clientSecret</code>, mandás el <code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">code_verifier</code> original que guardaste en el paso 1.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">copiar</button>
+POST https://neat-apps-b.vercel.app/oauth/token
+
+{
+  "code": "EL_CODE",
+  "clientId": "TU_CLIENT_ID",
+  "redirectUri": "https://tu-app.com/callback",
+  "codeVerifier": "EL_CODE_VERIFIER_GUARDADO_EN_PASO_1"
+}</div>
+        <p>Neat vuelve a hashear ese <code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">code_verifier</code> y lo compara contra el <code style="font-family:var(--mono);font-size:12px;background:var(--bg3);padding:1px 6px;border-radius:4px">code_challenge</code> que recibió en el paso 2. Si coinciden, te entrega el token — sin que tu app haya necesitado nunca un secret fijo.</p>
+      </div>
+
+      <div class="doc-section">
         <h2>Scopes</h2>
         <table class="scope-table">
           <thead><tr><th>Scope</th><th>Acceso</th><th>Sensible</th></tr></thead>
@@ -729,6 +825,12 @@ Authorization: Bearer ACCESS_TOKEN</div>
             <tr><td>chatter</td><td>Leer y enviar mensajes</td><td>Sí</td></tr>
             <tr><td>watch</td><td>Videos, likes, listas</td><td>Sí</td></tr>
             <tr><td>forums</td><td>Posts, votos, comunidades</td><td>Sí</td></tr>
+            <tr><td>forms</td><td>Crear encuestas y ver respuestas</td><td>Sí</td></tr>
+            <tr><td>notes</td><td>Crear, editar y borrar notas</td><td>Sí</td></tr>
+            <tr><td>ruletas</td><td>Crear, editar y borrar ruletas</td><td>Sí</td></tr>
+            <tr><td>web</td><td>Publicar tu página personalizada</td><td>Sí</td></tr>
+            <tr><td>ntfy</td><td>Activar y leer tu canal de notificaciones</td><td>Sí</td></tr>
+            <tr><td>kv</td><td>Exportar un resumen completo de tus datos</td><td>Sí</td></tr>
             <tr><td>points</td><td>Balance y transferencias de NP</td><td>Sí</td></tr>
             <tr><td>account</td><td>Acceso completo (equivale a contraseña)</td><td>⚠️ Peligroso</td></tr>
           </tbody>
@@ -794,6 +896,13 @@ console.log(user.username, user.email);</div>
         <input type="text" id="new-scopes" placeholder="profile email" value="profile email">
         <div class="modal-hint">Separados por espacio.</div>
       </div>
+      <div class="modal-field">
+        <label class="toggle-label">
+          <input type="checkbox" id="new-ispublic" class="toggle-checkbox">
+          <span>App pública (PKCE, sin secret)</span>
+        </label>
+        <div class="modal-hint">Activa esto si tu app es una SPA, app móvil, o cualquier app que no pueda guardar un secret de forma segura. Igual podrás revelar y usar el secret si lo necesitás más adelante.</div>
+      </div>
       <div class="auth-error" id="create-error"></div>
     </div>
     <div class="modal-footer">
@@ -824,6 +933,13 @@ console.log(user.username, user.email);</div>
         <label>Scopes permitidos</label>
         <input type="text" id="edit-scopes">
         <div class="modal-hint">Separados por espacio.</div>
+      </div>
+      <div class="modal-field">
+        <label class="toggle-label">
+          <input type="checkbox" id="edit-ispublic" class="toggle-checkbox">
+          <span>App pública (PKCE, sin secret)</span>
+        </label>
+        <div class="modal-hint">Activa esto si tu app es una SPA, app móvil, o cualquier app que no pueda guardar un secret de forma segura. Igual podrás revelar y usar el secret si lo necesitás más adelante.</div>
       </div>
       <div class="auth-error" id="edit-error"></div>
     </div>
@@ -932,7 +1048,7 @@ async function loadApps() {
       <div class="app-card">
         <div class="app-card-header">
           <div>
-            <div class="app-name">${esc(app.name)}</div>
+            <div class="app-name">${esc(app.name)}${app.isPublic ? '<span class="pkce-badge">PKCE</span>' : ''}</div>
             <div class="app-created">${new Date(app.createdAt).toLocaleDateString('es')}</div>
           </div>
           <div class="app-actions">
@@ -944,10 +1060,18 @@ async function loadApps() {
           <div class="kv-label">client_id</div>
           <div class="kv-value" onclick="copyText('${app.clientId}', 'Client ID copiado')" title="Clic para copiar">${app.clientId}</div>
         </div>
+        ${app.isPublic ? `
+        <div class="kv-row" id="secret-row-${app.clientId}">
+          <div class="kv-label">secret</div>
+          <div class="kv-value secret" style="cursor:default">App pública — usa PKCE, no necesita secret</div>
+        </div>
+        <div style="margin:-2px 0 8px 100px">
+          <button class="btn-link" onclick="forceShowSecret('${app.clientId}')">Mostrar de todos modos (usar Auth normal)</button>
+        </div>` : `
         <div class="kv-row">
           <div class="kv-label">secret</div>
           <div class="kv-value secret" id="secret-${app.clientId}" onclick="revealSecret('${app.clientId}', this)" title="Clic para revelar">••••••••••••••••</div>
-        </div>
+        </div>`}
         <div class="kv-row">
           <div class="kv-label">redirect</div>
           <div class="kv-value" title="${(app.redirectUris||[]).join(', ')}">${(app.redirectUris||[]).join(', ')}</div>
@@ -975,6 +1099,18 @@ async function revealSecret(clientId, el) {
   } catch { toast("Error obteniendo secret"); }
 }
 
+// Para apps marcadas como públicas: el secret sigue existiendo y funcionando
+// en el backend (PKCE y client_secret pueden coexistir), simplemente está
+// oculto por defecto en la UI. Esto lo revela igual que en una app normal.
+function forceShowSecret(clientId) {
+  const row = document.getElementById(`secret-row-${clientId}`);
+  if (!row) return;
+  row.innerHTML = `
+    <div class="kv-label">secret</div>
+    <div class="kv-value secret" id="secret-${clientId}" onclick="revealSecret('${clientId}', this)" title="Clic para revelar">••••••••••••••••</div>
+  `;
+}
+
 async function deleteApp(clientId, name) {
   if (!confirm(`¿Eliminar "${name}"? Esto revocará todos los tokens activos.`)) return;
   try {
@@ -991,6 +1127,7 @@ function openCreateModal() {
   document.getElementById("new-name").value = "";
   document.getElementById("new-uris").value = "";
   document.getElementById("new-scopes").value = "profile email";
+  document.getElementById("new-ispublic").checked = false;
   document.getElementById("create-error").textContent = "";
   document.getElementById("modal-create").classList.add("visible");
 }
@@ -999,6 +1136,7 @@ async function createApp() {
   const name = document.getElementById("new-name").value.trim();
   const uris = document.getElementById("new-uris").value.trim().split("\n").map(s => s.trim()).filter(Boolean);
   const scopes = document.getElementById("new-scopes").value.trim().split(/\s+/).filter(Boolean);
+  const isPublic = document.getElementById("new-ispublic").checked;
   const errEl = document.getElementById("create-error");
   errEl.textContent = "";
   if (!name) { errEl.textContent = "Ponle un nombre a tu app."; return; }
@@ -1007,7 +1145,7 @@ async function createApp() {
     const r = await fetch(`${API}/oauth/clients`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      body: JSON.stringify({ name, redirectUris: uris, scopes })
+      body: JSON.stringify({ name, redirectUris: uris, scopes, isPublic })
     });
     const d = await r.json();
     if (!r.ok) { errEl.textContent = d.error || "Error creando app."; return; }
@@ -1023,6 +1161,7 @@ function openEditModal(clientId) {
   document.getElementById("edit-name").value = app.name || "";
   document.getElementById("edit-uris").value = (app.redirectUris || []).join("\n");
   document.getElementById("edit-scopes").value = (app.scopes || []).join(" ");
+  document.getElementById("edit-ispublic").checked = !!app.isPublic;
   document.getElementById("edit-error").textContent = "";
   document.getElementById("modal-edit").dataset.clientId = clientId;
   document.getElementById("modal-edit").classList.add("visible");
@@ -1033,6 +1172,7 @@ async function saveEdit() {
   const name = document.getElementById("edit-name").value.trim();
   const uris = document.getElementById("edit-uris").value.trim().split("\n").map(s => s.trim()).filter(Boolean);
   const scopes = document.getElementById("edit-scopes").value.trim().split(/\s+/).filter(Boolean);
+  const isPublic = document.getElementById("edit-ispublic").checked;
   const errEl = document.getElementById("edit-error");
   errEl.textContent = "";
   if (!name) { errEl.textContent = "Ponle un nombre a tu app."; return; }
@@ -1041,7 +1181,7 @@ async function saveEdit() {
     const r = await fetch(`${API}/oauth/clients/${clientId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      body: JSON.stringify({ name, redirectUris: uris, scopes })
+      body: JSON.stringify({ name, redirectUris: uris, scopes, isPublic })
     });
     const d = await r.json();
     if (!r.ok) { errEl.textContent = d.error || "Error guardando cambios."; return; }
