@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi cuenta — Neat</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --blue-light: #e8f0fe;
+    --red: #d93025;
+    --red-light: #fce8e6;
+    --yellow: #f9ab00;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-400: #9aa0a6;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --white: #ffffff;
+    --card-bg: #ffffff;
+    --page-bg: #f8f9fa;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
+    --radius: 8px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+  }
+
+  [data-theme="dark"] {
+    --gray-50: #1a1a24;
+    --gray-100: #22222f;
+    --gray-200: rgba(255,255,255,0.1);
+    --gray-400: #8888a8;
+    --gray-600: #aaaabf;
+    --gray-800: #e0e0ec;
+    --gray-900: #f0f0f8;
+    --white: #15151f;
+    --card-bg: #1a1a24;
+    --page-bg: #0e0e15;
+    --blue-light: rgba(26,115,232,0.16);
+    --green-light: rgba(30,142,62,0.16);
+    --red-light: rgba(217,48,37,0.16);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  }
+
+  body {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    background: var(--page-bg);
+    min-height: 100vh;
+    color: var(--gray-900);
+    padding: 32px 16px 80px;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  /* ── Topbar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand-icon {
+    width: 30px;
+    height: 30px;
+    background: var(--blue);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    font-family: 'Google Sans', sans-serif;
+  }
+
+  .brand-text {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .brand-text span { color: var(--gray-400); font-weight: 400; }
+
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gray-200);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s;
+  }
+
+  .theme-toggle:hover { border-color: var(--blue); }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+
+  .card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .card-header h2 {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .card-header p {
+    font-size: 13px;
+    color: var(--gray-600);
+    margin-top: 2px;
+  }
+
+  .card-body { padding: 24px; }
+
+  /* ── Profile header card ── */
+  .profile-card { padding: 28px 24px; text-align: center; }
+
+  .profile-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 30px;
+    font-family: 'Google Sans', sans-serif;
+    margin: 0 auto 14px;
+    overflow: hidden;
+  }
+
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .profile-username {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 19px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .profile-username img { width: 16px; height: auto; }
+
+  .profile-email { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+
+  .profile-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  .badge-plus { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #fff; }
+  .badge-points { background: var(--blue-light); color: var(--blue); }
+  .badge-free { background: var(--gray-100); color: var(--gray-600); }
+
+  /* ── Fields ── */
+  .field-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .field-row:last-child { margin-bottom: 0; }
+  .field { flex: 1; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-600);
+    margin-bottom: 6px;
+  }
+
+  .field input, .field textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--gray-900);
+    background: var(--card-bg);
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus, .field textarea:focus { border-color: var(--blue); }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field-hint { font-size: 11.5px; color: var(--gray-400); margin-top: 5px; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: none;
+    color: var(--gray-800);
+    border: 1.5px solid var(--gray-200);
+  }
+  .btn-ghost:hover { background: var(--gray-100); }
+
+  .btn-danger { background: var(--red); color: white; }
+  .btn-danger:hover { opacity: 0.88; }
+
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+  /* ── Messages ── */
+  .msg {
+    font-size: 13px;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-top: 12px;
+    display: none;
+  }
+  .msg.visible { display: block; }
+  .msg.ok { background: var(--green-light); color: var(--green); }
+  .msg.err { background: var(--red-light); color: var(--red); }
+
+  /* ── Export ── */
+  .export-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .export-info p { font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+
+  /* ── Logout ── */
+  .logout-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logout-row p { font-size: 13px; color: var(--gray-600); }
+
+  /* ── Loading / states ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 60px 20px;
+    color: var(--gray-600);
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--gray-200);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Login screen ── */
+  .login-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+  }
+
+  .login-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: 32px;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .login-card h1 {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .login-card > p { font-size: 13px; color: var(--gray-600); margin-bottom: 20px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--gray-900);
+    color: var(--page-bg);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 200;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">N</div>
+      <div class="brand-text">Neat <span>/ Mi cuenta</span></div>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="screenLoading" class="screen active">
+    <div class="loading"><div class="spinner"></div>Cargando…</div>
+  </div>
+
+  <!-- Login -->
+  <div id="screenLogin" class="screen">
+    <div class="login-wrap">
+      <div class="login-card">
+        <h1>Iniciar sesión</h1>
+        <p>Entra con tu cuenta de Neat para gestionar tu perfil.</p>
+        <div class="field" style="margin-bottom:14px">
+          <label>Usuario</label>
+          <input type="text" id="loginUsername" placeholder="Tu usuario" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" autocomplete="current-password">
+        </div>
+        <div class="msg err" id="loginError"></div>
+        <div class="btn-row" style="justify-content:stretch;margin-top:18px">
+          <button class="btn btn-primary" style="width:100%" id="btnLogin" onclick="doLogin()">Entrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="screenMain" class="screen">
+
+    <!-- Profile summary -->
+    <div class="card profile-card">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div class="profile-username" id="profileUsername"></div>
+      <div class="profile-email" id="profileEmail"></div>
+      <div class="profile-badges" id="profileBadges"></div>
+    </div>
+
+    <!-- Edit profile -->
+    <div class="card" id="cardProfile">
+      <div class="card-header">
+        <h2>Perfil</h2>
+        <p>Tu bio y avatar son visibles públicamente.</p>
+      </div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Bio</label>
+            <textarea id="profileBio" placeholder="Cuéntale algo a los demás…" maxlength="280"></textarea>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Avatar (file ID de Telegram)</label>
+            <input type="text" id="profileAvatarFileId" placeholder="Opcional">
+            <div class="field-hint">El ID del archivo subido a Telegram que se usa como tu foto de perfil.</div>
+          </div>
+        </div>
+        <div class="msg ok" id="profileMsgOk"></div>
+        <div class="msg err" id="profileMsgErr"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnSaveProfile" onclick="saveProfile()">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change password -->
+    <div class="card" id="cardPassword">
+      <div class="card-header">
+        <h2>Contraseña</h2>
+        <p>Por seguridad, esto solo se puede cambiar desde aquí, nunca desde una app externa.</p>
+      </div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Contraseña actual</label>
+            <input type="password" id="pwCurrent" autocomplete="current-password">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Nueva contraseña</label>
+            <input type="password" id="pwNew" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label>Confirmar nueva contraseña</label>
+            <input type="password" id="pwConfirm" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="field-hint">Mínimo 6 caracteres.</div>
+        <div class="msg ok" id="pwMsgOk"></div>
+        <div class="msg err" id="pwMsgErr"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnChangePw" onclick="changePassword()">Cambiar contraseña</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export data -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Exportar mis datos</h2>
+        <p>Descarga un archivo con toda tu información en Neat.</p>
+      </div>
+      <div class="card-body">
+        <div class="export-row">
+          <div class="export-info">
+            <p>Incluye tu perfil, notas, ruletas, historial de Neat Points, chats, posts de Forums, encuestas y configuración de notificaciones — todo lo que existe asociado a tu cuenta.</p>
+          </div>
+          <button class="btn btn-ghost" id="btnExport" onclick="exportData()" style="flex-shrink:0">⬇ Exportar JSON</button>
+        </div>
+        <div class="msg err" id="exportMsgErr"></div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="card">
+      <div class="card-body">
+        <div class="logout-row">
+          <p>¿Terminaste por hoy?</p>
+          <button class="btn btn-ghost" onclick="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = "https://neat-apps-b.vercel.app";
+let token = localStorage.getItem("neat_account_token");
+let me = null;
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("themeToggle").textContent = theme === "dark" ? "☀️" : "🌙";
+  localStorage.setItem("neat_account_theme", theme);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+(function initTheme() {
+  const saved = localStorage.getItem("neat_account_theme");
+  if (saved) return applyTheme(saved);
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(prefersDark ? "dark" : "light");
+})();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.onload = async () => {
+  if (!token) return showScreen("screenLogin");
+  await loadMe();
+};
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+  const btn = document.getElementById("btnLogin");
+  errEl.classList.remove("visible");
+  if (!username || !password) { showErr(errEl, "Completa todos los campos."); return; }
+  btn.disabled = true; btn.textContent = "Entrando…";
+  try {
+    const r = await fetch(`${API}/chat/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const d = await r.json();
+    if (!r.ok) { showErr(errEl, d.note || d.error || "Credenciales inválidas."); return; }
+    token = d.token;
+    localStorage.setItem("neat_account_token", token);
+    await loadMe();
+  } catch { showErr(errEl, "Error de conexión. Intenta de nuevo."); }
+  finally { btn.disabled = false; btn.textContent = "Entrar"; }
+}
+
+function logout() {
+  localStorage.removeItem("neat_account_token");
+  token = null; me = null;
+  showScreen("screenLogin");
+}
+
+// ── Load profile ──────────────────────────────────────────────────────────────
+async function loadMe() {
+  showScreen("screenLoading");
+  try {
+    const r = await fetch(`${API}/chat/me`, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) { logout(); return; }
+    me = await r.json();
+    if (me.role === "admin") {
+      // El admin no tiene perfil editable en este backend — solo mostramos lo básico.
+      renderAdmin();
+    } else {
+      renderProfile();
+    }
+    showScreen("screenMain");
+  } catch {
+    logout();
+  }
+}
+
+function initials(username) { return (username || "?")[0].toUpperCase(); }
+
+function renderAdmin() {
+  document.getElementById("profileAvatar").textContent = initials(me.username);
+  document.getElementById("profileUsername").textContent = me.username;
+  document.getElementById("profileEmail").textContent = me.email || "";
+  document.getElementById("profileBadges").innerHTML = `<span class="badge badge-plus">Admin</span>`;
+  // El admin no tiene perfil editable ni contraseña gestionable por este backend.
+  document.getElementById("cardProfile").style.display = "none";
+  document.getElementById("cardPassword").style.display = "none";
+}
+
+function renderProfile() {
+  const avatarEl = document.getElementById("profileAvatar");
+  if (me.avatarFileId) {
+    avatarEl.innerHTML = `<img src="https://api.telegram.org/file/bot${me.avatarFileId}" onerror="this.parentElement.textContent='${initials(me.username)}'">`;
+  } else {
+    avatarEl.textContent = initials(me.username);
+  }
+
+  document.getElementById("profileUsername").innerHTML =
+    escHtml(me.username) + (me.verified ? ` <img src="https://www.fidelizador.com/wp-content/uploads/2024/02/CHECK-AZUL-1.png" title="Verificado">` : "");
+  document.getElementById("profileEmail").textContent = me.email || "";
+
+  const badges = [];
+  if (me.neatPlus) {
+    const exp = me.neatPlusExpiresAt ? new Date(me.neatPlusExpiresAt).toLocaleDateString("es") : null;
+    badges.push(`<span class="badge badge-plus">⚡ Neat Plus${exp ? " · vence " + exp : ""}</span>`);
+  } else {
+    badges.push(`<span class="badge badge-free">Plan gratuito</span>`);
+  }
+  badges.push(`<span class="badge badge-points">${me.neatPoints || 0} NP</span>`);
+  document.getElementById("profileBadges").innerHTML = badges.join("");
+
+  document.getElementById("profileBio").value = me.bio || "";
+  document.getElementById("profileAvatarFileId").value = me.avatarFileId || "";
+}
+
+// ── Edit profile ──────────────────────────────────────────────────────────────
+async function saveProfile() {
+  const bio = document.getElementById("profileBio").value.trim();
+  const avatarFileId = document.getElementById("profileAvatarFileId").value.trim();
+  const okEl = document.getElementById("profileMsgOk");
+  const errEl = document.getElementById("profileMsgErr");
+  const btn = document.getElementById("btnSaveProfile");
+  okEl.classList.remove("visible"); errEl.classList.remove("visible");
+  btn.disabled = true; btn.textContent = "Guardando…";
+  try {
+    const r = await fetch(`${API}/chat/me`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ bio, avatarFileId: avatarFileId || null })
+    });
+    const d = await r.json();
+    if (!r.ok) { showErr(errEl, d.error || "Error guardando cambios."); return; }
+    showOk(okEl, "Perfil actualizado ✓");
+    await loadMe();
+  } catch { showErr(errEl, "Error de conexión."); }
+  finally { btn.disabled = false; btn.textContent = "Guardar cambios"; }
+}
+
+// ── Change password ───────────────────────────────────────────────────────────
+async function changePassword() {
+  const currentPassword = document.getElementById("pwCurrent").value;
+  const newPassword = document.getElementById("pwNew").value;
+  const confirmPassword = document.getElementById("pwConfirm").value;
+  const okEl = document.getElementById("pwMsgOk");
+  const errEl = document.getElementById("pwMsgErr");
+  const btn = document.getElementById("btnChangePw");
+  okEl.classList.remove("visible"); errEl.classList.remove("visible");
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showErr(errEl, "Completa todos los campos."); return;
+  }
+  if (newPassword.length < 6) {
+    showErr(errEl, "La nueva contraseña debe tener al menos 6 caracteres."); return;
+  }
+  if (newPassword !== confirmPassword) {
+    showErr(errEl, "Las contraseñas no coinciden."); return;
+  }
+
+  btn.disabled = true; btn.textContent = "Cambiando…";
+  try {
+    const r = await fetch(`${API}/chat/me/password`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    const d = await r.json();
+    if (!r.ok) { showErr(errEl, d.error || "Error cambiando contraseña."); return; }
+    showOk(okEl, "Contraseña actualizada ✓");
+    document.getElementById("pwCurrent").value = "";
+    document.getElementById("pwNew").value = "";
+    document.getElementById("pwConfirm").value = "";
+  } catch { showErr(errEl, "Error de conexión."); }
+  finally { btn.disabled = false; btn.textContent = "Cambiar contraseña"; }
+}
+
+// ── Export data ───────────────────────────────────────────────────────────────
+async function exportData() {
+  const errEl = document.getElementById("exportMsgErr");
+  const btn = document.getElementById("btnExport");
+  errEl.classList.remove("visible");
+  btn.disabled = true; btn.textContent = "Preparando…";
+  try {
+    const r = await fetch(`${API}/oauth/kv`, { headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (!r.ok) { showErr(errEl, d.error || "Error exportando datos."); return; }
+    const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `neat-${(me.username||"datos")}-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("Datos exportados ✓");
+  } catch { showErr(errEl, "Error de conexión."); }
+  finally { btn.disabled = false; btn.textContent = "⬇ Exportar JSON"; }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function showErr(el, msg) { el.textContent = msg; el.classList.add("visible"); }
+function showOk(el, msg) { el.textContent = msg; el.classList.add("visible"); setTimeout(() => el.classList.remove("visible"), 4000); }
+function escHtml(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+</script>
+</body>
+</html>
