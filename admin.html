@@ -499,7 +499,7 @@ async function loadOAuth() {
   const tb = document.getElementById("oauthTable");
   if (!clients.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">Sin apps OAuth</td></tr>`; return; }
   tb.innerHTML = clients.map(c => `<tr>
-    <td><strong>${c.name}</strong> ${c.verified ? '<span title="App verificada" style="color:#1a73e8;font-size:13px">&#10003;</span>' : ''}</td>
+    <td><strong>${c.name}</strong> ${c.verified ? '<span title="App verificada" style="color:#1a73e8;font-size:13px">&#10003;</span>' : ''} ${c.isPublic ? '<span class="badge badge-green" style="margin-left:4px">PKCE</span>' : ''}</td>
     <td><span class="copy-id" onclick="copyId('${c.clientId}')">${c.clientId.slice(0,12)}…</span></td>
     <td style="color:var(--muted)">${(c.scopes||[]).join(", ")}</td>
     <td style="color:var(--muted)">${new Date(c.createdAt).toLocaleDateString("es")}</td>
