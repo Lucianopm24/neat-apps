@@ -192,6 +192,7 @@ nav {
   color: var(--accent2);
 }
 .lock-icon { font-size: 11px; }
+.vis-icon { font-size: 11px; }
 
 /* NOTE VIEW */
 .note-view-wrap {
@@ -574,6 +575,10 @@ function cycleVisibility() {
   document.getElementById('opt-visibility').classList.toggle('active', visIndex !== 0);
 }
 
+function visState(key) {
+  return VIS_STATES.find(v => v.key === key) || VIS_STATES[0];
+}
+
 marked.setOptions({ breaks: true, gfm: true });
 
 function toast(msg, err) {
@@ -724,6 +729,7 @@ async function loadMyNotes() {
         <div class="note-card-title">${n.title || '<em style="color:var(--text3);font-style:normal">Sin título</em>'}</div>
         <div class="note-card-meta">
           <span class="note-id">/n?n=${n.noteId}</span>
+          <span class="vis-icon" title="${visState(n.visibility).label}">${visState(n.visibility).icon}</span>
           ${n.hasPassword ? '<span class="lock-icon">🔒</span>' : ''}
           <span>${fmtDate(n.updatedAt)}</span>
         </div>
