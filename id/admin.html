@@ -1,0 +1,983 @@
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neat ID — Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'], google: ['Google Sans', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Roboto', sans-serif; margin: 0; }
+        .font-google { font-family: 'Google Sans', sans-serif; }
+        .input-field {
+            width: 100%; padding: 11px 14px; border: 1px solid #747775; border-radius: 8px;
+            background: transparent; outline: none; transition: border 0.2s; font-size: 14px;
+        }
+        .dark .input-field { border-color: #444; color: #e3e3e3; }
+        .input-field:focus { border: 2px solid #0b57d0; padding: 10px 13px; }
+        .dark .input-field:focus { border-color: #a8c7fa; }
+        .btn-primary {
+            background-color: #0b57d0; color: white; padding: 9px 20px;
+            border-radius: 100px; font-weight: 500; font-size: 14px; transition: background 0.2s, opacity 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .dark .btn-primary { background-color: #a8c7fa; color: #062e6f; }
+        .btn-primary:hover { opacity: 0.88; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            background: transparent; color: #0b57d0; padding: 9px 18px; border-radius: 100px;
+            font-weight: 500; font-size: 14px; border: 1px solid #dadce0; transition: background 0.15s;
+        }
+        .dark .btn-secondary { color: #a8c7fa; border-color: #444; }
+        .btn-secondary:hover { background: rgba(11,87,208,0.06); }
+        .dark .btn-secondary:hover { background: rgba(168,199,250,0.08); }
+        .btn-danger { color: #d93025; }
+        .btn-ghost { color: #5f6368; font-size: 13px; font-weight: 500; }
+        .dark .btn-ghost { color: #9aa0a6; }
+        .btn-ghost:hover { color: #0b57d0; }
+        .dark .btn-ghost:hover { color: #a8c7fa; }
+        .card {
+            background: white; border: 1px solid #e8eaed; border-radius: 16px;
+        }
+        .dark .card { background: #232323; border-color: #333; }
+        .sidebar-link {
+            display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 100px;
+            font-size: 14px; font-weight: 500; color: #444; transition: background 0.15s;
+        }
+        .dark .sidebar-link { color: #c4c7c5; }
+        .sidebar-link:hover { background: #f1f3f4; }
+        .dark .sidebar-link:hover { background: rgba(255,255,255,0.06); }
+        .sidebar-link.active { background: #d3e3fd; color: #041e49; }
+        .dark .sidebar-link.active { background: rgba(168,199,250,0.16); color: #a8c7fa; }
+        .step-enter { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner {
+            width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.15); border-top-color: currentColor;
+            border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        table { border-collapse: collapse; width: 100%; }
+        th { text-align: left; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; color: #5f6368; padding: 10px 12px; }
+        .dark th { color: #9aa0a6; }
+        td { padding: 12px; font-size: 14px; border-top: 1px solid #f1f3f4; }
+        .dark td { border-top: 1px solid #2c2c2c; }
+        .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+        .badge-blue { background: #d3e3fd; color: #041e49; }
+        .dark .badge-blue { background: rgba(168,199,250,0.16); color: #a8c7fa; }
+        .badge-green { background: #ceead6; color: #0d652d; }
+        .dark .badge-green { background: rgba(129,201,149,0.16); color: #81c995; }
+        .badge-gray { background: #f1f3f4; color: #5f6368; }
+        .dark .badge-gray { background: rgba(255,255,255,0.06); color: #9aa0a6; }
+        .badge-red { background: #fce8e6; color: #c5221f; }
+        .dark .badge-red { background: rgba(242,139,130,0.14); color: #f28b82; }
+        .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .toast { animation: toastIn 0.25s ease-out forwards; }
+        @keyframes toastIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0);} }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #444; }
+        .copyable { font-family: ui-monospace, monospace; font-size: 12.5px; }
+    </style>
+</head>
+<body class="bg-[#fafafa] dark:bg-[#161616] min-h-screen text-[#1f1f1f] dark:text-[#e3e3e3]">
+
+    <!-- ════════════ LOGIN ════════════ -->
+    <div id="view-login" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-[400px] card p-10">
+            <div class="w-12 h-12 bg-[#0b57d0] dark:bg-[#a8c7fa] rounded-full flex items-center justify-center shadow-sm mb-6">
+                <span class="text-white dark:text-[#062e6f] font-google text-2xl font-bold">N</span>
+            </div>
+            <h1 class="text-2xl font-google font-normal mb-1">Neat ID</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Panel de desarrolladores</p>
+
+            <div id="login-form" class="space-y-4 step-enter">
+                <input type="text" id="login-username" placeholder="Usuario" class="input-field" autocomplete="username">
+                <input type="password" id="login-password" placeholder="Contraseña" class="input-field" autocomplete="current-password">
+                <p id="login-error" class="text-[#d93025] text-xs hidden"></p>
+                <button id="btn-login" onclick="doLogin()" class="btn-primary w-full justify-center">Entrar</button>
+                <p class="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
+                    ¿No tienes cuenta? <span onclick="switchAuthMode('register')" class="text-[#0b57d0] dark:text-[#a8c7fa] font-medium cursor-pointer">Regístrate</span>
+                </p>
+            </div>
+
+            <div id="register-form" class="hidden space-y-4 step-enter">
+                <input type="text" id="reg-username" placeholder="Usuario (3-20 caracteres)" class="input-field">
+                <input type="password" id="reg-password" placeholder="Contraseña (mín. 6 caracteres)" class="input-field">
+                <p id="register-error" class="text-[#d93025] text-xs hidden"></p>
+                <button id="btn-register" onclick="doRegister()" class="btn-primary w-full justify-center">Crear cuenta</button>
+                <p class="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
+                    ¿Ya tienes cuenta? <span onclick="switchAuthMode('login')" class="text-[#0b57d0] dark:text-[#a8c7fa] font-medium cursor-pointer">Inicia sesión</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════ PANEL ════════════ -->
+    <div id="view-panel" class="hidden min-h-screen flex">
+        <!-- Sidebar -->
+        <aside class="w-64 shrink-0 border-r border-[#e8eaed] dark:border-[#2c2c2c] flex flex-col h-screen sticky top-0">
+            <div class="p-5 flex items-center gap-3">
+                <div class="w-8 h-8 bg-[#0b57d0] dark:bg-[#a8c7fa] rounded-full flex items-center justify-center shrink-0">
+                    <span class="text-white dark:text-[#062e6f] font-google text-sm font-bold">N</span>
+                </div>
+                <span class="font-google text-lg">Neat ID</span>
+            </div>
+            <nav class="px-3 space-y-1 flex-1">
+                <div onclick="goToList()" id="nav-apps" class="sidebar-link active cursor-pointer">
+                    <span>📦</span> Mis apps
+                </div>
+            </nav>
+            <div class="p-3 border-t border-[#e8eaed] dark:border-[#2c2c2c]">
+                <div class="flex items-center gap-3 p-2 rounded-xl">
+                    <div id="user-avatar" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">U</div>
+                    <div class="min-w-0 flex-1">
+                        <p id="user-name" class="text-sm font-medium truncate"></p>
+                        <p id="user-role" class="text-xs text-gray-500 dark:text-gray-400">Usuario</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="btn-ghost w-full text-left px-2 pt-2">Cerrar sesión</button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 min-w-0">
+            <button onclick="toggleTheme()" class="fixed top-5 right-5 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition z-40">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+            </button>
+
+            <!-- ── Lista de apps ── -->
+            <div id="screen-list" class="p-10 max-w-5xl">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 class="text-2xl font-google">Mis apps</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Apps registradas en Neat ID Apps</p>
+                    </div>
+                    <button onclick="openCreateAppModal()" class="btn-primary">+ Nueva app</button>
+                </div>
+                <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="apps-empty" class="hidden text-center py-20">
+                    <div class="text-4xl mb-3">📦</div>
+                    <p class="font-google text-lg mb-1">Aún no tienes apps</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Crea tu primera app para empezar a usar Neat ID.</p>
+                    <button onclick="openCreateAppModal()" class="btn-primary">+ Nueva app</button>
+                </div>
+                <div id="apps-loading" class="text-center py-20 text-gray-400 text-sm">Cargando…</div>
+            </div>
+
+            <!-- ── Detalle de una app ── -->
+            <div id="screen-detail" class="hidden p-10 max-w-5xl">
+                <button onclick="goToList()" class="btn-ghost mb-4">← Mis apps</button>
+                <div class="flex items-start justify-between mb-8 gap-4">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div id="detail-logo-wrap" class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm shrink-0 overflow-hidden" style="background-color:#0b57d0">
+                            <span id="detail-logo-initial" class="text-white font-google text-2xl font-bold">A</span>
+                            <img id="detail-logo-img" class="hidden w-full h-full object-cover" alt="">
+                        </div>
+                        <div class="min-w-0">
+                            <h1 id="detail-name" class="text-2xl font-google truncate"></h1>
+                            <p id="detail-slug" class="text-sm text-gray-500 dark:text-gray-400 copyable"></p>
+                        </div>
+                    </div>
+                    <span id="detail-status-badge" class="badge badge-green shrink-0">Activa</span>
+                </div>
+
+                <div class="flex gap-1 border-b border-[#e8eaed] dark:border-[#2c2c2c] mb-6" id="detail-tabs">
+                    <div data-tab="overview" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-[#0b57d0] dark:border-[#a8c7fa] text-[#0b57d0] dark:text-[#a8c7fa] cursor-pointer">General</div>
+                    <div data-tab="clients" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Clients</div>
+                    <div data-tab="users" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Usuarios</div>
+                    <div data-tab="branding" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Apariencia</div>
+                </div>
+
+                <!-- Tab: General -->
+                <div id="tab-overview" class="tab-panel step-enter">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+                        <div class="card p-4">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Usuarios totales</p>
+                            <p id="stat-total" class="text-2xl font-google">—</p>
+                        </div>
+                        <div class="card p-4">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Con Neat vinculado</p>
+                            <p id="stat-neat" class="text-2xl font-google">—</p>
+                        </div>
+                        <div class="card p-4">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Solo locales</p>
+                            <p id="stat-local" class="text-2xl font-google">—</p>
+                        </div>
+                        <div class="card p-4">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Sesiones activas</p>
+                            <p id="stat-sessions" class="text-2xl font-google">—</p>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 mb-6">
+                        <h3 class="font-google text-base mb-4">URL de login hosteado</h3>
+                        <div class="flex items-center gap-2 bg-[#f8f9fa] dark:bg-white/5 rounded-xl px-4 py-3">
+                            <code id="detail-login-url" class="copyable flex-1 truncate"></code>
+                            <button onclick="copyText(document.getElementById('detail-login-url').innerText)" class="btn-ghost shrink-0">Copiar</button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Agrega <span class="copyable">?redirect_uri=...&client_id=...&state=...</span> al redirigir a tus usuarios.</p>
+                    </div>
+
+                    <div class="card p-6">
+                        <h3 class="font-google text-base mb-4">Información general</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nombre</label>
+                                <input id="edit-name" type="text" class="input-field">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Descripción</label>
+                                <textarea id="edit-description" rows="2" class="input-field resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Sitio web</label>
+                                <input id="edit-homepage" type="text" placeholder="https://" class="input-field">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Redirect URIs por defecto (una por línea)</label>
+                                <textarea id="edit-redirects" rows="2" class="input-field resize-none copyable text-xs"></textarea>
+                            </div>
+                            <p id="overview-error" class="text-[#d93025] text-xs hidden"></p>
+                            <div class="flex items-center gap-3 pt-1">
+                                <button id="btn-save-overview" onclick="saveOverview()" class="btn-primary">Guardar cambios</button>
+                                <span id="overview-saved" class="text-sm text-[#0d652d] dark:text-[#81c995] hidden">Guardado ✓</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 mt-6 border-[#fce8e6] dark:border-[#3a2422]">
+                        <h3 class="font-google text-base mb-1 text-[#d93025]">Eliminar app</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Esto borra la app, todos sus clients y todos sus usuarios. No se puede deshacer.</p>
+                        <button onclick="confirmDeleteApp()" class="btn-secondary btn-danger">Eliminar app</button>
+                    </div>
+                </div>
+
+                <!-- Tab: Clients -->
+                <div id="tab-clients" class="tab-panel hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Cada client tiene su propio client_id (y secret si es confidential). Todos comparten el mismo pool de usuarios de esta app.</p>
+                        <button onclick="openCreateClientModal()" class="btn-secondary shrink-0">+ Nuevo client</button>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <table>
+                            <thead><tr><th>Nombre</th><th>Client ID</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+                            <tbody id="clients-table-body"></tbody>
+                        </table>
+                        <div id="clients-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin clients todavía.</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Usuarios -->
+                <div id="tab-users" class="tab-panel hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Usuarios locales de esta app.</p>
+                        <button onclick="loadUsers()" class="btn-ghost">Actualizar</button>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <table>
+                            <thead><tr><th>Usuario</th><th>Correo</th><th>Origen</th><th>Estado</th><th>Creado</th><th></th></tr></thead>
+                            <tbody id="users-table-body"></tbody>
+                        </table>
+                        <div id="users-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin usuarios todavía.</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Branding -->
+                <div id="tab-branding" class="tab-panel hidden">
+                    <div class="card p-6 max-w-lg">
+                        <h3 class="font-google text-base mb-4">Apariencia en la pantalla de login</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">URL del logo</label>
+                                <input id="edit-logo" type="text" placeholder="https://" class="input-field">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Color principal</label>
+                                <div class="flex items-center gap-3">
+                                    <input id="edit-color" type="color" value="#0b57d0" class="w-12 h-10 rounded-lg border border-[#dadce0] dark:border-[#444] cursor-pointer bg-transparent">
+                                    <input id="edit-color-text" type="text" placeholder="#0b57d0" class="input-field copyable">
+                                </div>
+                            </div>
+                            <p id="branding-error" class="text-[#d93025] text-xs hidden"></p>
+                            <div class="flex items-center gap-3 pt-1">
+                                <button onclick="saveBranding()" class="btn-primary">Guardar apariencia</button>
+                                <span id="branding-saved" class="text-sm text-[#0d652d] dark:text-[#81c995] hidden">Guardado ✓</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ════════════ MODALES ════════════ -->
+
+    <!-- Crear app -->
+    <div id="modal-create-app" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-6 step-enter">
+            <h2 class="font-google text-lg mb-5">Nueva app</h2>
+            <div class="space-y-3">
+                <input id="ca-name" type="text" placeholder="Nombre de la app" class="input-field">
+                <textarea id="ca-description" rows="2" placeholder="Descripción (opcional)" class="input-field resize-none"></textarea>
+                <textarea id="ca-redirects" rows="2" placeholder="Redirect URIs, una por línea" class="input-field resize-none copyable text-xs"></textarea>
+                <p id="ca-error" class="text-[#d93025] text-xs hidden"></p>
+            </div>
+            <div class="flex justify-end gap-3 pt-5">
+                <button onclick="closeModal('modal-create-app')" class="btn-ghost px-3">Cancelar</button>
+                <button id="btn-create-app" onclick="createApp()" class="btn-primary">Crear app</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crear client -->
+    <div id="modal-create-client" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-6 step-enter">
+            <h2 class="font-google text-lg mb-5">Nuevo client</h2>
+            <div class="space-y-3">
+                <input id="cc-name" type="text" placeholder="Nombre (ej. App X Web)" class="input-field">
+                <textarea id="cc-redirects" rows="2" placeholder="Redirect URIs, una por línea" class="input-field resize-none copyable text-xs"></textarea>
+                <div class="flex gap-3 pt-1">
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="cc-type" value="confidential" checked class="accent-[#0b57d0]"> Confidential (con secret)
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input type="radio" name="cc-type" value="public" class="accent-[#0b57d0]"> Público (PKCE)
+                    </label>
+                </div>
+                <p id="cc-error" class="text-[#d93025] text-xs hidden"></p>
+            </div>
+            <div class="flex justify-end gap-3 pt-5">
+                <button onclick="closeModal('modal-create-client')" class="btn-ghost px-3">Cancelar</button>
+                <button id="btn-create-client" onclick="createClient()" class="btn-primary">Crear client</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mostrar credenciales (una sola vez) -->
+    <div id="modal-credentials" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-6 step-enter">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-lg">🔑</span>
+                <h2 class="font-google text-lg">Guarda estas credenciales</h2>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">El client_secret solo se muestra una vez. Si lo pierdes, tendrás que rotarlo.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Client ID</label>
+                    <div class="flex items-center gap-2 bg-[#f8f9fa] dark:bg-white/5 rounded-xl px-3 py-2.5">
+                        <code id="cred-client-id" class="copyable flex-1 truncate"></code>
+                        <button onclick="copyText(document.getElementById('cred-client-id').innerText)" class="btn-ghost shrink-0 text-xs">Copiar</button>
+                    </div>
+                </div>
+                <div id="cred-secret-wrap">
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Client Secret</label>
+                    <div class="flex items-center gap-2 bg-[#f8f9fa] dark:bg-white/5 rounded-xl px-3 py-2.5">
+                        <code id="cred-client-secret" class="copyable flex-1 truncate"></code>
+                        <button onclick="copyText(document.getElementById('cred-client-secret').innerText)" class="btn-ghost shrink-0 text-xs">Copiar</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('modal-credentials')" class="btn-primary w-full justify-center mt-6">Ya las guardé</button>
+        </div>
+    </div>
+
+    <!-- Confirmar -->
+    <div id="modal-confirm" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-sm p-6 step-enter">
+            <h2 id="confirm-title" class="font-google text-lg mb-2">¿Confirmar?</h2>
+            <p id="confirm-msg" class="text-sm text-gray-500 dark:text-gray-400 mb-6"></p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-confirm')" class="btn-ghost px-3">Cancelar</button>
+                <button id="btn-confirm-action" class="btn-primary btn-danger-fill">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#1f1f1f] dark:bg-[#3c3c3c] text-white text-sm px-5 py-3 rounded-full shadow-lg z-50 toast"></div>
+
+    <script>
+        const API_BASE = "https://neat-apps-b.vercel.app";
+        let authToken = null;
+        let currentUser = null;
+        let myApps = [];
+        let currentAppSlug = null;
+        let currentAppData = null;
+        let pendingDeleteClientId = null;
+
+        // ── Utilidades ───────────────────────────────────────────────────────
+        function toggleTheme() { document.documentElement.classList.toggle('dark'); }
+        function showError(id, msg) { const el = document.getElementById(id); el.innerText = msg; el.classList.remove('hidden'); }
+        function hideError(id) { document.getElementById(id).classList.add('hidden'); }
+        function setBusy(btnId, busy, label) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = busy;
+            btn.innerHTML = busy ? `<span class="spinner"></span> ${label}` : label;
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => showToast('Copiado al portapapeles'));
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => t.classList.add('hidden'), 2500);
+        }
+        function linesToArray(text) {
+            return text.split('\n').map(l => l.trim()).filter(Boolean);
+        }
+        async function api(path, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+            const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+            return data;
+        }
+
+        // ── Auth ─────────────────────────────────────────────────────────────
+        function switchAuthMode(mode) {
+            document.getElementById('login-form').classList.toggle('hidden', mode !== 'login');
+            document.getElementById('register-form').classList.toggle('hidden', mode !== 'register');
+        }
+
+        async function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            hideError('login-error');
+            if (!username || !password) { showError('login-error', 'Completa usuario y contraseña.'); return; }
+            setBusy('btn-login', true, 'Entrar');
+            try {
+                const data = await api('/chat/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+                authToken = data.token;
+                currentUser = data;
+                sessionStorage.setItem('neat_panel_token', authToken);
+                enterPanel();
+            } catch (e) {
+                showError('login-error', e.message);
+            } finally {
+                setBusy('btn-login', false, 'Entrar');
+            }
+        }
+
+        async function doRegister() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value;
+            hideError('register-error');
+            if (!username || !password) { showError('register-error', 'Completa usuario y contraseña.'); return; }
+            setBusy('btn-register', true, 'Crear cuenta');
+            try {
+                const data = await api('/chat/register', { method: 'POST', body: JSON.stringify({ username, password }) });
+                authToken = data.token;
+                currentUser = data;
+                sessionStorage.setItem('neat_panel_token', authToken);
+                enterPanel();
+            } catch (e) {
+                showError('register-error', e.message);
+            } finally {
+                setBusy('btn-register', false, 'Crear cuenta');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('neat_panel_token');
+            authToken = null; currentUser = null;
+            document.getElementById('view-panel').classList.add('hidden');
+            document.getElementById('view-login').classList.remove('hidden');
+        }
+
+        function enterPanel() {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-panel').classList.remove('hidden');
+            document.getElementById('user-name').innerText = currentUser.username;
+            document.getElementById('user-role').innerText = currentUser.role === 'admin' ? 'Administrador' : 'Usuario';
+            document.getElementById('user-avatar').innerText = currentUser.username[0].toUpperCase();
+            goToList();
+        }
+
+        // ── Navegación ───────────────────────────────────────────────────────
+        function goToList() {
+            currentAppSlug = null; currentAppData = null;
+            document.getElementById('screen-detail').classList.add('hidden');
+            document.getElementById('screen-list').classList.remove('hidden');
+            loadApps();
+        }
+
+        function goToDetail(slug) {
+            currentAppSlug = slug;
+            document.getElementById('screen-list').classList.add('hidden');
+            document.getElementById('screen-detail').classList.remove('hidden');
+            switchTab('overview');
+            loadAppDetail(slug);
+        }
+
+        document.getElementById('detail-tabs').addEventListener('click', (e) => {
+            const tab = e.target.closest('.detail-tab');
+            if (tab) switchTab(tab.dataset.tab);
+        });
+
+        function switchTab(name) {
+            document.querySelectorAll('.detail-tab').forEach(t => {
+                const active = t.dataset.tab === name;
+                t.classList.toggle('border-[#0b57d0]', active);
+                t.classList.toggle('dark:border-[#a8c7fa]', active);
+                t.classList.toggle('text-[#0b57d0]', active);
+                t.classList.toggle('dark:text-[#a8c7fa]', active);
+                t.classList.toggle('border-transparent', !active);
+                t.classList.toggle('text-gray-500', !active);
+                t.classList.toggle('dark:text-gray-400', !active);
+            });
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            const panel = document.getElementById(`tab-${name}`);
+            panel.classList.remove('hidden');
+            panel.classList.add('step-enter');
+            if (name === 'clients') loadClients();
+            if (name === 'users') loadUsers();
+        }
+
+        // ── Lista de apps ────────────────────────────────────────────────────
+        async function loadApps() {
+            document.getElementById('apps-loading').classList.remove('hidden');
+            document.getElementById('apps-empty').classList.add('hidden');
+            document.getElementById('apps-grid').innerHTML = '';
+            try {
+                myApps = await api('/id/apps/me');
+                renderAppsGrid();
+            } catch (e) {
+                showToast(e.message);
+            } finally {
+                document.getElementById('apps-loading').classList.add('hidden');
+            }
+        }
+
+        function renderAppsGrid() {
+            const grid = document.getElementById('apps-grid');
+            if (!myApps.length) {
+                document.getElementById('apps-empty').classList.remove('hidden');
+                return;
+            }
+            grid.innerHTML = myApps.map(app => `
+                <div onclick="goToDetail('${app.slug}')" class="card p-5 cursor-pointer hover:shadow-md transition-shadow">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm mb-3 overflow-hidden" style="background-color:${app.branding?.primaryColor || '#0b57d0'}">
+                        ${app.branding?.logoUrl
+                            ? `<img src="${app.branding.logoUrl}" class="w-full h-full object-cover" alt="">`
+                            : `<span class="text-white font-google text-lg font-bold">${app.name[0].toUpperCase()}</span>`}
+                    </div>
+                    <p class="font-google text-base truncate">${app.name}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate mb-3">${app.description || 'Sin descripción'}</p>
+                    ${app.suspended
+                        ? '<span class="badge badge-red">Suspendida</span>'
+                        : '<span class="badge badge-green">Activa</span>'}
+                </div>
+            `).join('');
+        }
+
+        // ── Crear app ────────────────────────────────────────────────────────
+        function openCreateAppModal() {
+            document.getElementById('ca-name').value = '';
+            document.getElementById('ca-description').value = '';
+            document.getElementById('ca-redirects').value = '';
+            hideError('ca-error');
+            openModal('modal-create-app');
+        }
+
+        async function createApp() {
+            const name = document.getElementById('ca-name').value.trim();
+            const description = document.getElementById('ca-description').value.trim();
+            const redirectUris = linesToArray(document.getElementById('ca-redirects').value);
+            hideError('ca-error');
+            if (!name) { showError('ca-error', 'El nombre es requerido.'); return; }
+            if (!redirectUris.length) { showError('ca-error', 'Agrega al menos una redirect URI.'); return; }
+
+            setBusy('btn-create-app', true, 'Crear app');
+            try {
+                const data = await api('/id/apps', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, description, redirectUris })
+                });
+                closeModal('modal-create-app');
+                showToast(`"${data.name}" creada`);
+                await loadApps();
+                goToDetail(data.slug);
+                // Mostrar credenciales del client default recién creado
+                if (data.defaultClient) {
+                    showCredentials(data.defaultClient.clientId, data.defaultClient.clientSecret);
+                }
+            } catch (e) {
+                showError('ca-error', e.message);
+            } finally {
+                setBusy('btn-create-app', false, 'Crear app');
+            }
+        }
+
+        function showCredentials(clientId, clientSecret) {
+            document.getElementById('cred-client-id').innerText = clientId;
+            if (clientSecret) {
+                document.getElementById('cred-secret-wrap').classList.remove('hidden');
+                document.getElementById('cred-client-secret').innerText = clientSecret;
+            } else {
+                document.getElementById('cred-secret-wrap').classList.add('hidden');
+            }
+            openModal('modal-credentials');
+        }
+
+        // ── Detalle de app: overview ─────────────────────────────────────────
+        async function loadAppDetail(slug) {
+            try {
+                const apps = myApps.length ? myApps : await api('/id/apps/me');
+                myApps = apps;
+                currentAppData = apps.find(a => a.slug === slug);
+                if (!currentAppData) { showToast('App no encontrada'); goToList(); return; }
+                renderDetailHeader();
+                renderOverviewForm();
+                loadStats();
+            } catch (e) {
+                showToast(e.message);
+            }
+        }
+
+        function renderDetailHeader() {
+            const app = currentAppData;
+            document.getElementById('detail-name').innerText = app.name;
+            document.getElementById('detail-slug').innerText = app.slug;
+            document.getElementById('detail-status-badge').innerText = app.suspended ? 'Suspendida' : 'Activa';
+            document.getElementById('detail-status-badge').className = `badge ${app.suspended ? 'badge-red' : 'badge-green'} shrink-0`;
+            document.getElementById('detail-login-url').innerText = `https://id.neat.qzz.io/login?app=${app.slug}`;
+
+            const color = app.branding?.primaryColor || '#0b57d0';
+            document.getElementById('detail-logo-wrap').style.backgroundColor = color;
+            if (app.branding?.logoUrl) {
+                document.getElementById('detail-logo-initial').classList.add('hidden');
+                const img = document.getElementById('detail-logo-img');
+                img.src = app.branding.logoUrl;
+                img.classList.remove('hidden');
+            } else {
+                document.getElementById('detail-logo-initial').classList.remove('hidden');
+                document.getElementById('detail-logo-img').classList.add('hidden');
+                document.getElementById('detail-logo-initial').innerText = app.name[0].toUpperCase();
+            }
+        }
+
+        function renderOverviewForm() {
+            const app = currentAppData;
+            document.getElementById('edit-name').value = app.name || '';
+            document.getElementById('edit-description').value = app.description || '';
+            document.getElementById('edit-homepage').value = app.homepageUrl || '';
+            document.getElementById('edit-redirects').value = (app.redirectUris || []).join('\n');
+            document.getElementById('edit-logo').value = app.branding?.logoUrl || '';
+            document.getElementById('edit-color').value = app.branding?.primaryColor || '#0b57d0';
+            document.getElementById('edit-color-text').value = app.branding?.primaryColor || '#0b57d0';
+        }
+
+        document.getElementById('edit-color').addEventListener('input', (e) => {
+            document.getElementById('edit-color-text').value = e.target.value;
+        });
+
+        async function saveOverview() {
+            hideError('overview-error');
+            const name = document.getElementById('edit-name').value.trim();
+            const description = document.getElementById('edit-description').value.trim();
+            const homepageUrl = document.getElementById('edit-homepage').value.trim();
+            const redirectUris = linesToArray(document.getElementById('edit-redirects').value);
+            if (!name) { showError('overview-error', 'El nombre no puede estar vacío.'); return; }
+
+            setBusy('btn-save-overview', true, 'Guardar cambios');
+            try {
+                await api(`/id/apps/${currentAppSlug}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name, description, homepageUrl, redirectUris })
+                });
+                myApps = []; // forzar refresco
+                await loadAppDetail(currentAppSlug);
+                const saved = document.getElementById('overview-saved');
+                saved.classList.remove('hidden');
+                setTimeout(() => saved.classList.add('hidden'), 2000);
+            } catch (e) {
+                showError('overview-error', e.message);
+            } finally {
+                setBusy('btn-save-overview', false, 'Guardar cambios');
+            }
+        }
+
+        async function saveBranding() {
+            hideError('branding-error');
+            const logoUrl = document.getElementById('edit-logo').value.trim();
+            const primaryColor = document.getElementById('edit-color-text').value.trim() || '#0b57d0';
+            try {
+                await api(`/id/apps/${currentAppSlug}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ logoUrl, primaryColor })
+                });
+                myApps = [];
+                await loadAppDetail(currentAppSlug);
+                const saved = document.getElementById('branding-saved');
+                saved.classList.remove('hidden');
+                setTimeout(() => saved.classList.add('hidden'), 2000);
+            } catch (e) {
+                showError('branding-error', e.message);
+            }
+        }
+
+        function confirmDeleteApp() {
+            showConfirm(
+                `Eliminar "${currentAppData.name}"`,
+                'Esto borra la app, todos sus clients y todos sus usuarios de forma permanente.',
+                async () => {
+                    try {
+                        await api(`/id/apps/${currentAppSlug}`, { method: 'DELETE' });
+                        closeModal('modal-confirm');
+                        showToast('App eliminada');
+                        myApps = [];
+                        goToList();
+                    } catch (e) {
+                        showToast(e.message);
+                    }
+                }
+            );
+        }
+
+        function showConfirm(title, msg, onConfirm) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerText = msg;
+            const btn = document.getElementById('btn-confirm-action');
+            btn.replaceWith(btn.cloneNode(true)); // limpia listeners viejos
+            const freshBtn = document.getElementById('btn-confirm-action');
+            freshBtn.addEventListener('click', onConfirm);
+            openModal('modal-confirm');
+        }
+
+        // ── Clients ──────────────────────────────────────────────────────────
+        async function loadClients() {
+            const tbody = document.getElementById('clients-table-body');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            try {
+                const clients = await api(`/id/apps/${currentAppSlug}/clients`);
+                document.getElementById('clients-empty').classList.toggle('hidden', clients.length > 0);
+                tbody.innerHTML = clients.map(c => `
+                    <tr>
+                        <td class="font-medium">${c.name}${c.isDefault ? ' <span class="badge badge-blue ml-1">Default</span>' : ''}</td>
+                        <td class="copyable text-xs">${c.clientId}</td>
+                        <td><span class="badge ${c.isPublic ? 'badge-blue' : 'badge-gray'}">${c.isPublic ? 'PKCE' : 'Confidential'}</span></td>
+                        <td><span class="badge ${c.suspended ? 'badge-red' : 'badge-green'}">${c.suspended ? 'Suspendido' : 'Activo'}</span></td>
+                        <td class="text-right whitespace-nowrap">
+                            ${!c.isPublic ? `<button onclick="rotateClientSecret('${c.clientId}')" class="btn-ghost mr-3">Rotar secret</button>` : ''}
+                            <button onclick="deleteClient('${c.clientId}')" class="btn-ghost btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        function openCreateClientModal() {
+            document.getElementById('cc-name').value = '';
+            document.getElementById('cc-redirects').value = '';
+            document.querySelector('input[name="cc-type"][value="confidential"]').checked = true;
+            hideError('cc-error');
+            openModal('modal-create-client');
+        }
+
+        async function createClient() {
+            const name = document.getElementById('cc-name').value.trim();
+            const redirectUris = linesToArray(document.getElementById('cc-redirects').value);
+            const isPublic = document.querySelector('input[name="cc-type"]:checked').value === 'public';
+            hideError('cc-error');
+            if (!redirectUris.length) { showError('cc-error', 'Agrega al menos una redirect URI.'); return; }
+
+            setBusy('btn-create-client', true, 'Crear client');
+            try {
+                const data = await api(`/id/apps/${currentAppSlug}/clients`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name, redirectUris, isPublic })
+                });
+                closeModal('modal-create-client');
+                loadClients();
+                showCredentials(data.clientId, data.clientSecret);
+            } catch (e) {
+                showError('cc-error', e.message);
+            } finally {
+                setBusy('btn-create-client', false, 'Crear client');
+            }
+        }
+
+        async function rotateClientSecret(clientId) {
+            showConfirm(
+                'Rotar client secret',
+                'El secret anterior dejará de funcionar de inmediato. Cualquier integración con el secret viejo se romperá hasta que actualices.',
+                async () => {
+                    try {
+                        const data = await api(`/id/apps/${currentAppSlug}/clients/${clientId}/rotate-secret`, { method: 'POST' });
+                        closeModal('modal-confirm');
+                        showCredentials(data.clientId, data.clientSecret);
+                    } catch (e) {
+                        showToast(e.message);
+                    }
+                }
+            );
+        }
+
+        async function deleteClient(clientId) {
+            showConfirm(
+                'Eliminar client',
+                'Las sesiones activas emitidas por este client se revocarán.',
+                async () => {
+                    try {
+                        await api(`/id/apps/${currentAppSlug}/clients/${clientId}`, { method: 'DELETE' });
+                        closeModal('modal-confirm');
+                        showToast('Client eliminado');
+                        loadClients();
+                    } catch (e) {
+                        showToast(e.message);
+                        closeModal('modal-confirm');
+                    }
+                }
+            );
+        }
+
+        // ── Usuarios ─────────────────────────────────────────────────────────
+        // GET /id/apps/:slug/users requiere x-client-id/x-client-secret de un
+        // client confidential. Usamos el client "Default" de la app para esto,
+        // pidiéndolo primero (no exponemos secrets en el listado de clients).
+        let cachedAdminCreds = null;
+
+        async function getAdminClientCreds() {
+            if (cachedAdminCreds && cachedAdminCreds.appSlug === currentAppSlug) return cachedAdminCreds;
+            // No hay endpoint para recuperar un secret ya emitido (por diseño).
+            // Pedimos al dev que lo ingrese una vez por sesión si no lo tenemos.
+            return null;
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            try {
+                const stats = await api(`/id/apps/${currentAppSlug}/stats-via-panel`).catch(() => null);
+            } catch (e) {}
+            // El panel gestiona usuarios usando la sesión del dueño directamente
+            // vía un proxy interno simulado aquí con el token de sesión Neat,
+            // ya que /id/apps/:slug/users normalmente usa tenantAuth (x-client-id/secret).
+            try {
+                const users = await fetchUsersAsOwner();
+                document.getElementById('users-empty').classList.toggle('hidden', users.length > 0);
+                tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td class="font-medium">${u.username || '—'}</td>
+                        <td class="text-xs">${u.email}</td>
+                        <td><span class="badge ${u.neatUserId ? 'badge-blue' : 'badge-gray'}">${u.neatUserId ? 'Neat' : 'Local'}</span></td>
+                        <td><span class="badge ${u.suspended ? 'badge-red' : 'badge-green'}">${u.suspended ? 'Suspendido' : 'Activo'}</span></td>
+                        <td class="text-xs text-gray-500 dark:text-gray-400">${new Date(u.createdAt).toLocaleDateString()}</td>
+                        <td class="text-right whitespace-nowrap">
+                            <button onclick="toggleUserSuspend('${u._id}', ${!u.suspended})" class="btn-ghost mr-3">${u.suspended ? 'Reactivar' : 'Suspender'}</button>
+                            <button onclick="deleteUser('${u._id}')" class="btn-ghost btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        function loadStats() {
+            fetchStatsAsOwner().then(s => {
+                document.getElementById('stat-total').innerText = s.totalUsers ?? '—';
+                document.getElementById('stat-neat').innerText = s.neatUsers ?? '—';
+                document.getElementById('stat-local').innerText = s.localUsers ?? '—';
+                document.getElementById('stat-sessions').innerText = s.activeSessions ?? '—';
+            }).catch(() => {});
+        }
+
+        // ── Puente: panel admin usa endpoints protegidos con x-client-id/secret ──
+        // El panel se autentica con la SESIÓN del dueño (JWT Neat normal), no con
+        // credenciales de un client específico. /id/apps/:slug/users, /stats y
+        // /revoke fueron diseñados para tenantAuth (x-client-id/secret), así que
+        // aquí usamos el client "Default" creado al registrar la app, cuyo
+        // secret el dueño ya vio una vez. Si no lo tiene a mano, se le pide.
+        async function withDefaultClientAuth(path, options = {}) {
+            let creds = sessionStorage.getItem(`neat_default_creds_${currentAppSlug}`);
+            creds = creds ? JSON.parse(creds) : null;
+            if (!creds) {
+                creds = await promptForDefaultCreds();
+                if (!creds) throw new Error('Se necesitan las credenciales del client Default para gestionar usuarios.');
+            }
+            const headers = { 'Content-Type': 'application/json', 'x-client-id': creds.clientId, 'x-client-secret': creds.clientSecret, ...(options.headers || {}) };
+            const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 401) {
+                sessionStorage.removeItem(`neat_default_creds_${currentAppSlug}`);
+                throw new Error('Credenciales del client inválidas. Vuelve a ingresarlas.');
+            }
+            if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+            return data;
+        }
+
+        function promptForDefaultCreds() {
+            return new Promise((resolve) => {
+                const clientId = prompt('Client ID del client Default de esta app:');
+                if (!clientId) return resolve(null);
+                const clientSecret = prompt('Client secret correspondiente:');
+                if (!clientSecret) return resolve(null);
+                const creds = { clientId, clientSecret };
+                sessionStorage.setItem(`neat_default_creds_${currentAppSlug}`, JSON.stringify(creds));
+                resolve(creds);
+            });
+        }
+
+        async function fetchUsersAsOwner() {
+            const data = await withDefaultClientAuth(`/id/apps/${currentAppSlug}/users`);
+            return data.users || data;
+        }
+
+        async function fetchStatsAsOwner() {
+            return withDefaultClientAuth(`/id/apps/${currentAppSlug}/stats`);
+        }
+
+        async function toggleUserSuspend(userId, suspended) {
+            try {
+                await withDefaultClientAuth(`/id/apps/${currentAppSlug}/users/${userId}/suspend`, {
+                    method: 'PUT', body: JSON.stringify({ suspended })
+                });
+                showToast(suspended ? 'Usuario suspendido' : 'Usuario reactivado');
+                loadUsers();
+            } catch (e) {
+                showToast(e.message);
+            }
+        }
+
+        function deleteUser(userId) {
+            showConfirm('Eliminar usuario', 'Esto borra al usuario y sus sesiones de forma permanente.', async () => {
+                try {
+                    await withDefaultClientAuth(`/id/apps/${currentAppSlug}/users/${userId}`, { method: 'DELETE' });
+                    closeModal('modal-confirm');
+                    showToast('Usuario eliminado');
+                    loadUsers();
+                } catch (e) {
+                    showToast(e.message);
+                    closeModal('modal-confirm');
+                }
+            });
+        }
+
+        // ── Arranque ─────────────────────────────────────────────────────────
+        (function boot() {
+            const saved = sessionStorage.getItem('neat_panel_token');
+            if (!saved) return;
+            authToken = saved;
+            api('/chat/me').then(me => {
+                currentUser = { username: me.username, role: me.role };
+                enterPanel();
+            }).catch(() => {
+                sessionStorage.removeItem('neat_panel_token');
+            });
+        })();
+    </script>
+</body>
+</html>
