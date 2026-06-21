@@ -654,7 +654,7 @@
             document.getElementById('detail-slug').innerText = app.slug;
             document.getElementById('detail-status-badge').innerText = app.suspended ? 'Suspendida' : 'Activa';
             document.getElementById('detail-status-badge').className = `badge ${app.suspended ? 'badge-red' : 'badge-green'} shrink-0`;
-            document.getElementById('detail-login-url').innerText = `https://id.neat.qzz.io/login?app=${app.slug}`;
+            document.getElementById('detail-login-url').innerText = `https://id.neat.qzz.io/${app.slug}`;
 
             const color = app.branding?.primaryColor || '#0b57d0';
             document.getElementById('detail-logo-wrap').style.backgroundColor = color;
