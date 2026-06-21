@@ -427,6 +427,10 @@
             const stateB64 = btoa(JSON.stringify(statePayload))
                 .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
+            // redirect_uri va al BACKEND (API_BASE), no a esta página: /id/callback
+            // es un endpoint de Express que recibe el code de Neat, hace todo el
+            // intercambio server-side, y termina con un res.redirect() directo al
+            // tenant — el navegador nunca vuelve a pasar por login.html en este caso.
             const p = new URLSearchParams({
                 client_id: appData.internalClientId,
                 redirect_uri: `${API_BASE}/id/callback`,
