@@ -1,0 +1,478 @@
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neat ID</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Roboto', 'sans-serif'], google: ['Google Sans', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Roboto', sans-serif; transition: background-color 0.3s; margin: 0; }
+        .font-google { font-family: 'Google Sans', sans-serif; }
+        .input-field {
+            width: 100%; padding: 13px 15px; border: 1px solid #747775; border-radius: 4px;
+            background: transparent; outline: none; transition: border 0.2s;
+        }
+        .dark .input-field { border-color: #8e918f; color: #e3e3e3; }
+        .input-field:focus { border: 2px solid #0b57d0; padding: 12px 14px; }
+        .dark .input-field:focus { border-color: #a8c7fa; }
+        .btn-primary {
+            background-color: #0b57d0; color: white; padding: 10px 24px;
+            border-radius: 100px; font-weight: 500; transition: background 0.2s;
+        }
+        .dark .btn-primary { background-color: #a8c7fa; color: #062e6f; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .step-enter { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-checkbox { width: 18px; height: 18px; accent-color: #0b57d0; }
+        .spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite;
+            display: inline-block; vertical-align: -2px; margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-white dark:bg-[#1b1b1b] min-h-screen flex items-center justify-center p-4">
+    <button onclick="toggleTheme()" class="fixed top-5 right-5 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition z-50">
+        <span class="text-gray-600 dark:text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+        </span>
+    </button>
+
+    <!-- Estado de carga inicial -->
+    <div id="boot-loading" class="flex flex-col items-center gap-4">
+        <div class="w-10 h-10 border-[3px] border-gray-200 dark:border-white/10 border-t-[#0b57d0] dark:border-t-[#a8c7fa] rounded-full animate-spin"></div>
+        <p class="text-sm text-gray-400">Cargando…</p>
+    </div>
+
+    <!-- Error fatal: falta ?app= o la app no existe / está suspendida -->
+    <div id="boot-error" class="hidden w-full max-w-[420px] text-center space-y-4">
+        <div class="text-4xl">⚠️</div>
+        <h1 class="text-xl font-google text-[#1f1f1f] dark:text-[#e3e3e3]" id="boot-error-title">No se pudo cargar</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400" id="boot-error-msg"></p>
+    </div>
+
+    <div id="main-card" class="hidden w-full max-w-[840px] bg-white dark:bg-[#1b1b1b] md:border md:border-[#dadce0] dark:md:border-[#444] rounded-3xl overflow-hidden flex flex-col md:flex-row min-h-[480px]">
+        <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-start">
+            <div class="mb-8">
+                <div id="app-logo-wrap" class="w-12 h-12 rounded-full flex items-center justify-center shadow-sm mb-6 overflow-hidden" style="background-color:#0b57d0">
+                    <span id="app-logo-initial" class="text-white font-google text-2xl font-bold">A</span>
+                    <img id="app-logo-img" class="hidden w-full h-full object-cover" alt="">
+                </div>
+                <h1 class="text-3xl font-google font-normal text-[#1f1f1f] dark:text-[#e3e3e3] mb-3">Neat ID</h1>
+                <p class="text-lg text-[#444] dark:text-[#c4c7c5]">Usar cuenta en <span id="service-name-text" class="font-medium">…</span></p>
+            </div>
+            <div id="user-display" class="hidden items-center gap-3 p-2 rounded-full border border-gray-200 dark:border-[#444] w-fit">
+                <div id="user-initial" class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">U</div>
+                <span id="user-email" class="text-sm dark:text-gray-300 pr-2"></span>
+            </div>
+        </div>
+        <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-gray-50/50 dark:bg-white/5 border-l border-gray-100 dark:border-white/5 relative">
+            <div id="step-container" class="w-full">
+
+                <!-- Paso: usuario (email) -->
+                <div id="step-user" class="space-y-6">
+                    <div>
+                        <input type="email" id="email" placeholder="Correo" class="input-field" autocomplete="email">
+                        <p id="error-user" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                    </div>
+                    <div class="flex justify-between items-center pt-4">
+                        <span onclick="renderStep('register')" class="text-[#0b57d0] dark:text-[#a8c7fa] text-sm font-medium cursor-pointer">Crear cuenta</span>
+                        <button onclick="toPassword()" class="btn-primary">Siguiente</button>
+                    </div>
+                    <div class="flex items-center gap-3 pt-2">
+                        <div class="flex-1 h-px bg-gray-200 dark:bg-white/10"></div>
+                        <span class="text-xs text-gray-400">o</span>
+                        <div class="flex-1 h-px bg-gray-200 dark:bg-white/10"></div>
+                    </div>
+                    <button onclick="loginWithNeat(false)" class="w-full flex items-center justify-center gap-2 p-3 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        <span class="w-5 h-5 rounded bg-[#7c6af7] flex items-center justify-center text-white text-[10px] font-bold">N</span>
+                        Continuar con Neat
+                    </button>
+                </div>
+
+                <!-- Paso: contraseña -->
+                <div id="step-pass" class="hidden space-y-6">
+                    <div>
+                        <input type="password" id="password" placeholder="Contraseña" class="input-field" autocomplete="current-password">
+                        <p id="error-pass" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                    </div>
+                    <div class="flex justify-between items-center pt-4">
+                        <button onclick="renderStep('user')" class="text-sm text-gray-500">Atrás</button>
+                        <button id="btn-login" onclick="handleLogin()" class="btn-primary">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- Paso: registro -->
+                <div id="step-register" class="hidden space-y-4">
+                    <h2 class="text-sm font-bold dark:text-gray-400 uppercase">Nueva cuenta</h2>
+                    <input type="text" id="reg-username" placeholder="Usuario" class="input-field">
+                    <input type="email" id="reg-email" placeholder="Correo" class="input-field" autocomplete="email">
+                    <input type="password" id="reg-password" placeholder="Contraseña" class="input-field" autocomplete="new-password">
+                    <p id="error-register" class="text-[#d93025] text-xs hidden"></p>
+                    <div class="flex justify-between items-center pt-4">
+                        <button onclick="renderStep('user')" class="text-sm text-gray-500">Volver</button>
+                        <button id="btn-register" onclick="handleRegister()" class="btn-primary">Registrar</button>
+                    </div>
+                </div>
+
+                <!-- Paso: ofrecer vincular Neat tras login/registro local -->
+                <div id="step-link-neat-offer" class="hidden space-y-6 step-enter">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-blue-50/50 dark:bg-white/5 border border-blue-100 dark:border-white/10">
+                        <span class="w-8 h-8 rounded bg-[#7c6af7] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">N</span>
+                        <p class="text-sm dark:text-gray-300">Puedes vincular una cuenta de Neat para iniciar sesión más rápido la próxima vez.</p>
+                    </div>
+                    <button onclick="loginWithNeat(true)" class="w-full flex items-center justify-center gap-2 p-3 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        Vincular cuenta de Neat
+                    </button>
+                    <button onclick="finishLocalLogin()" class="w-full text-gray-500 text-sm font-medium">Omitir por ahora</button>
+                </div>
+
+                <!-- Paso: cuenta suspendida -->
+                <div id="step-suspended" class="hidden space-y-6 step-enter">
+                    <div class="text-center p-6 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                        <div class="text-red-500 text-5xl mb-4">⚠️</div>
+                        <h2 class="text-2xl font-bold text-red-600 dark:text-red-400">Cuenta suspendida</h2>
+                        <p id="suspended-reason" class="text-sm text-gray-600 dark:text-gray-400 mt-2">Tu acceso a esta aplicación ha sido restringido.</p>
+                    </div>
+                    <button onclick="renderStep('user')" class="w-full text-gray-500 text-sm font-medium pt-2">Volver</button>
+                </div>
+
+                <!-- Paso: vinculando con Neat (estado intermedio) -->
+                <div id="step-linking" class="hidden space-y-6 step-enter text-center">
+                    <div class="w-8 h-8 mx-auto border-[3px] border-gray-200 dark:border-white/10 border-t-[#0b57d0] dark:border-t-[#a8c7fa] rounded-full animate-spin"></div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Vinculando tu cuenta de Neat…</p>
+                </div>
+
+                <!-- Paso: redirigiendo al final -->
+                <div id="step-redirecting" class="hidden space-y-6 step-enter text-center">
+                    <div class="w-8 h-8 mx-auto border-[3px] border-gray-200 dark:border-white/10 border-t-[#0b57d0] dark:border-t-[#a8c7fa] rounded-full animate-spin"></div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Te llevamos de vuelta a <span id="redirecting-app-name" class="font-medium"></span>…</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://neat-apps-b.vercel.app";
+        const NEAT_OAUTH_URL = "https://neat.qzz.io/oauth.html";
+        const PAGE_ORIGIN = location.origin + location.pathname;
+
+        // ── Params de entrada (del tenant) ──────────────────────────────────
+        const qp = new URLSearchParams(window.location.search);
+        const appSlug = qp.get('app');
+        const tenantRedirectUri = qp.get('redirect_uri');
+        const tenantState = qp.get('state');
+        const tenantCodeChallenge = qp.get('code_challenge');
+        const tenantCodeChallengeMethod = qp.get('code_challenge_method') || 'S256';
+
+        // ── Estado en memoria ────────────────────────────────────────────────
+        let appData = null;          // respuesta de /id/apps/:slug/public
+        let internalToken = null;    // de /id/apps/:slug/page-token
+        let pendingEmail = "";
+        let localAccessToken = null; // sesión local activa (post login/registro), antes de vincular Neat
+
+        function toggleTheme() { document.documentElement.classList.toggle('dark'); }
+
+        function renderStep(step) {
+            document.querySelectorAll('#step-container > div').forEach(d => d.classList.add('hidden'));
+            const el = document.getElementById(`step-${step}`);
+            el.classList.remove('hidden');
+            el.classList.add('step-enter');
+        }
+
+        function showError(elId, msg) {
+            const el = document.getElementById(elId);
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+        function hideError(elId) { document.getElementById(elId).classList.add('hidden'); }
+
+        function setBusy(btnId, busy, label) {
+            const btn = document.getElementById(btnId);
+            btn.disabled = busy;
+            btn.innerHTML = busy ? `<span class="spinner"></span>${label}` : label;
+        }
+
+        // ── PKCE helpers ─────────────────────────────────────────────────────
+        function randomString(len) {
+            const arr = new Uint8Array(len);
+            crypto.getRandomValues(arr);
+            return Array.from(arr, b => ('0' + b.toString(16)).slice(-2)).join('').slice(0, len);
+        }
+        function base64url(buffer) {
+            return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        async function pkcePair() {
+            const verifier = randomString(64);
+            const data = new TextEncoder().encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return { verifier, challenge: base64url(digest) };
+        }
+
+        function updateUserDisplay(label) {
+            document.getElementById('user-display').classList.remove('hidden');
+            document.getElementById('user-display').classList.add('flex');
+            document.getElementById('user-email').innerText = label;
+            document.getElementById('user-initial').innerText = label[0].toUpperCase();
+        }
+
+        // ── Boot ─────────────────────────────────────────────────────────────
+        async function boot() {
+            const isLinkingReturn = qp.get('linking') === '1' && qp.get('code');
+            if (!appSlug || (!tenantRedirectUri && !isLinkingReturn)) {
+                return bootError("Falta información", "Esta página necesita que la app de origen indique 'app' y 'redirect_uri'. Vuelve a la aplicación e intenta de nuevo.");
+            }
+            try {
+                const [pubRes, tokenRes] = await Promise.all([
+                    fetch(`${API_BASE}/id/apps/${appSlug}/public`),
+                    fetch(`${API_BASE}/id/apps/${appSlug}/page-token`)
+                ]);
+                if (!pubRes.ok) {
+                    const data = await pubRes.json().catch(() => ({}));
+                    return bootError(pubRes.status === 404 ? "App no encontrada" : "App no disponible", data.error || "Esta aplicación no está disponible en este momento.");
+                }
+                appData = await pubRes.json();
+                const tokenData = await tokenRes.json();
+                internalToken = tokenData.token;
+
+                applyBranding();
+                document.getElementById('boot-loading').classList.add('hidden');
+                document.getElementById('main-card').classList.remove('hidden');
+                if (!isLinkingReturn) renderStep('user');
+            } catch (e) {
+                bootError("Error de conexión", "No pudimos conectar con Neat ID. Revisa tu conexión e intenta de nuevo.");
+            }
+        }
+
+        function bootError(title, msg) {
+            document.getElementById('boot-loading').classList.add('hidden');
+            document.getElementById('boot-error-title').innerText = title;
+            document.getElementById('boot-error-msg').innerText = msg;
+            document.getElementById('boot-error').classList.remove('hidden');
+        }
+
+        function applyBranding() {
+            document.getElementById('service-name-text').innerText = appData.name;
+            document.title = `Iniciar sesión en ${appData.name}`;
+            const color = appData.branding?.primaryColor || "#0b57d0";
+            document.getElementById('app-logo-wrap').style.backgroundColor = color;
+            if (appData.branding?.logoUrl) {
+                document.getElementById('app-logo-initial').classList.add('hidden');
+                const img = document.getElementById('app-logo-img');
+                img.src = appData.branding.logoUrl;
+                img.classList.remove('hidden');
+            } else {
+                document.getElementById('app-logo-initial').innerText = appData.name[0].toUpperCase();
+            }
+        }
+
+        // ── Login local ──────────────────────────────────────────────────────
+        function toPassword() {
+            const email = document.getElementById('email').value.trim();
+            hideError('error-user');
+            if (!email) { showError('error-user', 'Ingresa tu correo.'); return; }
+            pendingEmail = email;
+            updateUserDisplay(email);
+            renderStep('pass');
+        }
+
+        async function handleLogin() {
+            const password = document.getElementById('password').value;
+            hideError('error-pass');
+            setBusy('btn-login', true, 'Siguiente');
+            try {
+                const body = {
+                    email: pendingEmail,
+                    password,
+                    internalToken,
+                    redirectUri: tenantRedirectUri,
+                    state: tenantState
+                };
+                if (tenantCodeChallenge) {
+                    body.codeChallenge = tenantCodeChallenge;
+                    body.codeChallengeMethod = tenantCodeChallengeMethod;
+                }
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    if (res.status === 403 && /suspendida/i.test(data.error || "")) {
+                        document.getElementById('suspended-reason').innerText = data.error;
+                        renderStep('suspended');
+                    } else {
+                        showError('error-pass', data.error || 'Credenciales inválidas.');
+                    }
+                    return;
+                }
+                // Login local exitoso: tenemos un code del tenant.
+                // Como no podemos vincular Neat sin un access_token local primero,
+                // intercambiamos el code de inmediato contra /id/token para obtener
+                // un access_token (necesario solo si el usuario decide vincular Neat).
+                await afterLocalAuth(data.code, data.redirectUri, data.state, data.pageSessionToken);
+            } catch (e) {
+                showError('error-pass', 'Error de conexión.');
+            } finally {
+                setBusy('btn-login', false, 'Siguiente');
+            }
+        }
+
+        async function handleRegister() {
+            const username = document.getElementById('reg-username').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            hideError('error-register');
+            if (!email || !password) { showError('error-register', 'Completa correo y contraseña.'); return; }
+
+            setBusy('btn-register', true, 'Registrar');
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/register`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, username, internalToken })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showError('error-register', data.error || 'No se pudo registrar la cuenta.');
+                    return;
+                }
+                // Registrado — ahora iniciamos sesión para obtener el code y continuar el flujo
+                pendingEmail = email;
+                updateUserDisplay(email);
+                document.getElementById('password').value = password;
+                document.getElementById('email').value = email;
+                await handleLogin();
+            } catch (e) {
+                showError('error-register', 'Error de conexión.');
+            } finally {
+                setBusy('btn-register', false, 'Registrar');
+            }
+        }
+
+        // Tras login/registro local: guardamos el pageSessionToken (corto, solo
+        // sirve para vincular Neat) y el code del tenant, listos para cuando el
+        // usuario decida vincular o simplemente continuar.
+        let lastLocalCode = null, lastLocalRedirect = null, lastLocalState = null, pageSessionToken = null;
+        async function afterLocalAuth(code, redirectUri, state, sessionToken) {
+            lastLocalCode = code; lastLocalRedirect = redirectUri; lastLocalState = state;
+            pageSessionToken = sessionToken;
+            renderStep('link-neat-offer');
+        }
+
+        function finishLocalLogin() {
+            redirectToTenant(lastLocalCode, lastLocalRedirect, lastLocalState);
+        }
+
+        function redirectToTenant(code, redirectUri, state) {
+            renderStep('redirecting');
+            document.getElementById('redirecting-app-name').innerText = appData?.name || '';
+            const url = new URL(redirectUri);
+            url.searchParams.set('code', code);
+            if (state) url.searchParams.set('state', state);
+            location.href = url.href;
+        }
+
+        // ── Continuar con Neat (login global) ───────────────────────────────
+        // El backend de Neat ID Apps recibe el callback en /id/callback y desde
+        // ahí redirige directo al tenant — esta página no procesa ese retorno.
+        async function loginWithNeat(isLinking) {
+            const { verifier, challenge } = await pkcePair();
+
+            if (isLinking) {
+                // Caso "vincular cuenta Neat" desde una sesión local activa:
+                // el retorno SÍ vuelve a esta misma página (no a /id/callback),
+                // porque /id/users/:slug/link-neat lo resolvemos aquí mismo,
+                // usando el pageSessionToken corto en vez de credenciales del tenant.
+                sessionStorage.setItem('neat_link_verifier', verifier);
+                sessionStorage.setItem('neat_link_page_token', pageSessionToken);
+                sessionStorage.setItem('neat_link_local_code', lastLocalCode);
+                sessionStorage.setItem('neat_link_local_redirect', lastLocalRedirect);
+                sessionStorage.setItem('neat_link_local_state', lastLocalState || '');
+
+                const p = new URLSearchParams({
+                    client_id: appData.internalClientId,
+                    redirect_uri: PAGE_ORIGIN + `?app=${appSlug}&linking=1`,
+                    scope: "openid profile email",
+                    code_challenge: challenge,
+                    code_challenge_method: "S256"
+                });
+                location.href = `${NEAT_OAUTH_URL}?${p}`;
+                return;
+            }
+
+            // Caso login normal con Neat: el state codifica todo lo que /id/callback
+            // necesita para crear/actualizar el id_app_user y redirigir al tenant.
+            const statePayload = {
+                appSlug,
+                redirectUri: tenantRedirectUri,
+                codeChallenge: tenantCodeChallenge || null,
+                codeChallengeMethod: tenantCodeChallengeMethod,
+                tenantState: tenantState || null,
+                codeVerifier: verifier
+            };
+            const stateB64 = btoa(JSON.stringify(statePayload))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+            const p = new URLSearchParams({
+                client_id: appData.internalClientId,
+                redirect_uri: `${API_BASE}/id/callback`,
+                scope: "openid profile email",
+                code_challenge: challenge,
+                code_challenge_method: "S256",
+                state: stateB64
+            });
+            location.href = `${NEAT_OAUTH_URL}?${p}`;
+        }
+
+        // ── Retorno del flujo de vinculación (?linking=1&code=...) ─────────
+        async function handleLinkingReturn(neatCode) {
+            renderStep('linking');
+            const verifier = sessionStorage.getItem('neat_link_verifier');
+            const sessionToken = sessionStorage.getItem('neat_link_page_token');
+            lastLocalCode = sessionStorage.getItem('neat_link_local_code');
+            lastLocalRedirect = sessionStorage.getItem('neat_link_local_redirect');
+            lastLocalState = sessionStorage.getItem('neat_link_local_state') || null;
+            sessionStorage.removeItem('neat_link_verifier');
+            sessionStorage.removeItem('neat_link_page_token');
+            sessionStorage.removeItem('neat_link_local_code');
+            sessionStorage.removeItem('neat_link_local_redirect');
+            sessionStorage.removeItem('neat_link_local_state');
+
+            try {
+                const linkRes = await fetch(`${API_BASE}/id/users/${appSlug}/link-neat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        neatCode,
+                        localAccessToken: sessionToken,
+                        redirectUri: PAGE_ORIGIN + `?app=${appSlug}&linking=1`,
+                        codeVerifier: verifier
+                    })
+                });
+                const linkData = await linkRes.json();
+                if (!linkRes.ok) throw new Error(linkData.error || 'link-failed');
+
+                redirectToTenant(lastLocalCode, lastLocalRedirect, lastLocalState);
+            } catch (e) {
+                renderStep('link-neat-offer');
+                console.error('No se pudo vincular Neat:', e);
+            }
+        }
+
+        // ── Arranque ─────────────────────────────────────────────────────────
+        if (qp.get('linking') === '1' && qp.get('code')) {
+            boot().then(() => handleLinkingReturn(qp.get('code')));
+        } else {
+            boot();
+        }
+    </script>
+</body>
+</html>
