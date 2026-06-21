@@ -181,6 +181,18 @@
         }
         const appSlug = getAppSlugFromPath() || qp.get('app');
 
+        // URL dedicada para el retorno de "vincular Neat" — ruta propia
+        // (/SLUG/neat-callback) en vez de un query param (?linking=1) mezclado
+        // con el resto de parámetros de la URL, que se volvía frágil al
+        // combinarse con ?code= (ej. /SLUG?linking=1?code=... quedaba mal
+        // formado). Debe coincidir EXACTO con lo registrado en el
+        // internalClient del backend.
+        const NEAT_LINKING_CALLBACK = appSlug ? `${location.origin}/${appSlug}/neat-callback` : null;
+
+        // ¿Esta carga de página ES ese retorno? (navegador aterrizó en
+        // /SLUG/neat-callback?code=...&state=...)
+        const isLinkingReturnPath = window.location.pathname.split('/').filter(Boolean)[1] === 'neat-callback';
+
         const tenantRedirectUri = qp.get('redirect_uri');
         const tenantState = qp.get('state');
         const tenantCodeChallenge = qp.get('code_challenge');
@@ -243,7 +255,7 @@
 
         // ── Boot ─────────────────────────────────────────────────────────────
         async function boot() {
-            const isLinkingReturn = qp.get('linking') === '1' && qp.get('code');
+            const isLinkingReturn = isLinkingReturnPath && !!qp.get('code');
             if (!appSlug || (!tenantRedirectUri && !isLinkingReturn)) {
                 return bootError("Falta información", "Esta página necesita que la app de origen indique 'app' y 'redirect_uri'. Vuelve a la aplicación e intenta de nuevo.");
             }
@@ -431,7 +443,7 @@
 
                 const p = new URLSearchParams({
                     client_id: appData.internalClientId,
-                    redirect_uri: PAGE_ORIGIN + `?linking=1`,
+                    redirect_uri: NEAT_LINKING_CALLBACK,
                     scope: "openid profile email",
                     code_challenge: challenge,
                     code_challenge_method: "S256"
@@ -469,7 +481,7 @@
             location.href = `${NEAT_OAUTH_URL}?${p}`;
         }
 
-        // ── Retorno del flujo de vinculación (?linking=1&code=...) ─────────
+        // ── Retorno del flujo de vinculación (/SLUG/neat-callback?code=...) ────
         async function handleLinkingReturn(neatCode) {
             renderStep('linking');
             const verifier = sessionStorage.getItem('neat_link_verifier');
@@ -489,7 +501,7 @@
                     body: JSON.stringify({
                         neatCode,
                         localAccessToken: sessionToken,
-                        redirectUri: PAGE_ORIGIN + `?linking=1`,
+                        redirectUri: NEAT_LINKING_CALLBACK,
                         codeVerifier: verifier
                     })
                 });
@@ -504,7 +516,7 @@
         }
 
         // ── Arranque ─────────────────────────────────────────────────────────
-        if (qp.get('linking') === '1' && qp.get('code')) {
+        if (isLinkingReturnPath && qp.get('code')) {
             boot().then(() => handleLinkingReturn(qp.get('code')));
         } else {
             boot();
