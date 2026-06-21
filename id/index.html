@@ -66,7 +66,7 @@
                     <img id="app-logo-img" class="hidden w-full h-full object-cover" alt="">
                 </div>
                 <h1 class="text-3xl font-google font-normal text-[#1f1f1f] dark:text-[#e3e3e3] mb-3">Neat ID</h1>
-                <p class="text-lg text-[#444] dark:text-[#c4c7c5]">Usa tu cuenta de <span id="service-name-text" class="font-medium">…</span></p>
+                <p id="service-name-line" class="text-lg text-[#444] dark:text-[#c4c7c5]">Usar cuenta en <span id="service-name-text" class="font-medium">…</span></p>
             </div>
             <div id="user-display" class="hidden items-center gap-3 p-2 rounded-full border border-gray-200 dark:border-[#444] w-fit">
                 <div id="user-initial" class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">U</div>
@@ -167,7 +167,20 @@
 
         // ── Params de entrada (del tenant) ──────────────────────────────────
         const qp = new URLSearchParams(window.location.search);
-        const appSlug = qp.get('app');
+
+        // appSlug viene del PATH (id.neat.qzz.io/innernet) — más simple para el
+        // dev que armar ?app=innernet. Se mantiene ?app= como fallback por si
+        // alguna integración vieja todavía lo usa, o si la página vive en la
+        // raíz sin rewrite de path configurado.
+        function getAppSlugFromPath() {
+            const segment = window.location.pathname.split('/').filter(Boolean)[0];
+            // Evita capturar rutas reservadas si esta página llegara a compartir
+            // dominio con otras cosas estáticas (ajustar esta lista si aplica).
+            const reserved = ['', 'favicon.ico', 'robots.txt'];
+            return segment && !reserved.includes(segment) ? decodeURIComponent(segment) : null;
+        }
+        const appSlug = getAppSlugFromPath() || qp.get('app');
+
         const tenantRedirectUri = qp.get('redirect_uri');
         const tenantState = qp.get('state');
         const tenantCodeChallenge = qp.get('code_challenge');
@@ -235,8 +248,11 @@
                 return bootError("Falta información", "Esta página necesita que la app de origen indique 'app' y 'redirect_uri'. Vuelve a la aplicación e intenta de nuevo.");
             }
             try {
+                const publicUrl = tenantClientId
+                    ? `${API_BASE}/id/apps/${appSlug}/public?client_id=${encodeURIComponent(tenantClientId)}`
+                    : `${API_BASE}/id/apps/${appSlug}/public`;
                 const [pubRes, tokenRes] = await Promise.all([
-                    fetch(`${API_BASE}/id/apps/${appSlug}/public`),
+                    fetch(publicUrl),
                     fetch(`${API_BASE}/id/apps/${appSlug}/page-token`)
                 ]);
                 if (!pubRes.ok) {
@@ -263,8 +279,19 @@
             document.getElementById('boot-error').classList.remove('hidden');
         }
 
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        }
+
         function applyBranding() {
-            document.getElementById('service-name-text').innerText = appData.name;
+            const tenantName = escapeHtml(appData.name);
+            const line = document.getElementById('service-name-line');
+            if (appData.clientName) {
+                // "Usa tu cuenta de {Tenant} para continuar en {Client}"
+                line.innerHTML = `Usa tu cuenta de <span class="font-medium">${tenantName}</span> para continuar en <span class="font-medium">${escapeHtml(appData.clientName)}</span>`;
+            } else {
+                line.innerHTML = `Usar cuenta en <span class="font-medium">${tenantName}</span>`;
+            }
             document.title = `Iniciar sesión en ${appData.name}`;
             const color = appData.branding?.primaryColor || "#0b57d0";
             document.getElementById('app-logo-wrap').style.backgroundColor = color;
@@ -404,7 +431,7 @@
 
                 const p = new URLSearchParams({
                     client_id: appData.internalClientId,
-                    redirect_uri: PAGE_ORIGIN + `?app=${appSlug}&linking=1`,
+                    redirect_uri: PAGE_ORIGIN + `?linking=1`,
                     scope: "openid profile email",
                     code_challenge: challenge,
                     code_challenge_method: "S256"
@@ -462,7 +489,7 @@
                     body: JSON.stringify({
                         neatCode,
                         localAccessToken: sessionToken,
-                        redirectUri: PAGE_ORIGIN + `?app=${appSlug}&linking=1`,
+                        redirectUri: PAGE_ORIGIN + `?linking=1`,
                         codeVerifier: verifier
                     })
                 });
