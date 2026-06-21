@@ -172,6 +172,9 @@
         const tenantState = qp.get('state');
         const tenantCodeChallenge = qp.get('code_challenge');
         const tenantCodeChallengeMethod = qp.get('code_challenge_method') || 'S256';
+        // client_id del client específico de la app (web, móvil, admin...). Si la
+        // app tenant no lo manda, el backend usa el client "default" de esa app.
+        const tenantClientId = qp.get('client_id');
 
         // ── Estado en memoria ────────────────────────────────────────────────
         let appData = null;          // respuesta de /id/apps/:slug/public
@@ -297,6 +300,7 @@
                     redirectUri: tenantRedirectUri,
                     state: tenantState
                 };
+                if (tenantClientId) body.clientId = tenantClientId;
                 if (tenantCodeChallenge) {
                     body.codeChallenge = tenantCodeChallenge;
                     body.codeChallengeMethod = tenantCodeChallengeMethod;
@@ -413,6 +417,7 @@
             // necesita para crear/actualizar el id_app_user y redirigir al tenant.
             const statePayload = {
                 appSlug,
+                clientId: tenantClientId || null,
                 redirectUri: tenantRedirectUri,
                 codeChallenge: tenantCodeChallenge || null,
                 codeChallengeMethod: tenantCodeChallengeMethod,
