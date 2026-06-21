@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neat ID - Panel</title>
+    <title>Neat ID — Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <script>
@@ -848,29 +848,18 @@
         }
 
         // ── Usuarios ─────────────────────────────────────────────────────────
-        // GET /id/apps/:slug/users requiere x-client-id/x-client-secret de un
-        // client confidential. Usamos el client "Default" de la app para esto,
-        // pidiéndolo primero (no exponemos secrets en el listado de clients).
-        let cachedAdminCreds = null;
-
-        async function getAdminClientCreds() {
-            if (cachedAdminCreds && cachedAdminCreds.appSlug === currentAppSlug) return cachedAdminCreds;
-            // No hay endpoint para recuperar un secret ya emitido (por diseño).
-            // Pedimos al dev que lo ingrese una vez por sesión si no lo tenemos.
-            return null;
-        }
+        // /id/apps/:slug/users, /stats y /revoke usan tenantAuth, que ahora
+        // acepta la sesión Neat del dueño de la app (además de x-client-id/
+        // x-client-secret para backends externos) — así que el panel usa
+        // simplemente api(), igual que para todo lo demás. Ya no hace falta
+        // pedir ni guardar credenciales de ningún client aparte.
 
         async function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
             try {
-                const stats = await api(`/id/apps/${currentAppSlug}/stats-via-panel`).catch(() => null);
-            } catch (e) {}
-            // El panel gestiona usuarios usando la sesión del dueño directamente
-            // vía un proxy interno simulado aquí con el token de sesión Neat,
-            // ya que /id/apps/:slug/users normalmente usa tenantAuth (x-client-id/secret).
-            try {
-                const users = await fetchUsersAsOwner();
+                const data = await api(`/id/apps/${currentAppSlug}/users`);
+                const users = data.users || data;
                 document.getElementById('users-empty').classList.toggle('hidden', users.length > 0);
                 tbody.innerHTML = users.map(u => `
                     <tr>
@@ -891,7 +880,7 @@
         }
 
         function loadStats() {
-            fetchStatsAsOwner().then(s => {
+            api(`/id/apps/${currentAppSlug}/stats`).then(s => {
                 document.getElementById('stat-total').innerText = s.totalUsers ?? '—';
                 document.getElementById('stat-neat').innerText = s.neatUsers ?? '—';
                 document.getElementById('stat-local').innerText = s.localUsers ?? '—';
@@ -899,54 +888,9 @@
             }).catch(() => {});
         }
 
-        // ── Puente: panel admin usa endpoints protegidos con x-client-id/secret ──
-        // El panel se autentica con la SESIÓN del dueño (JWT Neat normal), no con
-        // credenciales de un client específico. /id/apps/:slug/users, /stats y
-        // /revoke fueron diseñados para tenantAuth (x-client-id/secret), así que
-        // aquí usamos el client "Default" creado al registrar la app, cuyo
-        // secret el dueño ya vio una vez. Si no lo tiene a mano, se le pide.
-        async function withDefaultClientAuth(path, options = {}) {
-            let creds = sessionStorage.getItem(`neat_default_creds_${currentAppSlug}`);
-            creds = creds ? JSON.parse(creds) : null;
-            if (!creds) {
-                creds = await promptForDefaultCreds();
-                if (!creds) throw new Error('Se necesitan las credenciales del client Default para gestionar usuarios.');
-            }
-            const headers = { 'Content-Type': 'application/json', 'x-client-id': creds.clientId, 'x-client-secret': creds.clientSecret, ...(options.headers || {}) };
-            const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-            const data = await res.json().catch(() => ({}));
-            if (res.status === 401) {
-                sessionStorage.removeItem(`neat_default_creds_${currentAppSlug}`);
-                throw new Error('Credenciales del client inválidas. Vuelve a ingresarlas.');
-            }
-            if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-            return data;
-        }
-
-        function promptForDefaultCreds() {
-            return new Promise((resolve) => {
-                const clientId = prompt('Client ID del client Default de esta app:');
-                if (!clientId) return resolve(null);
-                const clientSecret = prompt('Client secret correspondiente:');
-                if (!clientSecret) return resolve(null);
-                const creds = { clientId, clientSecret };
-                sessionStorage.setItem(`neat_default_creds_${currentAppSlug}`, JSON.stringify(creds));
-                resolve(creds);
-            });
-        }
-
-        async function fetchUsersAsOwner() {
-            const data = await withDefaultClientAuth(`/id/apps/${currentAppSlug}/users`);
-            return data.users || data;
-        }
-
-        async function fetchStatsAsOwner() {
-            return withDefaultClientAuth(`/id/apps/${currentAppSlug}/stats`);
-        }
-
         async function toggleUserSuspend(userId, suspended) {
             try {
-                await withDefaultClientAuth(`/id/apps/${currentAppSlug}/users/${userId}/suspend`, {
+                await api(`/id/apps/${currentAppSlug}/users/${userId}/suspend`, {
                     method: 'PUT', body: JSON.stringify({ suspended })
                 });
                 showToast(suspended ? 'Usuario suspendido' : 'Usuario reactivado');
@@ -959,7 +903,7 @@
         function deleteUser(userId) {
             showConfirm('Eliminar usuario', 'Esto borra al usuario y sus sesiones de forma permanente.', async () => {
                 try {
-                    await withDefaultClientAuth(`/id/apps/${currentAppSlug}/users/${userId}`, { method: 'DELETE' });
+                    await api(`/id/apps/${currentAppSlug}/users/${userId}`, { method: 'DELETE' });
                     closeModal('modal-confirm');
                     showToast('Usuario eliminado');
                     loadUsers();
