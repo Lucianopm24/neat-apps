@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neat ID — Panel</title>
+    <title>Neat ID - Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <script>
@@ -365,7 +365,10 @@
                 <span class="text-lg">🔑</span>
                 <h2 class="font-google text-lg">Guarda estas credenciales</h2>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">El client_secret solo se muestra una vez. Si lo pierdes, tendrás que rotarlo.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                Esto es el <b>client por defecto</b> de tu app — la credencial que tu <b>propio backend</b> usa para canjear el código de login por un token de usuario, llamando a <code class="copyable">POST /id/token</code>. No es una credencial de usuario final; es la "llave" de tu servidor para hablar con Neat ID Apps.
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">El client_secret solo se muestra una vez aquí. Si lo pierdes, puedes rotarlo desde la pestaña "Clients" de la app (eso invalida el anterior).</p>
             <div class="space-y-3">
                 <div>
                     <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Client ID</label>
@@ -385,6 +388,7 @@
             <button onclick="closeModal('modal-credentials')" class="btn-primary w-full justify-center mt-6">Ya las guardé</button>
         </div>
     </div>
+
 
     <!-- Confirmar -->
     <div id="modal-confirm" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
