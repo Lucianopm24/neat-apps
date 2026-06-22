@@ -77,7 +77,7 @@
                     <img id="app-logo-img" class="hidden w-full h-full object-cover" alt="">
                 </div>
                 <h1 class="text-3xl font-google font-normal text-[#1f1f1f] dark:text-[#e3e3e3] mb-3">Neat ID</h1>
-                <p id="service-name-line" class="text-lg text-[#444] dark:text-[#c4c7c5]">Usar cuenta en <span id="service-name-text" class="font-medium">…</span></p>
+                <p id="service-name-line" class="text-lg text-[#444] dark:text-[#c4c7c5]">Usa tu cuenta de <span id="service-name-text" class="font-medium">…</span></p>
             </div>
             <div id="user-display" class="hidden items-center gap-3 p-2 rounded-full border border-gray-200 dark:border-[#444] w-fit">
                 <div id="user-initial" class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">U</div>
@@ -600,7 +600,7 @@
                 // "Usa tu cuenta de {Tenant} para continuar en {Client}"
                 line.innerHTML = `Usa tu cuenta de <span class="font-medium">${tenantName}</span> para continuar en <span class="font-medium">${escapeHtml(appData.clientName)}</span>`;
             } else {
-                line.innerHTML = `Usar cuenta en <span class="font-medium">${tenantName}</span>`;
+                line.innerHTML = `Usa tu cuenta de <span class="font-medium">${tenantName}</span>`;
             }
             document.title = `Iniciar sesión en ${appData.name}`;
             const color = appData.branding?.primaryColor || "#0b57d0";
