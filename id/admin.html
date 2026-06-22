@@ -717,6 +717,9 @@
         }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        }
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => showToast('Copiado al portapapeles'));
         }
@@ -976,6 +979,8 @@
             document.getElementById('edit-color-text').value = app.branding?.primaryColor || '#0b57d0';
             // Inicializar toggle de verificación de email
             setEmailVerifToggle(!!app.requireEmailVerification);
+            // Inicializar toggle de registros abiertos/cerrados
+            initRegistrationsToggle(app.registrationsOpen !== false);
         }
 
         function setEmailVerifToggle(enabled) {
@@ -1568,14 +1573,27 @@
 
         async function createGroup() {
             const name = document.getElementById('cg-name').value.trim();
-            const key = document.getElementById('cg-key').value.trim();
+            let key = document.getElementById('cg-key').value.trim();
             const description = document.getElementById('cg-description').value.trim();
             const errEl = document.getElementById('cg-error');
             errEl.classList.add('hidden');
             if (!name) { errEl.innerText = 'El nombre es requerido.'; errEl.classList.remove('hidden'); return; }
+            // Si no se especifica key, lo generamos del nombre (el backend lo requiere
+            // y solo acepta minúsculas, números y guiones).
+            if (!key) {
+                key = name.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar acentos
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+            }
+            if (!/^[a-z0-9-]+$/.test(key)) {
+                errEl.innerText = 'El key solo puede tener letras minúsculas, números y guiones.';
+                errEl.classList.remove('hidden');
+                return;
+            }
             try {
                 await api(`/id/apps/${currentAppSlug}/groups`, {
-                    method: 'POST', body: JSON.stringify({ name, key: key || undefined, description: description || undefined })
+                    method: 'POST', body: JSON.stringify({ name, key, description: description || undefined })
                 });
                 closeModal('modal-create-group');
                 showToast('Grupo creado');
@@ -1626,8 +1644,8 @@
                 document.getElementById('members-empty').classList.toggle('hidden', members.length > 0);
                 tbody.innerHTML = members.map(m => `
                     <tr>
-                        <td class="font-medium">${escapeHtml(m.username || '—')}</td>
-                        <td class="text-xs">${escapeHtml(m.email)}</td>
+                        <td class="font-medium">${escapeHtml(m.user?.username || '—')}</td>
+                        <td class="text-xs">${escapeHtml(m.user?.email || '—')}</td>
                         <td>${m.roles && m.roles.length ? m.roles.map(r => `<span class="badge badge-blue">${escapeHtml(r)}</span>`).join(' ') : '<span class="badge badge-gray">—</span>'}</td>
                         <td class="text-right">
                             <button onclick="removeMember('${m.userId}')" class="btn-ghost btn-danger">Remover</button>
@@ -1647,7 +1665,7 @@
             sel.innerHTML = '<option>Cargando…</option>';
             openModal('modal-add-member');
             try {
-                const data = await api(`/id/apps/${currentAppSlug}/users`);
+                const data = await api(`/id/apps/${currentAppSlug}/users?limit=500`);
                 const users = data.users || data;
                 sel.innerHTML = users.map(u => `<option value="${u._id}">${escapeHtml(u.username || u.email)} — ${escapeHtml(u.email)}</option>`).join('');
             } catch {
@@ -1695,7 +1713,7 @@
                 tbody.innerHTML = invitations.map(inv => {
                     const expires = new Date(inv.expiresAt);
                     const expired = expires < new Date();
-                    const usesText = inv.maxUses === null ? `${inv.usedCount} / ∞` : `${inv.usedCount} / ${inv.maxUses}`;
+                    const usesText = inv.maxUses === null ? `${inv.uses} / ∞` : `${inv.uses} / ${inv.maxUses}`;
                     return `
                     <tr>
                         <td class="font-mono text-xs">${inv.token.substring(0, 12)}…</td>
