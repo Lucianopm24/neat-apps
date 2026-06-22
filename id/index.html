@@ -106,6 +106,7 @@
                         <span class="w-5 h-5 rounded bg-[#7c6af7] flex items-center justify-center text-white text-[10px] font-bold">N</span>
                         Continuar con Neat
                     </button>
+                    <div id="social-buttons" class="space-y-2"></div>
                 </div>
 
                 <!-- Paso: contraseña -->
@@ -163,6 +164,20 @@
                     <div class="flex justify-between items-center pt-2">
                         <button onclick="renderStep('pass')" class="text-sm text-gray-500">Atrás</button>
                         <button id="btn-totp-login" onclick="handleLoginTotp()" class="btn-primary">Verificar</button>
+                    </div>
+                </div>
+
+                <!-- Paso: vincular cuenta social a una cuenta local existente -->
+                <div id="step-link-social" class="hidden space-y-6 step-enter">
+                    <div>
+                        <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3] mb-1">Confirma tu identidad</h2>
+                        <p id="link-social-desc" class="text-xs text-gray-500 dark:text-gray-400 mb-4">Ya existe una cuenta con este correo. Ingresa tu contraseña para vincularla.</p>
+                        <input type="password" id="link-social-password" placeholder="Contraseña" class="input-field" autocomplete="current-password">
+                        <p id="error-link-social" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="renderStep('user')" class="text-sm text-gray-500">Cancelar</button>
+                        <button id="btn-link-social" onclick="handleLinkSocial()" class="btn-primary">Vincular</button>
                     </div>
                 </div>
 
@@ -546,6 +561,19 @@
                 applyBranding();
                 document.getElementById('boot-loading').classList.add('hidden');
 
+                // El callback de login social manda aquí con ?link_token=...&email=...
+                // cuando ya existe una cuenta local con el mismo email, pidiendo
+                // confirmación de contraseña antes de vincular el provider social.
+                if (qp.get('link_token')) {
+                    document.getElementById('main-card').classList.remove('hidden');
+                    _socialLinkToken = qp.get('link_token');
+                    renderStep('link-social');
+                    const desc = document.getElementById('link-social-desc');
+                    const email = qp.get('email');
+                    if (email) desc.innerText = `Ya existe una cuenta con ${email}. Ingresa tu contraseña para vincularla.`;
+                    return;
+                }
+
                 // El correo de "olvidé mi contraseña" siempre manda a /SLUG?reset_token=...
                 // (sin /manage), porque el mismo flujo sirve tanto al dueño del tenant
                 // como a un usuario final — ambos son el mismo tipo de cuenta
@@ -576,7 +604,10 @@
                     return;
                 }
 
-                if (!isLinkingReturn) renderStep('user');
+                if (!isLinkingReturn) {
+                    loadSocialProviders();
+                    renderStep('user');
+                }
             } catch (e) {
                 bootError("Error de conexión", "No pudimos conectar con Neat ID. Revisa tu conexión e intenta de nuevo.");
             }
@@ -906,7 +937,65 @@
             location.href = `${NEAT_OAUTH_URL}?${p}`;
         }
 
-        // ── Retorno del flujo de vinculación (/SLUG/neat-callback?code=...) ────
+        // ── Login social (OIDC por discovery, PKCE generado en el backend) ───
+        async function loadSocialProviders() {
+            try {
+                const res = await fetch(`${API_BASE}/id/apps/${appSlug}/social/available`);
+                if (!res.ok) return;
+                const providers = await res.json();
+                const container = document.getElementById('social-buttons');
+                if (!container) return;
+                container.innerHTML = providers.map(p => `
+                    <button onclick="startSocialLogin('${p.key}')" class="w-full flex items-center justify-center gap-2 p-3 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        Continuar con ${p.name}
+                    </button>
+                `).join('');
+            } catch (e) {
+                // Si falla, simplemente no se muestran botones sociales — no es bloqueante.
+            }
+        }
+
+        function startSocialLogin(key) {
+            const p = new URLSearchParams({
+                clientId: tenantClientId || '',
+                redirectUri: tenantRedirectUri || '',
+                codeChallenge: tenantCodeChallenge || '',
+                codeChallengeMethod: tenantCodeChallengeMethod || 'S256',
+                state: tenantState || ''
+            });
+            location.href = `${API_BASE}/id/users/${appSlug}/social/${key}/start?${p}`;
+        }
+
+        // ── Vincular cuenta social a una cuenta local existente ──────────────
+        // Llega aquí vía ?link_token=...&email=... cuando el callback social
+        // encontró un email coincidente pero no vinculó automático — se pide
+        // la contraseña local como confirmación antes de vincular.
+        let _socialLinkToken = null;
+
+        async function handleLinkSocial() {
+            const password = document.getElementById('link-social-password').value;
+            hideError('error-link-social');
+            if (!password) return showError('error-link-social', 'Ingresa tu contraseña.');
+
+            setBusy('btn-link-social', true, 'Vincular');
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/social/link-existing`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ link_token: _socialLinkToken, password })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showError('error-link-social', data.error || 'No se pudo vincular la cuenta.');
+                    return;
+                }
+                afterLocalAuth(data.code, data.redirectUri, data.state, data.pageSessionToken || null);
+            } catch (e) {
+                showError('error-link-social', 'Error de conexión.');
+            } finally {
+                setBusy('btn-link-social', false, 'Vincular');
+            }
+        }
         async function handleLinkingReturn(neatCode) {
             renderStep('linking');
             const verifier = sessionStorage.getItem('neat_link_verifier');
