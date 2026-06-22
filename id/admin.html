@@ -280,7 +280,7 @@
                     </div>
                     <div class="card overflow-hidden">
                         <table>
-                            <thead><tr><th>Usuario</th><th>Correo</th><th>Origen</th><th>Estado</th><th>Creado</th><th></th></tr></thead>
+                            <thead><tr><th>Usuario</th><th>Correo</th><th>Origen</th><th>Estado</th><th>Correo verificado</th><th>Creado</th><th></th></tr></thead>
                             <tbody id="users-table-body"></tbody>
                         </table>
                         <div id="users-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin usuarios todavía.</div>
@@ -911,26 +911,62 @@
 
         async function loadUsers() {
             const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
             try {
                 const data = await api(`/id/apps/${currentAppSlug}/users`);
                 const users = data.users || data;
                 document.getElementById('users-empty').classList.toggle('hidden', users.length > 0);
-                tbody.innerHTML = users.map(u => `
+                tbody.innerHTML = users.map(u => {
+                    const isNeatEmail = (u.email || '').endsWith('@neat.qzz.io');
+                    const verified = !!u.emailVerified;
+                    let verifCell;
+                    if (verified) {
+                        verifCell = `<span class="badge badge-green">Verificado</span>`;
+                    } else if (isNeatEmail) {
+                        verifCell = `<span class="badge badge-gray" title="Se verifica iniciando sesión con Neat">Pendiente (Neat)</span>`;
+                    } else if (currentAppData?.requireEmailVerification) {
+                        verifCell = `
+                            <span class="badge badge-red">Sin verificar</span>
+                            <button onclick="resendUserVerification('${u.email}', this)" class="btn-ghost ml-2 text-xs">Reenviar</button>
+                        `;
+                    } else {
+                        verifCell = `<span class="badge badge-gray">No requerido</span>`;
+                    }
+                    return `
                     <tr>
                         <td class="font-medium">${u.username || '—'}</td>
                         <td class="text-xs">${u.email}</td>
                         <td><span class="badge ${u.neatUserId ? 'badge-blue' : 'badge-gray'}">${u.neatUserId ? 'Neat' : 'Local'}</span></td>
                         <td><span class="badge ${u.suspended ? 'badge-red' : 'badge-green'}">${u.suspended ? 'Suspendido' : 'Activo'}</span></td>
+                        <td class="whitespace-nowrap">${verifCell}</td>
                         <td class="text-xs text-gray-500 dark:text-gray-400">${new Date(u.createdAt).toLocaleDateString()}</td>
                         <td class="text-right whitespace-nowrap">
                             <button onclick="toggleUserSuspend('${u._id}', ${!u.suspended})" class="btn-ghost mr-3">${u.suspended ? 'Reactivar' : 'Suspender'}</button>
                             <button onclick="deleteUser('${u._id}')" class="btn-ghost btn-danger">Eliminar</button>
                         </td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        async function resendUserVerification(email, btn) {
+            btn.disabled = true;
+            const original = btn.innerText;
+            btn.innerText = 'Enviando…';
+            try {
+                await api(`/id/users/${currentAppSlug}/resend-verification`, {
+                    method: 'POST', body: JSON.stringify({ email })
+                });
+                showToast('Correo de verificación reenviado');
+                btn.innerText = 'Enviado ✓';
+                setTimeout(() => { btn.innerText = original; btn.disabled = false; }, 3000);
+            } catch (e) {
+                showToast(e.message);
+                btn.innerText = original;
+                btn.disabled = false;
             }
         }
 
