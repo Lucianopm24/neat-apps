@@ -226,6 +226,15 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Agrega <span class="copyable">?redirect_uri=...&client_id=...&state=...</span> al redirigir a tus usuarios.</p>
                     </div>
 
+                    <div class="card p-6 mb-6">
+                        <h3 class="font-google text-base mb-1">App Key</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Credencial pública para que una app sin backend lea y escriba el KV storage de su propio usuario (junto con el access_token de ese usuario). No sirve para tocar el storage de otra persona ni para el KV público.</p>
+                        <div class="flex items-center gap-2 bg-[#f8f9fa] dark:bg-white/5 rounded-xl px-4 py-3">
+                            <code id="detail-app-key" class="copyable flex-1 truncate"></code>
+                            <button onclick="copyText(document.getElementById('detail-app-key').innerText)" class="btn-ghost shrink-0">Copiar</button>
+                        </div>
+                    </div>
+
                     <div class="card p-6">
                         <h3 class="font-google text-base mb-4">Información general</h3>
                         <div class="space-y-4">
@@ -953,6 +962,7 @@
             document.getElementById('detail-status-badge').innerText = app.suspended ? 'Suspendida' : 'Activa';
             document.getElementById('detail-status-badge').className = `badge ${app.suspended ? 'badge-red' : 'badge-green'} shrink-0`;
             document.getElementById('detail-login-url').innerText = `https://id.neat.qzz.io/${app.slug}`;
+            document.getElementById('detail-app-key').innerText = app.appKey || '—';
 
             const color = app.branding?.primaryColor || '#0b57d0';
             document.getElementById('detail-logo-wrap').style.backgroundColor = color;
