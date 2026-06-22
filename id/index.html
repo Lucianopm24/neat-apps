@@ -94,7 +94,7 @@
                         <p id="error-user" class="text-[#d93025] text-xs mt-2 hidden"></p>
                     </div>
                     <div class="flex justify-between items-center pt-4">
-                        <span onclick="renderStep('register')" class="text-[#0b57d0] dark:text-[#a8c7fa] text-sm font-medium cursor-pointer">Crear cuenta</span>
+                        <span id="create-account-link" onclick="renderStep('register')" class="text-[#0b57d0] dark:text-[#a8c7fa] text-sm font-medium cursor-pointer">Crear cuenta</span>
                         <button onclick="toPassword()" class="btn-primary">Siguiente</button>
                     </div>
                     <div class="flex items-center gap-3 pt-2">
@@ -183,15 +183,22 @@
 
                 <!-- Paso: registro -->
                 <div id="step-register" class="hidden space-y-4">
-                    <h2 class="text-sm font-bold dark:text-gray-400 uppercase">Nueva cuenta</h2>
+                    <h2 id="register-title" class="text-sm font-bold dark:text-gray-400 uppercase">Nueva cuenta</h2>
                     <input type="text" id="reg-username" placeholder="Usuario" class="input-field">
                     <input type="email" id="reg-email" placeholder="Correo" class="input-field" autocomplete="email">
                     <input type="password" id="reg-password" placeholder="Contraseña" class="input-field" autocomplete="new-password">
                     <p id="error-register" class="text-[#d93025] text-xs hidden"></p>
                     <div class="flex justify-between items-center pt-4">
-                        <button onclick="renderStep('user')" class="text-sm text-gray-500">Volver</button>
+                        <button id="register-back-btn" onclick="renderStep('user')" class="text-sm text-gray-500">Volver</button>
                         <button id="btn-register" onclick="handleRegister()" class="btn-primary">Registrar</button>
                     </div>
+                </div>
+
+                <!-- Paso: cuenta creada vía invitación (sin OAuth, nada que completar) -->
+                <div id="step-invite-done" class="hidden space-y-6 step-enter text-center">
+                    <div class="text-5xl mb-2">🎉</div>
+                    <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3]">¡Cuenta creada!</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Ya puedes cerrar esta pestaña y entrar con tu correo y contraseña desde la app.</p>
                 </div>
 
                 <!-- Paso: ofrecer vincular Neat tras login/registro local -->
@@ -475,11 +482,17 @@
         // app tenant no lo manda, el backend usa el client "default" de esa app.
         const tenantClientId = qp.get('client_id');
 
+        // Token de invitación (?inviteToken=...) — flujo separado del OAuth
+        // normal. No requiere redirect_uri: el familiar entra directo a crear
+        // su cuenta y no hay ningún flujo que completar después.
+        const inviteTokenParam = qp.get('inviteToken');
+
         // ── Estado en memoria ────────────────────────────────────────────────
         let appData = null;          // respuesta de /id/apps/:slug/public
         let internalToken = null;    // de /id/apps/:slug/page-token
         let pendingEmail = "";
         let localAccessToken = null; // sesión local activa (post login/registro), antes de vincular Neat
+        let _inviteToken = null;     // token de invitación activo, si llegamos por ?inviteToken=
 
         function toggleTheme() { document.documentElement.classList.toggle('dark'); }
 
@@ -539,7 +552,7 @@
             // panel — el flag quedó guardado antes de salir hacia Neat.
             const returningToManage = isLinkingReturn && !!sessionStorage.getItem('manage_neat_login_in_progress');
 
-            if (!appSlug || (!isManagePath && !returningToManage && !tenantRedirectUri && !isLinkingReturn)) {
+            if (!appSlug || (!isManagePath && !returningToManage && !tenantRedirectUri && !isLinkingReturn && !inviteTokenParam)) {
                 return bootError("Falta información", "Esta página necesita que la app de origen indique 'app' y 'redirect_uri'. Vuelve a la aplicación e intenta de nuevo.");
             }
             try {
@@ -560,6 +573,27 @@
 
                 applyBranding();
                 document.getElementById('boot-loading').classList.add('hidden');
+
+                // Flujo de invitación: validamos el token contra el backend y, si es
+                // válido, vamos directo al paso de registro — sin redirect_uri, sin
+                // OAuth, sin nada más que completar después de crear la cuenta.
+                if (inviteTokenParam) {
+                    document.getElementById('main-card').classList.remove('hidden');
+                    try {
+                        const valRes = await fetch(`${API_BASE}/id/apps/${appSlug}/invitations/${inviteTokenParam}/validate`);
+                        const valData = await valRes.json();
+                        if (!valRes.ok) {
+                            return bootError("Invitación no válida", valData.error || "Este enlace de invitación ya no es válido.");
+                        }
+                        _inviteToken = inviteTokenParam;
+                        renderStep('register');
+                        document.getElementById('register-title').innerText = `Crea tu cuenta en ${appData.name}`;
+                        document.getElementById('register-back-btn').classList.add('hidden');
+                    } catch {
+                        bootError("Error de conexión", "No pudimos validar tu invitación. Intenta de nuevo.");
+                    }
+                    return;
+                }
 
                 // El callback de login social manda aquí con ?link_token=...&email=...
                 // cuando ya existe una cuenta local con el mismo email, pidiendo
@@ -644,6 +678,10 @@
             } else {
                 document.getElementById('app-logo-initial').innerText = appData.name[0].toUpperCase();
             }
+            // Si el tenant cerró los registros, ocultamos el link "Crear cuenta".
+            // El único camino para crear cuenta nueva es por invitación (?inviteToken=),
+            // que toma una rama completamente separada en boot() y nunca llega aquí.
+            document.getElementById('create-account-link').classList.toggle('hidden', appData.registrationsOpen === false);
         }
 
         // ── Login local ──────────────────────────────────────────────────────
@@ -790,13 +828,20 @@
 
             setBusy('btn-register', true, 'Registrar');
             try {
+                const body = { email, password, username, internalToken };
+                if (_inviteToken) body.inviteToken = _inviteToken;
                 const res = await fetch(`${API_BASE}/id/users/${appSlug}/register`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, username, internalToken })
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 if (!res.ok) {
                     showError('error-register', data.error || 'No se pudo registrar la cuenta.');
+                    return;
+                }
+                // Flujo de invitación: no hay OAuth que completar, mostramos pantalla final.
+                if (_inviteToken) {
+                    renderStep('invite-done');
                     return;
                 }
                 // Si el tenant requiere verificación y el email no está verificado aún, mostrar pantalla
