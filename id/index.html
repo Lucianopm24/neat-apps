@@ -166,6 +166,27 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400">Te llevamos de vuelta a <span id="redirecting-app-name" class="font-medium"></span>…</p>
                 </div>
 
+                <!-- Paso: verificación de email pendiente -->
+                <div id="step-verify-email" class="hidden space-y-5 step-enter">
+                    <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
+                        <span class="text-2xl flex-shrink-0">📬</span>
+                        <div>
+                            <p class="text-sm font-medium dark:text-gray-200">Verifica tu correo</p>
+                            <p id="verify-email-msg" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"></p>
+                        </div>
+                    </div>
+                    <div id="verify-email-neat-info" class="hidden text-sm text-gray-600 dark:text-gray-400 text-center">
+                        Tu dirección <strong id="verify-neat-addr"></strong> se verificará automáticamente cuando inicies sesión con Neat.
+                    </div>
+                    <div id="verify-email-resend-wrap" class="hidden space-y-3 text-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">¿No recibiste el correo?</p>
+                        <button id="btn-resend" onclick="resendVerification()" class="text-sm text-[#0b57d0] dark:text-[#a8c7fa] font-medium">Reenviar correo de verificación</button>
+                        <p id="resend-ok" class="text-xs text-green-600 dark:text-green-400 hidden">¡Enviado! Revisa tu bandeja de entrada.</p>
+                        <p id="resend-error" class="text-xs text-[#d93025] hidden"></p>
+                    </div>
+                    <button onclick="renderStep('user')" class="w-full text-sm text-gray-500 pt-1">Volver al inicio</button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -385,6 +406,17 @@
                 }
 
                 document.getElementById('main-card').classList.remove('hidden');
+
+                // Si volvemos del enlace de verificación de correo, mostrar mensaje breve
+                if (qp.get('verified') === '1') {
+                    renderStep('user');
+                    const el = document.getElementById('error-user');
+                    el.innerText = '✅ ¡Correo verificado! Ya puedes iniciar sesión.';
+                    el.style.color = '#0d652d';
+                    el.classList.remove('hidden');
+                    return;
+                }
+
                 if (!isLinkingReturn) renderStep('user');
             } catch (e) {
                 bootError("Error de conexión", "No pudimos conectar con Neat ID. Revisa tu conexión e intenta de nuevo.");
@@ -457,7 +489,9 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    if (res.status === 403 && /suspendida/i.test(data.error || "")) {
+                    if (res.status === 403 && data.requiresVerification) {
+                        showVerifyEmailStep(data.email || pendingEmail, data.verificationMethod);
+                    } else if (res.status === 403 && /suspendida/i.test(data.error || "")) {
                         document.getElementById('suspended-reason').innerText = data.error;
                         renderStep('suspended');
                     } else {
@@ -495,6 +529,11 @@
                     showError('error-register', data.error || 'No se pudo registrar la cuenta.');
                     return;
                 }
+                // Si el tenant requiere verificación y el email no está verificado aún, mostrar pantalla
+                if (data.requiresVerification) {
+                    showVerifyEmailStep(email, data.verificationMethod);
+                    return;
+                }
                 // Registrado — ahora iniciamos sesión para obtener el code y continuar el flujo
                 pendingEmail = email;
                 updateUserDisplay(email);
@@ -512,6 +551,46 @@
         // sirve para vincular Neat) y el code del tenant, listos para cuando el
         // usuario decida vincular o simplemente continuar.
         let lastLocalCode = null, lastLocalRedirect = null, lastLocalState = null, pageSessionToken = null;
+        let pendingVerifyEmail = null;
+
+        function showVerifyEmailStep(email, method) {
+            pendingVerifyEmail = email;
+            const isNeat = method === 'neat';
+            document.getElementById('verify-email-msg').innerText = isNeat
+                ? `Tu cuenta usa una dirección @neat.qzz.io.`
+                : `Enviamos un enlace de verificación a ${email}.`;
+            document.getElementById('verify-email-neat-info').classList.toggle('hidden', !isNeat);
+            document.getElementById('verify-neat-addr').innerText = email;
+            document.getElementById('verify-email-resend-wrap').classList.toggle('hidden', isNeat);
+            document.getElementById('resend-ok').classList.add('hidden');
+            document.getElementById('resend-error').classList.add('hidden');
+            renderStep('verify-email');
+        }
+
+        async function resendVerification() {
+            if (!pendingVerifyEmail) return;
+            document.getElementById('btn-resend').disabled = true;
+            document.getElementById('resend-ok').classList.add('hidden');
+            document.getElementById('resend-error').classList.add('hidden');
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/resend-verification`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingVerifyEmail })
+                });
+                if (res.ok) {
+                    document.getElementById('resend-ok').classList.remove('hidden');
+                } else {
+                    const d = await res.json();
+                    document.getElementById('resend-error').innerText = d.error || 'No se pudo reenviar.';
+                    document.getElementById('resend-error').classList.remove('hidden');
+                }
+            } catch {
+                document.getElementById('resend-error').innerText = 'Error de conexión.';
+                document.getElementById('resend-error').classList.remove('hidden');
+            } finally {
+                setTimeout(() => { document.getElementById('btn-resend').disabled = false; }, 5000);
+            }
+        }
         async function afterLocalAuth(code, redirectUri, state, sessionToken) {
             lastLocalCode = code; lastLocalRedirect = redirectUri; lastLocalState = state;
             pageSessionToken = sessionToken;
