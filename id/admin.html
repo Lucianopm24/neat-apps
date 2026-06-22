@@ -191,6 +191,8 @@
                     <div data-tab="clients" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Clients</div>
                     <div data-tab="users" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Usuarios</div>
                     <div data-tab="social" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Social</div>
+                    <div data-tab="groups" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Grupos</div>
+                    <div data-tab="invitations" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Invitaciones</div>
                     <div data-tab="branding" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Apariencia</div>
                 </div>
 
@@ -251,6 +253,17 @@
                         </div>
                     </div>
 
+                    <div class="card p-6 mt-6">
+                        <h3 class="font-google text-base mb-1">Registros</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Controla si los usuarios pueden registrarse solos. Si está cerrado, solo el admin puede crear cuentas o usar invitaciones.</p>
+                        <div class="flex items-center gap-3">
+                            <button id="btn-registrations-toggle" onclick="toggleRegistrations()" class="flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 relative focus:outline-none" style="background:#dadce0">
+                                <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"></span>
+                            </button>
+                            <span id="registrations-label" class="text-sm text-gray-600 dark:text-gray-300">Registros abiertos</span>
+                        </div>
+                    </div>
+
                     <div class="card p-6 mt-6 border-[#fce8e6] dark:border-[#3a2422]">
                         <h3 class="font-google text-base mb-1 text-[#d93025]">Eliminar app</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Esto borra la app, todos sus clients y todos sus usuarios. No se puede deshacer.</p>
@@ -277,7 +290,10 @@
                 <div id="tab-users" class="tab-panel hidden">
                     <div class="flex items-center justify-between mb-4">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Usuarios locales de esta app.</p>
-                        <button onclick="loadUsers()" class="btn-ghost">Actualizar</button>
+                        <div class="flex gap-2">
+                            <button onclick="openCreateUserModal()" class="btn-secondary shrink-0">+ Crear usuario</button>
+                            <button onclick="loadUsers()" class="btn-ghost">Actualizar</button>
+                        </div>
                     </div>
                     <div class="card overflow-hidden">
                         <table>
@@ -285,6 +301,50 @@
                             <tbody id="users-table-body"></tbody>
                         </table>
                         <div id="users-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin usuarios todavía.</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Grupos -->
+                <div id="tab-groups" class="tab-panel hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Grupos con roles. Salen en el ID token como <code class="text-xs bg-gray-100 dark:bg-white/10 px-1 rounded">groups</code>.</p>
+                        <button onclick="openCreateGroupModal()" class="btn-secondary shrink-0">+ Nuevo grupo</button>
+                    </div>
+                    <div id="groups-list" class="space-y-3"></div>
+                    <div id="groups-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin grupos todavía.</div>
+
+                    <!-- Detalle de grupo (miembros) -->
+                    <div id="group-detail" class="hidden mt-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <button onclick="closeGroupDetail()" class="btn-ghost px-2">← Volver</button>
+                            <h3 id="group-detail-name" class="font-google text-base"></h3>
+                        </div>
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Miembros del grupo</p>
+                            <button onclick="openAddMemberModal()" class="btn-secondary shrink-0">+ Agregar miembro</button>
+                        </div>
+                        <div class="card overflow-hidden">
+                            <table>
+                                <thead><tr><th>Usuario</th><th>Correo</th><th>Roles</th><th></th></tr></thead>
+                                <tbody id="members-table-body"></tbody>
+                            </table>
+                            <div id="members-empty" class="hidden text-center py-8 text-sm text-gray-500 dark:text-gray-400">Sin miembros todavía.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Invitaciones -->
+                <div id="tab-invitations" class="tab-panel hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Links de invitación. El invitado entra a <code class="text-xs bg-gray-100 dark:bg-white/10 px-1 rounded">id.neat.qzz.io/SLUG?inviteToken=…</code> para crear su cuenta.</p>
+                        <button onclick="openCreateInvitationModal()" class="btn-secondary shrink-0">+ Nueva invitación</button>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <table>
+                            <thead><tr><th>Token</th><th>Usos</th><th>Expira</th><th>Estado</th><th></th></tr></thead>
+                            <tbody id="invitations-table-body"></tbody>
+                        </table>
+                        <div id="invitations-empty" class="hidden text-center py-8 text-sm text-gray-500 dark:text-gray-400">Sin invitaciones activas.</div>
                     </div>
                 </div>
 
@@ -510,6 +570,119 @@
 
 
     <!-- Confirmar -->
+    <!-- Modal: Crear usuario -->
+    <div id="modal-create-user" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-sm p-6 space-y-4">
+            <h2 class="font-google text-lg">Crear usuario</h2>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Correo *</label>
+                <input id="cu-email" type="email" placeholder="correo@ejemplo.com" class="input-field">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Username (opcional)</label>
+                <input id="cu-username" type="text" placeholder="Dejarlo vacío usa el correo" class="input-field">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Contraseña *</label>
+                <input id="cu-password" type="password" placeholder="Mínimo 6 caracteres" class="input-field">
+            </div>
+            <p id="cu-error" class="text-[#d93025] text-xs hidden"></p>
+            <div class="flex gap-2 pt-1">
+                <button onclick="createUser()" class="btn-primary flex-1 justify-center">Crear</button>
+                <button onclick="closeModal('modal-create-user')" class="btn-ghost px-3">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Crear grupo -->
+    <div id="modal-create-group" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-sm p-6 space-y-4">
+            <h2 class="font-google text-lg">Nuevo grupo</h2>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nombre</label>
+                <input id="cg-name" type="text" placeholder="Familia cercana" class="input-field">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Key (identificador en el token)</label>
+                <input id="cg-key" type="text" placeholder="familia-cercana" class="input-field font-mono text-sm">
+                <p class="text-xs text-gray-400 mt-1">Solo letras, números y guiones. Se autogenera si se deja vacío.</p>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Descripción (opcional)</label>
+                <input id="cg-description" type="text" class="input-field">
+            </div>
+            <p id="cg-error" class="text-[#d93025] text-xs hidden"></p>
+            <div class="flex gap-2 pt-1">
+                <button onclick="createGroup()" class="btn-primary flex-1 justify-center">Crear</button>
+                <button onclick="closeModal('modal-create-group')" class="btn-ghost px-3">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Agregar miembro -->
+    <div id="modal-add-member" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-sm p-6 space-y-4">
+            <h2 class="font-google text-lg">Agregar miembro</h2>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Usuario</label>
+                <select id="am-user" class="input-field"></select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Roles (separados por coma)</label>
+                <input id="am-roles" type="text" placeholder="member, admin" class="input-field">
+                <p class="text-xs text-gray-400 mt-1">Dejar vacío para sin roles.</p>
+            </div>
+            <p id="am-error" class="text-[#d93025] text-xs hidden"></p>
+            <div class="flex gap-2 pt-1">
+                <button onclick="addMember()" class="btn-primary flex-1 justify-center">Agregar</button>
+                <button onclick="closeModal('modal-add-member')" class="btn-ghost px-3">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Crear invitación -->
+    <div id="modal-create-invitation" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-sm p-6 space-y-4">
+            <h2 class="font-google text-lg">Nueva invitación</h2>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Expiración</label>
+                <select id="inv-expires" class="input-field">
+                    <option value="24h">24 horas</option>
+                    <option value="48h" selected>48 horas</option>
+                    <option value="7d">7 días</option>
+                    <option value="30d">30 días</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Usos máximos</label>
+                <select id="inv-uses-type" onchange="toggleUsesInput()" class="input-field">
+                    <option value="single">Único (1 uso)</option>
+                    <option value="limited">Número específico</option>
+                    <option value="unlimited">Ilimitado</option>
+                </select>
+                <input id="inv-uses-count" type="number" min="2" value="5" class="input-field mt-2 hidden" placeholder="Número de usos">
+            </div>
+            <p id="inv-error" class="text-[#d93025] text-xs hidden"></p>
+            <div class="flex gap-2 pt-1">
+                <button onclick="createInvitation()" class="btn-primary flex-1 justify-center">Generar link</button>
+                <button onclick="closeModal('modal-create-invitation')" class="btn-ghost px-3">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Link de invitación generado -->
+    <div id="modal-invitation-link" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-6 space-y-4">
+            <h2 class="font-google text-lg">¡Link generado!</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Copia este link y compártelo con la persona que quieres invitar.</p>
+            <div class="flex items-center gap-2 bg-[#f8f9fa] dark:bg-white/5 rounded-xl px-4 py-3">
+                <code id="invitation-link-text" class="flex-1 text-xs break-all"></code>
+                <button onclick="copyText(document.getElementById('invitation-link-text').innerText)" class="btn-ghost shrink-0">Copiar</button>
+            </div>
+            <button onclick="closeModal('modal-invitation-link')" class="btn-primary w-full justify-center">Listo</button>
+        </div>
+    </div>
+
     <div id="modal-confirm" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
         <div class="card w-full max-w-sm p-6 step-enter">
             <h2 id="confirm-title" class="font-google text-lg mb-2">¿Confirmar?</h2>
@@ -665,6 +838,8 @@
             if (name === 'clients') loadClients();
             if (name === 'users') loadUsers();
             if (name === 'social') loadSocialTab();
+            if (name === 'groups') loadGroups();
+            if (name === 'invitations') loadInvitations();
         }
 
         // ── Lista de apps ────────────────────────────────────────────────────
@@ -1299,6 +1474,294 @@
                     closeModal('modal-confirm');
                 }
             });
+        }
+
+        // ── Registros abiertos/cerrados ───────────────────────────────────────
+        function initRegistrationsToggle(isOpen) {
+            const btn = document.getElementById('btn-registrations-toggle');
+            const label = document.getElementById('registrations-label');
+            btn.dataset.open = isOpen ? '1' : '0';
+            btn.style.background = isOpen ? 'var(--color-primary, #0b57d0)' : '#dadce0';
+            btn.querySelector('span').style.transform = isOpen ? 'translateX(20px)' : 'translateX(0)';
+            label.innerText = isOpen ? 'Registros abiertos' : 'Registros cerrados';
+        }
+
+        async function toggleRegistrations() {
+            const btn = document.getElementById('btn-registrations-toggle');
+            const open = btn.dataset.open !== '1';
+            try {
+                await api(`/id/apps/${currentAppSlug}/registrations`, {
+                    method: 'PUT', body: JSON.stringify({ open })
+                });
+                initRegistrationsToggle(open);
+                showToast(open ? 'Registros abiertos' : 'Registros cerrados');
+            } catch (e) {
+                showToast(e.message);
+            }
+        }
+
+        // ── Crear usuario (admin) ─────────────────────────────────────────────
+        function openCreateUserModal() {
+            document.getElementById('cu-email').value = '';
+            document.getElementById('cu-username').value = '';
+            document.getElementById('cu-password').value = '';
+            document.getElementById('cu-error').classList.add('hidden');
+            openModal('modal-create-user');
+        }
+
+        async function createUser() {
+            const email = document.getElementById('cu-email').value.trim();
+            const username = document.getElementById('cu-username').value.trim();
+            const password = document.getElementById('cu-password').value;
+            const errEl = document.getElementById('cu-error');
+            errEl.classList.add('hidden');
+            if (!email || !password) { errEl.innerText = 'Correo y contraseña son requeridos.'; errEl.classList.remove('hidden'); return; }
+            try {
+                await api(`/id/apps/${currentAppSlug}/users`, {
+                    method: 'POST', body: JSON.stringify({ email, username: username || undefined, password })
+                });
+                closeModal('modal-create-user');
+                showToast('Usuario creado');
+                loadUsers();
+            } catch (e) {
+                errEl.innerText = e.message;
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        // ── Grupos ────────────────────────────────────────────────────────────
+        let currentGroupKey = null;
+
+        async function loadGroups() {
+            document.getElementById('group-detail').classList.add('hidden');
+            document.getElementById('groups-list').innerHTML = '';
+            document.getElementById('groups-empty').classList.add('hidden');
+            try {
+                const data = await api(`/id/apps/${currentAppSlug}/groups`);
+                const groups = data.groups || [];
+                document.getElementById('groups-empty').classList.toggle('hidden', groups.length > 0);
+                document.getElementById('groups-list').innerHTML = groups.map(g => `
+                    <div class="card p-4 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="font-medium text-sm">${escapeHtml(g.name)}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">${escapeHtml(g.key)}</p>
+                            ${g.description ? `<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">${escapeHtml(g.description)}</p>` : ''}
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <button onclick="openGroupDetail('${g.key}', '${escapeHtml(g.name)}')" class="btn-ghost">Miembros</button>
+                            <button onclick="deleteGroup('${g.key}')" class="btn-ghost btn-danger">Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('groups-list').innerHTML = `<p class="text-[#d93025] text-sm">${e.message}</p>`;
+            }
+        }
+
+        function openCreateGroupModal() {
+            document.getElementById('cg-name').value = '';
+            document.getElementById('cg-key').value = '';
+            document.getElementById('cg-description').value = '';
+            document.getElementById('cg-error').classList.add('hidden');
+            openModal('modal-create-group');
+        }
+
+        async function createGroup() {
+            const name = document.getElementById('cg-name').value.trim();
+            const key = document.getElementById('cg-key').value.trim();
+            const description = document.getElementById('cg-description').value.trim();
+            const errEl = document.getElementById('cg-error');
+            errEl.classList.add('hidden');
+            if (!name) { errEl.innerText = 'El nombre es requerido.'; errEl.classList.remove('hidden'); return; }
+            try {
+                await api(`/id/apps/${currentAppSlug}/groups`, {
+                    method: 'POST', body: JSON.stringify({ name, key: key || undefined, description: description || undefined })
+                });
+                closeModal('modal-create-group');
+                showToast('Grupo creado');
+                loadGroups();
+            } catch (e) {
+                errEl.innerText = e.message;
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        async function deleteGroup(key) {
+            showConfirm('Eliminar grupo', 'Esto elimina el grupo y remueve a todos sus miembros. No se puede deshacer.', async () => {
+                try {
+                    await api(`/id/apps/${currentAppSlug}/groups/${key}`, { method: 'DELETE' });
+                    closeModal('modal-confirm');
+                    showToast('Grupo eliminado');
+                    loadGroups();
+                } catch (e) {
+                    showToast(e.message);
+                    closeModal('modal-confirm');
+                }
+            });
+        }
+
+        async function openGroupDetail(key, name) {
+            currentGroupKey = key;
+            document.getElementById('group-detail-name').innerText = name;
+            document.getElementById('groups-list').classList.add('hidden');
+            document.getElementById('groups-empty').classList.add('hidden');
+            document.querySelector('[onclick="openCreateGroupModal()"]').parentElement.querySelector('button:last-child')?.classList?.add('hidden');
+            document.getElementById('group-detail').classList.remove('hidden');
+            await loadMembers();
+        }
+
+        function closeGroupDetail() {
+            currentGroupKey = null;
+            document.getElementById('group-detail').classList.add('hidden');
+            document.getElementById('groups-list').classList.remove('hidden');
+            loadGroups();
+        }
+
+        async function loadMembers() {
+            const tbody = document.getElementById('members-table-body');
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            try {
+                const data = await api(`/id/apps/${currentAppSlug}/groups/${currentGroupKey}/members`);
+                const members = data.members || [];
+                document.getElementById('members-empty').classList.toggle('hidden', members.length > 0);
+                tbody.innerHTML = members.map(m => `
+                    <tr>
+                        <td class="font-medium">${escapeHtml(m.username || '—')}</td>
+                        <td class="text-xs">${escapeHtml(m.email)}</td>
+                        <td>${m.roles && m.roles.length ? m.roles.map(r => `<span class="badge badge-blue">${escapeHtml(r)}</span>`).join(' ') : '<span class="badge badge-gray">—</span>'}</td>
+                        <td class="text-right">
+                            <button onclick="removeMember('${m.userId}')" class="btn-ghost btn-danger">Remover</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        async function openAddMemberModal() {
+            document.getElementById('am-roles').value = '';
+            document.getElementById('am-error').classList.add('hidden');
+            // Cargar usuarios para el select
+            const sel = document.getElementById('am-user');
+            sel.innerHTML = '<option>Cargando…</option>';
+            openModal('modal-add-member');
+            try {
+                const data = await api(`/id/apps/${currentAppSlug}/users`);
+                const users = data.users || data;
+                sel.innerHTML = users.map(u => `<option value="${u._id}">${escapeHtml(u.username || u.email)} — ${escapeHtml(u.email)}</option>`).join('');
+            } catch {
+                sel.innerHTML = '<option>Error cargando usuarios</option>';
+            }
+        }
+
+        async function addMember() {
+            const userId = document.getElementById('am-user').value;
+            const rolesRaw = document.getElementById('am-roles').value.trim();
+            const roles = rolesRaw ? rolesRaw.split(',').map(r => r.trim()).filter(Boolean) : [];
+            const errEl = document.getElementById('am-error');
+            errEl.classList.add('hidden');
+            try {
+                await api(`/id/apps/${currentAppSlug}/groups/${currentGroupKey}/members/${userId}`, {
+                    method: 'PUT', body: JSON.stringify({ roles })
+                });
+                closeModal('modal-add-member');
+                showToast('Miembro agregado');
+                loadMembers();
+            } catch (e) {
+                errEl.innerText = e.message;
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        async function removeMember(userId) {
+            try {
+                await api(`/id/apps/${currentAppSlug}/groups/${currentGroupKey}/members/${userId}`, { method: 'DELETE' });
+                showToast('Miembro removido');
+                loadMembers();
+            } catch (e) {
+                showToast(e.message);
+            }
+        }
+
+        // ── Invitaciones ──────────────────────────────────────────────────────
+        async function loadInvitations() {
+            const tbody = document.getElementById('invitations-table-body');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            try {
+                const data = await api(`/id/apps/${currentAppSlug}/invitations`);
+                const invitations = data.invitations || [];
+                document.getElementById('invitations-empty').classList.toggle('hidden', invitations.length > 0);
+                tbody.innerHTML = invitations.map(inv => {
+                    const expires = new Date(inv.expiresAt);
+                    const expired = expires < new Date();
+                    const usesText = inv.maxUses === null ? `${inv.usedCount} / ∞` : `${inv.usedCount} / ${inv.maxUses}`;
+                    return `
+                    <tr>
+                        <td class="font-mono text-xs">${inv.token.substring(0, 12)}…</td>
+                        <td class="text-sm">${usesText}</td>
+                        <td class="text-xs text-gray-500 dark:text-gray-400">${expires.toLocaleDateString()} ${expires.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</td>
+                        <td><span class="badge ${expired ? 'badge-red' : 'badge-green'}">${expired ? 'Expirada' : 'Activa'}</span></td>
+                        <td class="text-right whitespace-nowrap">
+                            <button onclick="copyInviteLink('${inv.token}')" class="btn-ghost mr-2">Copiar link</button>
+                            <button onclick="revokeInvitation('${inv.token}')" class="btn-ghost btn-danger">Revocar</button>
+                        </td>
+                    </tr>
+                `}).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        function toggleUsesInput() {
+            const type = document.getElementById('inv-uses-type').value;
+            document.getElementById('inv-uses-count').classList.toggle('hidden', type !== 'limited');
+        }
+
+        function openCreateInvitationModal() {
+            document.getElementById('inv-expires').value = '48h';
+            document.getElementById('inv-uses-type').value = 'single';
+            document.getElementById('inv-uses-count').classList.add('hidden');
+            document.getElementById('inv-error').classList.add('hidden');
+            openModal('modal-create-invitation');
+        }
+
+        async function createInvitation() {
+            const expiresIn = document.getElementById('inv-expires').value;
+            const usesType = document.getElementById('inv-uses-type').value;
+            let maxUses = null;
+            if (usesType === 'single') maxUses = 1;
+            else if (usesType === 'limited') maxUses = parseInt(document.getElementById('inv-uses-count').value) || 5;
+            // unlimited = null
+            const errEl = document.getElementById('inv-error');
+            errEl.classList.add('hidden');
+            try {
+                const data = await api(`/id/apps/${currentAppSlug}/invitations`, {
+                    method: 'POST', body: JSON.stringify({ expiresIn, maxUses })
+                });
+                closeModal('modal-create-invitation');
+                document.getElementById('invitation-link-text').innerText = data.inviteUrl;
+                openModal('modal-invitation-link');
+                loadInvitations();
+            } catch (e) {
+                errEl.innerText = e.message;
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        function copyInviteLink(token) {
+            const url = `https://id.neat.qzz.io/${currentAppSlug}?inviteToken=${token}`;
+            copyText(url);
+        }
+
+        async function revokeInvitation(token) {
+            try {
+                await api(`/id/apps/${currentAppSlug}/invitations/${token}`, { method: 'DELETE' });
+                showToast('Invitación revocada');
+                loadInvitations();
+            } catch (e) {
+                showToast(e.message);
+            }
         }
 
         // ── Arranque ─────────────────────────────────────────────────────────
