@@ -188,6 +188,13 @@
             <p id="manage-login-error" class="text-[#d93025] text-xs hidden"></p>
             <button type="submit" id="manage-login-btn" class="btn-primary w-full justify-center flex items-center">Iniciar sesión</button>
         </form>
+        <div class="flex items-center gap-3 my-6">
+            <div class="flex-1 h-px bg-[#dadce0] dark:bg-[#444]"></div>
+            <span class="text-xs text-gray-400">o</span>
+            <div class="flex-1 h-px bg-[#dadce0] dark:bg-[#444]"></div>
+        </div>
+        <button type="button" onclick="manageLoginWithNeatStart()" class="btn-ghost w-full justify-center flex items-center">Continuar con Neat</button>
+        <p class="text-xs text-gray-400 mt-3">Si tu cuenta solo usa Neat (sin contraseña local), entra por aquí.</p>
     </div>
 
     <!-- Dashboard de cuenta -->
@@ -626,8 +633,10 @@
             document.getElementById('manage-logo-wrap').style.backgroundColor = color;
             document.getElementById('manage-logo-initial').innerText = appData.name[0].toUpperCase();
 
-            // ¿Venimos de vuelta de vincular Neat desde el panel?
+            // ¿Venimos de vuelta de vincular Neat desde el panel (ya logueado)?
             const linkingFromManage = sessionStorage.getItem('manage_linking_in_progress');
+            // ¿O venimos de "Continuar con Neat" para ENTRAR al panel (sin sesión previa)?
+            const neatLoginInProgress = sessionStorage.getItem('manage_neat_login_in_progress');
             const savedToken = sessionStorage.getItem(`manage_token_${appSlug}`);
 
             if (isLinkingReturnPath && qp.get('code') && linkingFromManage) {
@@ -635,6 +644,12 @@
                 manageToken = savedToken;
                 document.getElementById('manage-dashboard').classList.remove('hidden');
                 manageFinishLinkNeat(qp.get('code'));
+                return;
+            }
+
+            if (isLinkingReturnPath && qp.get('code') && neatLoginInProgress) {
+                sessionStorage.removeItem('manage_neat_login_in_progress');
+                manageFinishLoginWithNeat(qp.get('code'));
                 return;
             }
 
@@ -843,6 +858,58 @@
                 manageLoadAccount();
             } catch (e) {
                 showManageToastFallback(e.message);
+            }
+        }
+
+        // ── Entrar al panel CON Neat (sin sesión previa) — para cuentas que
+        // son 100% Neat y nunca tuvieron una contraseña local que poner en el
+        // formulario de email/password. Usa el mismo internalClientId público
+        // (PKCE) que el resto del flujo de Neat, pero llama a un endpoint que
+        // identifica al usuario por neatUserId y devuelve manage_session
+        // directo — nunca pide ni necesita password. ──
+        async function manageLoginWithNeatStart() {
+            const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+            const challengeBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+            const challenge = base64url(new Uint8Array(challengeBuf));
+
+            sessionStorage.setItem('manage_login_verifier', verifier);
+            sessionStorage.setItem('manage_neat_login_in_progress', '1');
+
+            const p = new URLSearchParams({
+                client_id: appData.internalClientId,
+                redirect_uri: NEAT_LINKING_CALLBACK,
+                scope: "openid profile email",
+                code_challenge: challenge,
+                code_challenge_method: "S256"
+            });
+            location.href = `${NEAT_OAUTH_URL}?${p}`;
+        }
+
+        async function manageFinishLoginWithNeat(neatCode) {
+            const verifier = sessionStorage.getItem('manage_login_verifier');
+            sessionStorage.removeItem('manage_login_verifier');
+            const errorEl = document.getElementById('manage-login-error');
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/manage/login-with-neat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        neatCode,
+                        redirectUri: NEAT_LINKING_CALLBACK,
+                        codeVerifier: verifier
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.access_token) throw new Error(data.error || 'No se pudo iniciar sesión con Neat');
+
+                manageToken = data.access_token;
+                sessionStorage.setItem(`manage_token_${appSlug}`, manageToken);
+                document.getElementById('manage-login').classList.add('hidden');
+                document.getElementById('manage-dashboard').classList.remove('hidden');
+                manageLoadAccount();
+            } catch (e) {
+                document.getElementById('manage-login').classList.remove('hidden');
+                errorEl.innerText = e.message;
+                errorEl.classList.remove('hidden');
             }
         }
     </script>
