@@ -218,8 +218,7 @@
                 <button id="manage-unlink-btn" onclick="manageUnlinkNeat()" class="btn-ghost btn-danger text-sm">Desvincular Neat</button>
             </div>
             <div id="manage-neat-unlinked" class="hidden">
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">No tienes una cuenta de Neat vinculada todavía.</p>
-                <button onclick="manageLinkNeatStart()" class="btn-ghost text-sm">Vincular cuenta de Neat</button>
+                <p class="text-sm text-gray-500 dark:text-gray-400">No tienes una cuenta de Neat vinculada todavía. Para vincularla, completa un login y acepta la oferta de vincular Neat para lograr una vinculación exitosa.</p>
             </div>
         </div>
 
@@ -348,7 +347,18 @@
         // ── Boot ─────────────────────────────────────────────────────────────
         async function boot() {
             const isLinkingReturn = isLinkingReturnPath && !!qp.get('code');
-            if (!appSlug || (!isManagePath && !tenantRedirectUri && !isLinkingReturn)) {
+
+            // Si volvemos de Neat (/SLUG/neat-callback) pero el viaje empezó
+            // desde el panel /manage, el path YA NO tiene /manage (Neat solo
+            // conoce la URL fija registrada en redirectUris). Sin este chequeo,
+            // boot() trataría el regreso como un login OAuth normal en vez de
+            // devolvernos al panel — los flags quedaron guardados antes de salir.
+            const returningToManage = isLinkingReturn && (
+                sessionStorage.getItem('manage_linking_in_progress') ||
+                sessionStorage.getItem('manage_neat_login_in_progress')
+            );
+
+            if (!appSlug || (!isManagePath && !returningToManage && !tenantRedirectUri && !isLinkingReturn)) {
                 return bootError("Falta información", "Esta página necesita que la app de origen indique 'app' y 'redirect_uri'. Vuelve a la aplicación e intenta de nuevo.");
             }
             try {
@@ -370,7 +380,7 @@
                 applyBranding();
                 document.getElementById('boot-loading').classList.add('hidden');
 
-                if (isManagePath) {
+                if (isManagePath || returningToManage) {
                     document.getElementById('manage-app-name').innerText = appData.name;
                     bootManage();
                     return;
@@ -615,7 +625,19 @@
         }
 
         // ── Arranque ─────────────────────────────────────────────────────────
-        if (isLinkingReturnPath && qp.get('code')) {
+        // OJO: la misma ruta /SLUG/neat-callback sirve para 3 casos distintos
+        // (login normal, vincular dentro del flujo OAuth, y vincular/entrar
+        // desde /manage) — solo sessionStorage distingue cuál es cuál. Si el
+        // retorno es de manage, boot() ya llama a bootManage() internamente;
+        // handleLinkingReturn() es SOLO para el flujo OAuth normal del tenant,
+        // y no debe dispararse en el caso de manage (no hay lastLocalCode ni
+        // tenant esperando un redirect en ese caso).
+        const isManageReturn = isLinkingReturnPath && (
+            sessionStorage.getItem('manage_linking_in_progress') ||
+            sessionStorage.getItem('manage_neat_login_in_progress')
+        );
+
+        if (isLinkingReturnPath && qp.get('code') && !isManageReturn) {
             boot().then(() => handleLinkingReturn(qp.get('code')));
         } else {
             boot();
