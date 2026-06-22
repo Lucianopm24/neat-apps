@@ -310,6 +310,26 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Seguridad -->
+                    <div class="card p-6 max-w-lg mt-4">
+                        <h3 class="font-google text-base mb-1">Seguridad</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Opciones de seguridad para los usuarios de esta app.</p>
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-sm font-medium dark:text-gray-200">Verificación de email obligatoria</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#7c6af7]/15 text-[#7c6af7]">NEAT PLUS</span>
+                                </div>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Los usuarios deben verificar su correo antes de poder iniciar sesión. Los usuarios con <code class="text-xs">@neat.qzz.io</code> lo verifican iniciando sesión con Neat.</p>
+                                <p id="email-verif-error" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                                <p id="email-verif-saved" class="text-xs text-[#0d652d] dark:text-[#81c995] mt-2 hidden"></p>
+                            </div>
+                            <button id="btn-email-verif-toggle" onclick="toggleEmailVerification()" class="flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 relative focus:outline-none" style="background:#dadce0">
+                                <span id="email-verif-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -679,6 +699,41 @@
             document.getElementById('edit-logo').value = app.branding?.logoUrl || '';
             document.getElementById('edit-color').value = app.branding?.primaryColor || '#0b57d0';
             document.getElementById('edit-color-text').value = app.branding?.primaryColor || '#0b57d0';
+            // Inicializar toggle de verificación de email
+            setEmailVerifToggle(!!app.requireEmailVerification);
+        }
+
+        function setEmailVerifToggle(enabled) {
+            const btn = document.getElementById('btn-email-verif-toggle');
+            const knob = document.getElementById('email-verif-knob');
+            btn.style.background = enabled ? '#0b57d0' : '#dadce0';
+            knob.style.transform = enabled ? 'translateX(20px)' : 'translateX(0)';
+            btn.dataset.enabled = enabled ? '1' : '0';
+        }
+
+        async function toggleEmailVerification() {
+            const btn = document.getElementById('btn-email-verif-toggle');
+            const newEnabled = btn.dataset.enabled !== '1';
+            document.getElementById('email-verif-error').classList.add('hidden');
+            document.getElementById('email-verif-saved').classList.add('hidden');
+            btn.disabled = true;
+            try {
+                await api(`/id/apps/${currentAppSlug}/require-email-verification`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ enabled: newEnabled })
+                });
+                setEmailVerifToggle(newEnabled);
+                if (currentAppData) currentAppData.requireEmailVerification = newEnabled;
+                const msg = document.getElementById('email-verif-saved');
+                msg.innerText = newEnabled ? 'Verificación activada ✓' : 'Verificación desactivada ✓';
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 2500);
+            } catch (e) {
+                document.getElementById('email-verif-error').innerText = e.message;
+                document.getElementById('email-verif-error').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         document.getElementById('edit-color').addEventListener('input', (e) => {
