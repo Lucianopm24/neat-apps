@@ -152,6 +152,20 @@
                     </div>
                 </div>
 
+                <!-- Paso: código de verificación en dos pasos (login normal, usuario final) -->
+                <div id="step-totp-login" class="hidden space-y-6 step-enter">
+                    <div>
+                        <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3] mb-1">Verificación en dos pasos</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Ingresa el código de tu app de autenticación, o un código de respaldo.</p>
+                        <input type="text" id="login-totp-code" class="input-field text-center tracking-widest" placeholder="123456" autocomplete="one-time-code" inputmode="numeric">
+                        <p id="error-totp-login" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="renderStep('pass')" class="text-sm text-gray-500">Atrás</button>
+                        <button id="btn-totp-login" onclick="handleLoginTotp()" class="btn-primary">Verificar</button>
+                    </div>
+                </div>
+
                 <!-- Paso: registro -->
                 <div id="step-register" class="hidden space-y-4">
                     <h2 class="text-sm font-bold dark:text-gray-400 uppercase">Nueva cuenta</h2>
@@ -644,6 +658,11 @@
                     }
                     return;
                 }
+                if (data.totp_required && data.totp_pending_token) {
+                    _loginTotpPendingToken = data.totp_pending_token;
+                    renderStep('totp-login');
+                    return;
+                }
                 // Login local exitoso: tenemos un code del tenant.
                 // Como no podemos vincular Neat sin un access_token local primero,
                 // intercambiamos el code de inmediato contra /id/token para obtener
@@ -653,6 +672,30 @@
                 showError('error-pass', 'Error de conexión.');
             } finally {
                 setBusy('btn-login', false, 'Siguiente');
+            }
+        }
+
+        // Token pendiente de 2FA durante el login normal (OAuth) de un usuario final.
+        // Distinto de _manageTotpPendingToken, que es para el panel /manage.
+        let _loginTotpPendingToken = null;
+
+        async function handleLoginTotp() {
+            const code = document.getElementById('login-totp-code').value.trim();
+            hideError('error-totp-login');
+            if (!code) { showError('error-totp-login', 'Ingresa el código.'); return; }
+            setBusy('btn-totp-login', true, 'Verificar');
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/manage/2fa/totp`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ totp_pending_token: _loginTotpPendingToken, code })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Código incorrecto.');
+                await afterLocalAuth(data.code, data.redirectUri, data.state, data.pageSessionToken);
+            } catch (e) {
+                showError('error-totp-login', e.message);
+            } finally {
+                setBusy('btn-totp-login', false, 'Verificar');
             }
         }
 
