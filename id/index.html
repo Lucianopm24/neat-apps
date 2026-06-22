@@ -670,33 +670,17 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span>Iniciando sesión…';
             try {
-                const res = await fetch(`${API_BASE}/id/users/${appSlug}/login`, {
+                // Login directo, sin client, sin code, sin OAuth — el panel de
+                // cuenta no es "una app más" consumiendo el sistema, así que no
+                // pasa por ningún client_id/secret ni por /id/token.
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/manage/login`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    // redirectUri/codeChallenge no aplican aquí (no hay tenant
-                    // esperando un code) — el backend igual los acepta como
-                    // opcionales; solo nos interesa el access_token real, que
-                    // se obtiene canjeando el code emitido contra /id/token.
-                    body: JSON.stringify({ email, password, internalToken })
+                    body: JSON.stringify({ email, password })
                 });
                 const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'No se pudo iniciar sesión');
+                if (!res.ok || !data.access_token) throw new Error(data.error || 'No se pudo iniciar sesión');
 
-                // El login local devuelve un `code` de un solo uso (pensado
-                // para el flujo OAuth) — lo canjeamos inmediatamente contra
-                // nuestro propio client por defecto para obtener un
-                // access_token real de uso personal en este panel.
-                const tokenRes = await fetch(`${API_BASE}/id/token`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        code: data.code,
-                        client_id: appData.internalClientId, // público, PKCE no requerido aquí porque no hubo code_challenge
-                        redirect_uri: data.redirectUri
-                    })
-                });
-                const tokenData = await tokenRes.json();
-                if (!tokenRes.ok || !tokenData.access_token) throw new Error('No se pudo completar el inicio de sesión');
-
-                manageToken = tokenData.access_token;
+                manageToken = data.access_token;
                 sessionStorage.setItem(`manage_token_${appSlug}`, manageToken);
                 document.getElementById('manage-login').classList.add('hidden');
                 document.getElementById('manage-dashboard').classList.remove('hidden');
@@ -721,7 +705,7 @@
 
         async function manageLoadAccount() {
             try {
-                const user = await manageApiFetch('/id/userinfo');
+                const user = await manageApiFetch(`/id/users/${appSlug}/manage/me`);
                 document.getElementById('manage-user-name').innerText = user.username;
                 document.getElementById('manage-user-email').innerText = user.email;
                 document.getElementById('manage-user-initial').innerText = (user.username || '?')[0].toUpperCase();
@@ -731,7 +715,15 @@
 
                 // Si el usuario es 100% Neat (sin password local todavía), el
                 // formulario de contraseña sirve para CREAR una, no cambiarla.
-                manageHasLocalPassword = !user.isNeatUser || true; // se ajusta abajo con /me/sessions si hace falta
+                manageHasLocalPassword = user.hasPassword;
+                document.getElementById('manage-password-title').innerText =
+                    manageHasLocalPassword ? 'Cambiar contraseña' : 'Crear contraseña';
+                document.getElementById('manage-password-subtitle').innerText =
+                    manageHasLocalPassword
+                        ? 'Actualiza la contraseña que usas para entrar a esta app.'
+                        : 'Tu cuenta solo usa Neat por ahora. Crea una contraseña para poder entrar también con email y contraseña.';
+                document.getElementById('manage-current-password').classList.toggle('hidden', !manageHasLocalPassword);
+                document.getElementById('manage-current-password').required = manageHasLocalPassword;
                 manageLoadSessions();
             } catch (e) {
                 manageLogout();
@@ -751,7 +743,7 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span>Guardando…';
             try {
-                await manageApiFetch(`/id/users/${appSlug}/me/password`, {
+                await manageApiFetch(`/id/users/${appSlug}/manage/password`, {
                     method: 'PUT',
                     body: JSON.stringify({ currentPassword, newPassword })
                 });
@@ -770,7 +762,7 @@
         async function manageLoadSessions() {
             const list = document.getElementById('manage-sessions-list');
             try {
-                const data = await manageApiFetch(`/id/users/${appSlug}/me/sessions`);
+                const data = await manageApiFetch(`/id/users/${appSlug}/manage/sessions`);
                 if (!data.sessions.length) {
                     list.innerHTML = '<p class="text-sm text-gray-400">No hay sesiones activas.</p>';
                     return;
@@ -791,7 +783,7 @@
 
         async function manageRevokeSession(sessionId) {
             try {
-                await manageApiFetch(`/id/users/${appSlug}/me/sessions/${sessionId}`, { method: 'DELETE' });
+                await manageApiFetch(`/id/users/${appSlug}/manage/sessions/${sessionId}`, { method: 'DELETE' });
                 manageLoadSessions();
             } catch (e) {
                 showManageToastFallback(e.message);
