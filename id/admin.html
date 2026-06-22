@@ -378,6 +378,38 @@
         </div>
     </div>
 
+    <!-- Editar client -->
+    <div id="modal-edit-client" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-6 step-enter">
+            <h2 class="font-google text-lg mb-1">Editar client</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Client ID: <code id="ec-client-id" class="copyable"></code></p>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nombre</label>
+                    <input id="ec-name" type="text" placeholder="Nombre (ej. App X Web)" class="input-field">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Redirect URIs</label>
+                    <textarea id="ec-redirects" rows="3" placeholder="Redirect URIs, una por línea" class="input-field resize-none copyable text-xs"></textarea>
+                </div>
+                <div class="flex items-start justify-between gap-4 pt-2">
+                    <div class="flex-1">
+                        <span class="text-sm font-medium dark:text-gray-200">Client suspendido</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Mientras esté suspendido, este client no puede iniciar nuevos logins.</p>
+                    </div>
+                    <button id="ec-suspend-toggle" onclick="toggleEditClientSuspend()" class="flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 relative focus:outline-none" style="background:#dadce0">
+                        <span id="ec-suspend-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"></span>
+                    </button>
+                </div>
+                <p id="ec-error" class="text-[#d93025] text-xs hidden"></p>
+            </div>
+            <div class="flex justify-end gap-3 pt-5">
+                <button onclick="closeModal('modal-edit-client')" class="btn-ghost px-3">Cancelar</button>
+                <button id="btn-edit-client" onclick="saveEditClient()" class="btn-primary">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mostrar credenciales (una sola vez) -->
     <div id="modal-credentials" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
         <div class="card w-full max-w-md p-6 step-enter">
@@ -814,11 +846,14 @@
         }
 
         // ── Clients ──────────────────────────────────────────────────────────
+        let loadedClients = [];
+
         async function loadClients() {
             const tbody = document.getElementById('clients-table-body');
             tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
             try {
                 const clients = await api(`/id/apps/${currentAppSlug}/clients`);
+                loadedClients = clients;
                 document.getElementById('clients-empty').classList.toggle('hidden', clients.length > 0);
                 tbody.innerHTML = clients.map(c => `
                     <tr>
@@ -827,6 +862,7 @@
                         <td><span class="badge ${c.isPublic ? 'badge-blue' : 'badge-gray'}">${c.isPublic ? 'PKCE' : 'Confidential'}</span></td>
                         <td><span class="badge ${c.suspended ? 'badge-red' : 'badge-green'}">${c.suspended ? 'Suspendido' : 'Activo'}</span></td>
                         <td class="text-right whitespace-nowrap">
+                            <button onclick="openEditClientModal('${c.clientId}')" class="btn-ghost mr-3">Editar</button>
                             ${!c.isPublic ? `<button onclick="rotateClientSecret('${c.clientId}')" class="btn-ghost mr-3">Rotar secret</button>` : ''}
                             <button onclick="deleteClient('${c.clientId}')" class="btn-ghost btn-danger">Eliminar</button>
                         </td>
@@ -865,6 +901,57 @@
                 showError('cc-error', e.message);
             } finally {
                 setBusy('btn-create-client', false, 'Crear client');
+            }
+        }
+
+        let editingClientId = null;
+
+        function setEditClientSuspendToggle(suspended) {
+            const btn = document.getElementById('ec-suspend-toggle');
+            const knob = document.getElementById('ec-suspend-knob');
+            btn.style.background = suspended ? '#0b57d0' : '#dadce0';
+            knob.style.transform = suspended ? 'translateX(20px)' : 'translateX(0)';
+            btn.dataset.suspended = suspended ? '1' : '0';
+        }
+
+        function toggleEditClientSuspend() {
+            const btn = document.getElementById('ec-suspend-toggle');
+            setEditClientSuspendToggle(btn.dataset.suspended !== '1');
+        }
+
+        function openEditClientModal(clientId) {
+            const client = loadedClients.find(c => c.clientId === clientId);
+            if (!client) return;
+            editingClientId = clientId;
+            document.getElementById('ec-client-id').innerText = client.clientId;
+            document.getElementById('ec-name').value = client.name || '';
+            document.getElementById('ec-redirects').value = (client.redirectUris || []).join('\n');
+            setEditClientSuspendToggle(!!client.suspended);
+            hideError('ec-error');
+            openModal('modal-edit-client');
+        }
+
+        async function saveEditClient() {
+            const name = document.getElementById('ec-name').value.trim();
+            const redirectUris = linesToArray(document.getElementById('ec-redirects').value);
+            const suspended = document.getElementById('ec-suspend-toggle').dataset.suspended === '1';
+            hideError('ec-error');
+            if (!name) { showError('ec-error', 'El nombre no puede estar vacío.'); return; }
+            if (!redirectUris.length) { showError('ec-error', 'Agrega al menos una redirect URI.'); return; }
+
+            setBusy('btn-edit-client', true, 'Guardar cambios');
+            try {
+                await api(`/id/apps/${currentAppSlug}/clients/${editingClientId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name, redirectUris, suspended })
+                });
+                closeModal('modal-edit-client');
+                showToast('Client actualizado');
+                loadClients();
+            } catch (e) {
+                showError('ec-error', e.message);
+            } finally {
+                setBusy('btn-edit-client', false, 'Guardar cambios');
             }
         }
 
