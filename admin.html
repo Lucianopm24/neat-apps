@@ -133,6 +133,7 @@ tr:hover td{background:var(--surface2)}
       <button class="nav-item" onclick="go('points')" id="nav-points"><span class="nav-icon">💰</span>Points</button>
       <button class="nav-item" onclick="go('oauth')" id="nav-oauth"><span class="nav-icon">🔑</span>OAuth Apps</button>
       <button class="nav-item" onclick="go('play')" id="nav-play"><span class="nav-icon">🎮</span>Neat Play</button>
+      <button class="nav-item" onclick="go('social')" id="nav-social"><span class="nav-icon">🌐</span>Social Logins</button>
     </nav>
     <div class="sidebar-footer" id="adminBadge"></div>
   </div>
@@ -227,6 +228,27 @@ tr:hover td{background:var(--surface2)}
         </div>
       </div>
 
+      <!-- Social Logins (providers globales) -->
+      <div id="screen-social" class="screen">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Providers globales</span>
+            <button class="btn btn-primary btn-sm" onclick="openSocialModal()">+ Nuevo provider</button>
+          </div>
+          <div class="panel-body">
+            <p style="color:var(--muted);font-size:13px;margin-bottom:14px">
+              Disponibles para que cualquier tenant los active desde su panel. El client_secret es tuyo — se guarda una sola vez aquí, nunca por tenant.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nombre</th><th>Key</th><th>Modo</th><th>Client ID</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="socialTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -285,6 +307,47 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- Modal: Social Provider -->
+<div class="modal-bg" id="socialModal">
+  <div class="modal" style="width:480px">
+    <h3>Nuevo provider global</h3>
+    <div class="field">
+      <label>Nombre</label>
+      <input id="spName" placeholder="Discord">
+    </div>
+    <div class="field">
+      <label>Key (identificador, sin espacios)</label>
+      <input id="spKey" placeholder="discord">
+    </div>
+    <div class="field">
+      <label>Configuración</label>
+      <select id="spMode" onchange="toggleSocialMode()">
+        <option value="discovery">Por discovery URL (OIDC estándar)</option>
+        <option value="manual">Manual (OAuth2, sin discovery — ej. Discord)</option>
+      </select>
+    </div>
+    <div id="spDiscoveryFields">
+      <div class="field">
+        <label>Discovery URL</label>
+        <input id="spDiscoveryUrl" placeholder="https://accounts.google.com/.well-known/openid-configuration">
+      </div>
+    </div>
+    <div id="spManualFields" style="display:none">
+      <div class="field"><label>Authorization endpoint</label><input id="spAuthEndpoint" placeholder="https://discord.com/api/oauth2/authorize"></div>
+      <div class="field"><label>Token endpoint</label><input id="spTokenEndpoint" placeholder="https://discord.com/api/oauth2/token"></div>
+      <div class="field"><label>Userinfo endpoint (opcional)</label><input id="spUserinfoEndpoint" placeholder="https://discord.com/api/users/@me"></div>
+    </div>
+    <div class="field"><label>Client ID</label><input id="spClientId"></div>
+    <div class="field"><label>Client Secret</label><input id="spClientSecret" type="password" placeholder="Se guarda una sola vez, oculto después"></div>
+    <div class="field"><label>Scope (opcional)</label><input id="spScope" placeholder="identify email"></div>
+    <div id="spErr" style="color:var(--red);font-size:13px;display:none;margin-bottom:8px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('socialModal')">Cancelar</button>
+      <button class="btn btn-primary" id="spSaveBtn" onclick="createSocialGlobal()">Crear</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -329,7 +392,7 @@ function api(path, opts = {}) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const titles = {usuarios:"Usuarios", points:"Neat Points", oauth:"OAuth Apps", play:"Neat Play"};
+const titles = {usuarios:"Usuarios", points:"Neat Points", oauth:"OAuth Apps", play:"Neat Play", social:"Social Logins"};
 function go(section) {
   document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
   document.getElementById("nav-"+section).classList.add("active");
@@ -339,6 +402,7 @@ function go(section) {
   if (section === "points") loadNPHistory();
   if (section === "oauth") loadOAuth();
   if (section === "play") loadPlay();
+  if (section === "social") loadSocialGlobal();
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -597,7 +661,117 @@ async function deleteApp(id, name) {
   loadPlay(); playApps = [];
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Social Logins (providers globales) ────────────────────────────────────────
+async function loadSocialGlobal() {
+  const r = await api("/id/social/global");
+  const providers = await r.json();
+  const tb = document.getElementById("socialTable");
+  if (!providers.length) { tb.innerHTML = `<tr><td colspan="6" class="empty">Sin providers globales todavía</td></tr>`; return; }
+  tb.innerHTML = providers.map(p => `<tr>
+    <td><strong>${p.name}</strong></td>
+    <td><span class="copy-id">${p.key}</span></td>
+    <td><span class="badge ${p.discoveryUrl ? 'badge-blue' : 'badge-yellow'}">${p.discoveryUrl ? 'Discovery' : 'Manual'}</span></td>
+    <td><span class="copy-id" onclick="copyId('${p.clientId}')">${p.clientId.slice(0,14)}…</span></td>
+    <td><span class="badge ${p.enabled ? 'badge-green' : 'badge-red'}">${p.enabled ? 'Activo' : 'Desactivado'}</span></td>
+    <td>
+      <div class="flex-gap">
+        <button class="btn btn-ghost btn-sm" onclick="toggleSocialGlobalEnabled('${p.key}', ${!p.enabled})">${p.enabled ? 'Desactivar' : 'Activar'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSocialGlobal('${p.key}','${p.name}')">🗑️</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+function toggleSocialMode() {
+  const manual = document.getElementById("spMode").value === "manual";
+  document.getElementById("spDiscoveryFields").style.display = manual ? "none" : "block";
+  document.getElementById("spManualFields").style.display = manual ? "block" : "none";
+}
+
+function openSocialModal() {
+  ["spName","spKey","spDiscoveryUrl","spAuthEndpoint","spTokenEndpoint","spUserinfoEndpoint","spClientId","spClientSecret","spScope"]
+    .forEach(i => document.getElementById(i).value = "");
+  document.getElementById("spMode").value = "discovery";
+  toggleSocialMode();
+  document.getElementById("spErr").style.display = "none";
+  document.getElementById("socialModal").classList.add("open");
+}
+
+async function createSocialGlobal() {
+  const err = document.getElementById("spErr");
+  err.style.display = "none";
+
+  const key = document.getElementById("spKey").value.trim().toLowerCase();
+  const name = document.getElementById("spName").value.trim();
+  const clientId = document.getElementById("spClientId").value.trim();
+  const clientSecret = document.getElementById("spClientSecret").value.trim();
+  const scope = document.getElementById("spScope").value.trim();
+  const isManual = document.getElementById("spMode").value === "manual";
+
+  if (!key || !name || !clientId) {
+    err.textContent = "Nombre, key y Client ID son requeridos.";
+    err.style.display = "block";
+    return;
+  }
+  if (!/^[a-z0-9_-]+$/.test(key)) {
+    err.textContent = "La key solo puede tener minúsculas, números, - y _.";
+    err.style.display = "block";
+    return;
+  }
+
+  const body = { key, name, clientId, clientSecret: clientSecret || undefined, scope: scope || undefined };
+
+  if (isManual) {
+    const authorizationEndpoint = document.getElementById("spAuthEndpoint").value.trim();
+    const tokenEndpoint = document.getElementById("spTokenEndpoint").value.trim();
+    const userinfoEndpoint = document.getElementById("spUserinfoEndpoint").value.trim();
+    if (!authorizationEndpoint || !tokenEndpoint) {
+      err.textContent = "Authorization endpoint y Token endpoint son requeridos en modo manual.";
+      err.style.display = "block";
+      return;
+    }
+    Object.assign(body, { authorizationEndpoint, tokenEndpoint, userinfoEndpoint: userinfoEndpoint || undefined });
+  } else {
+    const discoveryUrl = document.getElementById("spDiscoveryUrl").value.trim();
+    if (!discoveryUrl) {
+      err.textContent = "Discovery URL es requerida (o cambia a modo manual).";
+      err.style.display = "block";
+      return;
+    }
+    body.discoveryUrl = discoveryUrl;
+  }
+
+  const btn = document.getElementById("spSaveBtn");
+  btn.disabled = true; btn.textContent = "Creando…";
+  try {
+    const r = await api("/id/social/global", { method: "POST", body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) { err.textContent = d.error || "Error"; err.style.display = "block"; return; }
+    closeModal("socialModal");
+    toast("Provider creado");
+    loadSocialGlobal();
+  } catch {
+    err.textContent = "Error de conexión.";
+    err.style.display = "block";
+  } finally {
+    btn.disabled = false; btn.textContent = "Crear";
+  }
+}
+
+async function toggleSocialGlobalEnabled(key, enabled) {
+  await api(`/id/social/global/${key}`, { method: "PUT", body: JSON.stringify({ enabled }) });
+  toast(enabled ? "Provider activado" : "Provider desactivado");
+  loadSocialGlobal();
+}
+
+async function deleteSocialGlobal(key, name) {
+  if (!confirm(`¿Eliminar el provider global "${name}"? Los tenants que lo activaron dejarán de poder usarlo.`)) return;
+  await api(`/id/social/global/${key}`, { method: "DELETE" });
+  toast(`${name} eliminado`);
+  loadSocialGlobal();
+}
+
+
 if (token) {
   // Verificar token guardado
   fetch(`${API}/chat/me`, {headers:{Authorization:"Bearer "+token}})
