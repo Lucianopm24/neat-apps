@@ -190,6 +190,7 @@
                     <div data-tab="overview" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-[#0b57d0] dark:border-[#a8c7fa] text-[#0b57d0] dark:text-[#a8c7fa] cursor-pointer">General</div>
                     <div data-tab="clients" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Clients</div>
                     <div data-tab="users" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Usuarios</div>
+                    <div data-tab="social" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Social</div>
                     <div data-tab="branding" class="detail-tab px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 cursor-pointer">Apariencia</div>
                 </div>
 
@@ -284,6 +285,36 @@
                             <tbody id="users-table-body"></tbody>
                         </table>
                         <div id="users-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin usuarios todavía.</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Social login -->
+                <div id="tab-social" class="tab-panel hidden">
+                    <!-- Providers propios del tenant -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Tus propios proveedores (ej. tu propio Google).</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Siempre usan PKCE — nunca guardamos un client_secret ajeno.</p>
+                        </div>
+                        <button onclick="openCreateSocialModal()" class="btn-secondary shrink-0">+ Nuevo proveedor</button>
+                    </div>
+                    <div class="card overflow-hidden mb-8">
+                        <table>
+                            <thead><tr><th>Nombre</th><th>Key</th><th>Estado</th><th></th></tr></thead>
+                            <tbody id="social-tenant-table-body"></tbody>
+                        </table>
+                        <div id="social-tenant-empty" class="hidden text-center py-10 text-sm text-gray-500 dark:text-gray-400">No has configurado proveedores propios.</div>
+                    </div>
+
+                    <!-- Providers globales disponibles -->
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Proveedores que Neat ya configuró — solo actívalos.</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">No necesitas client_id ni nada propio para estos.</p>
+                    <div class="card overflow-hidden">
+                        <table>
+                            <thead><tr><th>Nombre</th><th>Key</th><th></th></tr></thead>
+                            <tbody id="social-global-table-body"></tbody>
+                        </table>
+                        <div id="social-global-empty" class="hidden text-center py-10 text-sm text-gray-500 dark:text-gray-400">Neat todavía no tiene proveedores globales configurados.</div>
                     </div>
                 </div>
 
@@ -406,6 +437,42 @@
             <div class="flex justify-end gap-3 pt-5">
                 <button onclick="closeModal('modal-edit-client')" class="btn-ghost px-3">Cancelar</button>
                 <button id="btn-edit-client" onclick="saveEditClient()" class="btn-primary">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crear proveedor social propio del tenant -->
+    <div id="modal-create-social" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-6 step-enter">
+            <h2 class="font-google text-lg mb-1">Nuevo proveedor social</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Usa PKCE siempre — no pedimos ni guardamos un client_secret.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nombre a mostrar</label>
+                    <input id="cs-name" type="text" placeholder="ej. Google" class="input-field">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Identificador (key)</label>
+                    <input id="cs-key" type="text" placeholder="ej. google" class="input-field">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Solo minúsculas, sin espacios. Aparece en la URL del login.</p>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Discovery URL (OIDC)</label>
+                    <input id="cs-discovery" type="text" placeholder="https://accounts.google.com/.well-known/openid-configuration" class="input-field copyable text-xs">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Client ID</label>
+                    <input id="cs-client-id" type="text" placeholder="Client ID público de tu app en ese proveedor" class="input-field copyable text-xs">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Scope (opcional)</label>
+                    <input id="cs-scope" type="text" placeholder="openid profile email" class="input-field">
+                </div>
+                <p id="cs-error" class="text-[#d93025] text-xs hidden"></p>
+            </div>
+            <div class="flex justify-end gap-3 pt-5">
+                <button onclick="closeModal('modal-create-social')" class="btn-ghost px-3">Cancelar</button>
+                <button id="btn-create-social" onclick="createSocialProvider()" class="btn-primary">Crear proveedor</button>
             </div>
         </div>
     </div>
@@ -597,6 +664,7 @@
             panel.classList.add('step-enter');
             if (name === 'clients') loadClients();
             if (name === 'users') loadUsers();
+            if (name === 'social') loadSocialTab();
         }
 
         // ── Lista de apps ────────────────────────────────────────────────────
@@ -987,6 +1055,147 @@
                     }
                 }
             );
+        }
+
+        // ── Social login (OIDC por tenant + globales de Neat) ──────────────────
+        async function loadSocialTab() {
+            await Promise.all([loadSocialTenantProviders(), loadSocialGlobalProviders()]);
+        }
+
+        async function loadSocialTenantProviders() {
+            const tbody = document.getElementById('social-tenant-table-body');
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            try {
+                const providers = await api(`/id/apps/${currentAppSlug}/social`);
+                document.getElementById('social-tenant-empty').classList.toggle('hidden', providers.length > 0);
+                tbody.innerHTML = providers.map(p => `
+                    <tr>
+                        <td class="font-medium">${p.name}</td>
+                        <td class="copyable text-xs">${p.key}</td>
+                        <td><span class="badge ${p.enabled ? 'badge-green' : 'badge-gray'}">${p.enabled ? 'Activo' : 'Desactivado'}</span></td>
+                        <td class="text-right whitespace-nowrap">
+                            <button onclick="toggleSocialTenantProvider('${p.key}', ${!p.enabled})" class="btn-ghost mr-3">${p.enabled ? 'Desactivar' : 'Activar'}</button>
+                            <button onclick="deleteSocialTenantProvider('${p.key}')" class="btn-ghost btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        let loadedGlobalProviders = [];
+
+        async function loadSocialGlobalProviders() {
+            const tbody = document.getElementById('social-global-table-body');
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 text-sm py-8">Cargando…</td></tr>`;
+            try {
+                const providers = await api(`/id/social/global`);
+                loadedGlobalProviders = providers;
+                const enabledKeys = currentAppData?.enabledGlobalProviders || [];
+                document.getElementById('social-global-empty').classList.toggle('hidden', providers.length > 0);
+                tbody.innerHTML = providers.map(p => {
+                    const enabled = enabledKeys.includes(p.key);
+                    return `
+                    <tr>
+                        <td class="font-medium">${p.name}</td>
+                        <td class="copyable text-xs">${p.key}</td>
+                        <td class="text-right whitespace-nowrap">
+                            <button onclick="toggleSocialGlobalProvider('${p.key}', ${!enabled})" class="btn-ghost">${enabled ? 'Desactivar' : 'Activar'}</button>
+                        </td>
+                    </tr>
+                `;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-[#d93025] text-sm py-8">${e.message}</td></tr>`;
+            }
+        }
+
+        function openCreateSocialModal() {
+            document.getElementById('cs-name').value = '';
+            document.getElementById('cs-key').value = '';
+            document.getElementById('cs-discovery').value = '';
+            document.getElementById('cs-client-id').value = '';
+            document.getElementById('cs-scope').value = '';
+            hideError('cs-error');
+            openModal('modal-create-social');
+        }
+
+        async function createSocialProvider() {
+            const name = document.getElementById('cs-name').value.trim();
+            const key = document.getElementById('cs-key').value.trim().toLowerCase();
+            const discoveryUrl = document.getElementById('cs-discovery').value.trim();
+            const clientId = document.getElementById('cs-client-id').value.trim();
+            const scope = document.getElementById('cs-scope').value.trim();
+            hideError('cs-error');
+            if (!name || !key || !discoveryUrl || !clientId) {
+                showError('cs-error', 'Completa nombre, identificador, discovery URL y client ID.');
+                return;
+            }
+            if (!/^[a-z0-9_-]+$/.test(key)) {
+                showError('cs-error', 'El identificador solo puede tener minúsculas, números, - y _.');
+                return;
+            }
+
+            setBusy('btn-create-social', true, 'Crear proveedor');
+            try {
+                await api(`/id/apps/${currentAppSlug}/social`, {
+                    method: 'POST',
+                    body: JSON.stringify({ key, name, discoveryUrl, clientId, scope: scope || undefined })
+                });
+                closeModal('modal-create-social');
+                showToast('Proveedor creado');
+                loadSocialTenantProviders();
+            } catch (e) {
+                showError('cs-error', e.message);
+            } finally {
+                setBusy('btn-create-social', false, 'Crear proveedor');
+            }
+        }
+
+        async function toggleSocialTenantProvider(key, enabled) {
+            try {
+                await api(`/id/apps/${currentAppSlug}/social/${key}`, {
+                    method: 'PUT', body: JSON.stringify({ enabled })
+                });
+                loadSocialTenantProviders();
+            } catch (e) {
+                showToast(e.message);
+            }
+        }
+
+        async function deleteSocialTenantProvider(key) {
+            showConfirm(
+                'Eliminar proveedor',
+                'Los usuarios que entraron con este proveedor seguirán existiendo, pero ya no podrán iniciar sesión con él.',
+                async () => {
+                    try {
+                        await api(`/id/apps/${currentAppSlug}/social/${key}`, { method: 'DELETE' });
+                        closeModal('modal-confirm');
+                        showToast('Proveedor eliminado');
+                        loadSocialTenantProviders();
+                    } catch (e) {
+                        showToast(e.message);
+                        closeModal('modal-confirm');
+                    }
+                }
+            );
+        }
+
+        async function toggleSocialGlobalProvider(key, enabled) {
+            try {
+                await api(`/id/apps/${currentAppSlug}/social/${key}`, {
+                    method: 'PUT', body: JSON.stringify({ enabled })
+                });
+                if (currentAppData) {
+                    const current = new Set(currentAppData.enabledGlobalProviders || []);
+                    if (enabled) current.add(key); else current.delete(key);
+                    currentAppData.enabledGlobalProviders = [...current];
+                }
+                loadSocialGlobalProviders();
+            } catch (e) {
+                showToast(e.message);
+            }
         }
 
         // ── Usuarios ─────────────────────────────────────────────────────────
