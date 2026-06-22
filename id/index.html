@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neat ID</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -117,6 +118,38 @@
                         <button onclick="renderStep('user')" class="text-sm text-gray-500">Atrás</button>
                         <button id="btn-login" onclick="handleLogin()" class="btn-primary">Siguiente</button>
                     </div>
+                    <div class="text-center pt-1">
+                        <button onclick="renderStep('forgot')" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">¿Olvidaste tu contraseña?</button>
+                    </div>
+                </div>
+
+                <!-- Paso: olvidé mi contraseña (usuario final) -->
+                <div id="step-forgot" class="hidden space-y-6 step-enter">
+                    <div>
+                        <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3] mb-1">Recuperar contraseña</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Te mandaremos un enlace para elegir una nueva contraseña.</p>
+                        <input type="email" id="forgot-email" class="input-field" placeholder="Tu correo electrónico" autocomplete="email">
+                        <p id="error-forgot" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                        <p id="forgot-ok" class="text-xs text-green-600 dark:text-green-400 mt-2 hidden">Si ese correo tiene una cuenta, recibirás un enlace en los próximos minutos.</p>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="renderStep('pass')" class="text-sm text-gray-500">Atrás</button>
+                        <button id="btn-forgot" onclick="handleForgotPassword()" class="btn-primary">Enviar enlace</button>
+                    </div>
+                </div>
+
+                <!-- Paso: elegir nueva contraseña (usuario final, llega con ?reset_token=) -->
+                <div id="step-reset" class="hidden space-y-6 step-enter">
+                    <div>
+                        <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3] mb-1">Elige una nueva contraseña</h2>
+                        <input type="password" id="reset-password" class="input-field mt-3" placeholder="Nueva contraseña (mínimo 8 caracteres)" autocomplete="new-password">
+                        <input type="password" id="reset-password2" class="input-field mt-2" placeholder="Repite la contraseña" autocomplete="new-password">
+                        <p id="error-reset" class="text-[#d93025] text-xs mt-2 hidden"></p>
+                        <p id="reset-ok" class="text-xs text-green-600 dark:text-green-400 mt-2 hidden">¡Listo! Ya puedes iniciar sesión con tu nueva contraseña.</p>
+                    </div>
+                    <div class="flex justify-end items-center pt-2">
+                        <button id="btn-reset" onclick="handleResetPassword()" class="btn-primary">Guardar contraseña</button>
+                    </div>
                 </div>
 
                 <!-- Paso: registro -->
@@ -199,23 +232,62 @@
         </div>
         <h1 class="text-2xl font-google font-normal text-[#1f1f1f] dark:text-[#e3e3e3] mb-2">Gestiona tu cuenta</h1>
         <p class="text-sm text-[#444] dark:text-[#c4c7c5] mb-8">Inicia sesión en <span id="manage-app-name" class="font-medium">…</span> para administrar tu cuenta</p>
-        <form id="manage-login-form" class="space-y-4" onsubmit="event.preventDefault(); manageLogin();">
-            <div>
-                <input type="email" id="manage-email" required class="input-field text-[#1f1f1f] dark:text-[#e3e3e3]" placeholder="Correo electrónico">
+
+        <!-- Formulario de login -->
+        <div id="manage-login-form-wrap">
+            <form id="manage-login-form" class="space-y-4" onsubmit="event.preventDefault(); manageLogin();">
+                <div>
+                    <input type="email" id="manage-email" required class="input-field text-[#1f1f1f] dark:text-[#e3e3e3]" placeholder="Correo electrónico">
+                </div>
+                <div>
+                    <input type="password" id="manage-password" required class="input-field text-[#1f1f1f] dark:text-[#e3e3e3]" placeholder="Contraseña">
+                </div>
+                <p id="manage-login-error" class="text-[#d93025] text-xs hidden"></p>
+                <button type="submit" id="manage-login-btn" class="btn-primary w-full justify-center flex items-center">Iniciar sesión</button>
+            </form>
+            <div class="text-center mt-3">
+                <button onclick="showManageForgot()" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">¿Olvidaste tu contraseña?</button>
             </div>
-            <div>
-                <input type="password" id="manage-password" required class="input-field text-[#1f1f1f] dark:text-[#e3e3e3]" placeholder="Contraseña">
+            <div class="flex items-center gap-3 my-6">
+                <div class="flex-1 h-px bg-[#dadce0] dark:bg-[#444]"></div>
+                <span class="text-xs text-gray-400">o</span>
+                <div class="flex-1 h-px bg-[#dadce0] dark:bg-[#444]"></div>
             </div>
-            <p id="manage-login-error" class="text-[#d93025] text-xs hidden"></p>
-            <button type="submit" id="manage-login-btn" class="btn-primary w-full justify-center flex items-center">Iniciar sesión</button>
-        </form>
-        <div class="flex items-center gap-3 my-6">
-            <div class="flex-1 h-px bg-[#dadce0] dark:bg-[#444]"></div>
-            <span class="text-xs text-gray-400">o</span>
-            <div class="flex-1 h-px bg-[#dadce0] dark:bg-[#444]"></div>
+            <button type="button" onclick="manageLoginWithNeatStart()" class="btn-ghost w-full justify-center flex items-center">Continuar con Neat</button>
+            <p class="text-xs text-gray-400 mt-3">Si tu cuenta solo usa Neat (sin contraseña local), entra por aquí.</p>
         </div>
-        <button type="button" onclick="manageLoginWithNeatStart()" class="btn-ghost w-full justify-center flex items-center">Continuar con Neat</button>
-        <p class="text-xs text-gray-400 mt-3">Si tu cuenta solo usa Neat (sin contraseña local), entra por aquí.</p>
+
+        <!-- Paso: olvidé mi contraseña -->
+        <div id="manage-forgot-wrap" class="hidden space-y-4">
+            <button onclick="showManageLoginForm()" class="text-xs text-gray-400 flex items-center gap-1">← Volver</button>
+            <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3]">Recuperar contraseña</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Si usas <strong>@neat.qzz.io</strong>, entra con Neat — no necesitas correo de recuperación.</p>
+            <input type="email" id="manage-forgot-email" class="input-field" placeholder="Tu correo electrónico">
+            <p id="manage-forgot-error" class="text-[#d93025] text-xs hidden"></p>
+            <p id="manage-forgot-ok" class="text-xs text-green-600 dark:text-green-400 hidden">Si ese correo tiene una cuenta, recibirás un enlace en los próximos minutos.</p>
+            <button id="manage-forgot-btn" onclick="manageForgotPassword()" class="btn-primary w-full justify-center flex items-center">Enviar enlace</button>
+        </div>
+
+        <!-- Paso: restablecer contraseña (desde enlace del correo) -->
+        <div id="manage-reset-wrap" class="hidden space-y-4">
+            <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3]">Nueva contraseña</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Elige una nueva contraseña para tu cuenta.</p>
+            <input type="password" id="manage-reset-password" class="input-field" placeholder="Nueva contraseña (mínimo 8 caracteres)">
+            <input type="password" id="manage-reset-password2" class="input-field" placeholder="Repite la contraseña">
+            <p id="manage-reset-error" class="text-[#d93025] text-xs hidden"></p>
+            <p id="manage-reset-ok" class="text-xs text-green-600 dark:text-green-400 hidden">¡Contraseña actualizada! Ya puedes iniciar sesión.</p>
+            <button id="manage-reset-btn" onclick="manageResetPassword()" class="btn-primary w-full justify-center flex items-center">Guardar contraseña</button>
+        </div>
+
+        <!-- Paso: código 2FA -->
+        <div id="manage-totp-wrap" class="hidden space-y-4">
+            <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3]">Verificación en dos pasos</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Ingresa el código de 6 dígitos de tu autenticador, o uno de tus códigos de respaldo.</p>
+            <input type="text" id="manage-totp-code" class="input-field tracking-widest text-center text-lg" placeholder="000000" maxlength="8" autocomplete="one-time-code" inputmode="numeric">
+            <p id="manage-totp-error" class="text-[#d93025] text-xs hidden"></p>
+            <button id="manage-totp-btn" onclick="manageTotpSubmit()" class="btn-primary w-full justify-center flex items-center">Verificar</button>
+            <button onclick="showManageLoginForm()" class="w-full text-xs text-gray-400 text-center">Cancelar</button>
+        </div>
     </div>
 
     <!-- Dashboard de cuenta -->
@@ -262,6 +334,67 @@
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Dónde has iniciado sesión con esta cuenta.</p>
             <div id="manage-sessions-list" class="space-y-2 max-h-[280px] overflow-y-auto pr-1">
                 <p class="text-sm text-gray-400">Cargando…</p>
+            </div>
+        </div>
+
+        <!-- Verificación en dos pasos (2FA) -->
+        <div class="bg-white dark:bg-[#1b1b1b] md:border md:border-[#dadce0] dark:md:border-[#444] rounded-3xl p-6 md:p-8">
+            <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3] mb-1">Verificación en dos pasos</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Protege tu cuenta con un autenticador (Google Authenticator, Authy, etc.).</p>
+
+            <!-- Estado: 2FA desactivado -->
+            <div id="manage-2fa-off" class="hidden space-y-3">
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <span class="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 inline-block"></span> No activado
+                </div>
+                <button onclick="manageSetup2fa()" class="btn-primary text-sm">Activar 2FA</button>
+            </div>
+
+            <!-- Estado: 2FA activado -->
+            <div id="manage-2fa-on" class="hidden space-y-3">
+                <div class="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                    <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Activado
+                </div>
+                <button onclick="manageDisable2faShow()" class="btn-ghost text-sm text-red-500 dark:text-red-400 border-red-200 dark:border-red-800">Desactivar 2FA</button>
+            </div>
+
+            <!-- Setup: escanear QR -->
+            <div id="manage-2fa-setup" class="hidden space-y-4">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Escanea este código QR con tu autenticador, luego ingresa el código de 6 dígitos para confirmar.</p>
+                <div class="flex flex-col items-center gap-3">
+                    <canvas id="manage-2fa-qr" class="rounded-xl border border-gray-200 dark:border-[#444]" width="180" height="180"></canvas>
+                    <details class="text-center">
+                        <summary class="text-xs text-gray-400 cursor-pointer">No puedo escanear el QR</summary>
+                        <p id="manage-2fa-secret-text" class="text-xs font-mono mt-2 select-all bg-gray-100 dark:bg-white/5 rounded p-2 break-all"></p>
+                    </details>
+                </div>
+                <input type="text" id="manage-2fa-setup-code" class="input-field tracking-widest text-center text-lg" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                <p id="manage-2fa-setup-error" class="text-[#d93025] text-xs hidden"></p>
+                <div class="flex gap-2">
+                    <button onclick="manageCancel2faSetup()" class="btn-ghost flex-1 text-sm">Cancelar</button>
+                    <button id="manage-2fa-setup-btn" onclick="manageConfirm2fa()" class="btn-primary flex-1 text-sm">Confirmar</button>
+                </div>
+            </div>
+
+            <!-- Backup codes (mostrados una sola vez tras activar) -->
+            <div id="manage-2fa-backup" class="hidden space-y-3">
+                <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
+                    <p class="text-sm font-medium text-amber-900 dark:text-amber-300 mb-2">⚠️ Guarda estos códigos de respaldo</p>
+                    <p class="text-xs text-amber-800 dark:text-amber-400 mb-3">Si pierdes acceso a tu autenticador, usa uno de estos códigos. Cada uno sirve una sola vez.</p>
+                    <div id="manage-backup-codes-list" class="grid grid-cols-2 gap-1 font-mono text-sm"></div>
+                </div>
+                <button onclick="manageBackupCodesOk()" class="btn-primary w-full text-sm">Ya los guardé</button>
+            </div>
+
+            <!-- Desactivar 2FA: pedir código -->
+            <div id="manage-2fa-disable" class="hidden space-y-3">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Ingresa tu código de autenticador (o un backup code) para desactivar 2FA.</p>
+                <input type="text" id="manage-2fa-disable-code" class="input-field tracking-widest text-center text-lg" placeholder="000000" maxlength="8" inputmode="numeric">
+                <p id="manage-2fa-disable-error" class="text-[#d93025] text-xs hidden"></p>
+                <div class="flex gap-2">
+                    <button onclick="manageCancel2faDisable()" class="btn-ghost flex-1 text-sm">Cancelar</button>
+                    <button id="manage-2fa-disable-btn" onclick="manageConfirmDisable2fa()" class="btn-primary flex-1 text-sm bg-red-600 hover:bg-red-700">Desactivar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -399,6 +532,18 @@
                 applyBranding();
                 document.getElementById('boot-loading').classList.add('hidden');
 
+                // El correo de "olvidé mi contraseña" siempre manda a /SLUG?reset_token=...
+                // (sin /manage), porque el mismo flujo sirve tanto al dueño del tenant
+                // como a un usuario final — ambos son el mismo tipo de cuenta
+                // (id_app_users). Mostramos el paso de reset sin importar si la URL
+                // tiene /manage o no, y sin importar si hay una sesión /manage guardada.
+                if (qp.get('reset_token')) {
+                    document.getElementById('main-card').classList.remove('hidden');
+                    _userResetToken = qp.get('reset_token');
+                    renderStep('reset');
+                    return;
+                }
+
                 if (isManagePath || returningToManage) {
                     document.getElementById('manage-app-name').innerText = appData.name;
                     bootManage();
@@ -508,6 +653,57 @@
                 showError('error-pass', 'Error de conexión.');
             } finally {
                 setBusy('btn-login', false, 'Siguiente');
+            }
+        }
+
+        async function handleForgotPassword() {
+            const email = document.getElementById('forgot-email').value.trim();
+            hideError('error-forgot');
+            document.getElementById('forgot-ok').classList.add('hidden');
+            if (!email) { showError('error-forgot', 'Ingresa tu correo.'); return; }
+            setBusy('btn-forgot', true, 'Enviar enlace');
+            try {
+                await fetch(`${API_BASE}/id/users/${appSlug}/forgot-password`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                // Siempre mostramos ok, sin revelar si el correo existe
+                document.getElementById('forgot-ok').classList.remove('hidden');
+            } catch (e) {
+                showError('error-forgot', 'Error de conexión.');
+            } finally {
+                setBusy('btn-forgot', false, 'Enviar enlace');
+            }
+        }
+
+        // Token de reset cuando el usuario llega desde el enlace del correo
+        // (/SLUG?reset_token=...), fuera del flujo /manage.
+        let _userResetToken = null;
+
+        async function handleResetPassword() {
+            const password = document.getElementById('reset-password').value;
+            const password2 = document.getElementById('reset-password2').value;
+            hideError('error-reset');
+            document.getElementById('reset-ok').classList.add('hidden');
+            if (password.length < 8) { showError('error-reset', 'Mínimo 8 caracteres.'); return; }
+            if (password !== password2) { showError('error-reset', 'Las contraseñas no coinciden.'); return; }
+            setBusy('btn-reset', true, 'Guardar contraseña');
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/reset-password`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: _userResetToken, newPassword: password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo restablecer la contraseña.');
+                document.getElementById('reset-ok').classList.remove('hidden');
+                const url = new URL(location.href);
+                url.searchParams.delete('reset_token');
+                history.replaceState({}, '', url.toString());
+                setTimeout(() => renderStep('user'), 2000);
+            } catch (e) {
+                showError('error-reset', e.message);
+            } finally {
+                setBusy('btn-reset', false, 'Guardar contraseña');
             }
         }
 
@@ -787,7 +983,15 @@
                     body: JSON.stringify({ email, password })
                 });
                 const data = await res.json();
-                if (!res.ok || !data.access_token) throw new Error(data.error || 'No se pudo iniciar sesión');
+                if (!res.ok) throw new Error(data.error || 'No se pudo iniciar sesión');
+
+                // 2FA requerido — mostrar paso de código TOTP
+                if (data.totp_required && data.totp_pending_token) {
+                    showManageTotp(data.totp_pending_token);
+                    return;
+                }
+
+                if (!data.access_token) throw new Error(data.error || 'No se pudo iniciar sesión');
 
                 manageToken = data.access_token;
                 sessionStorage.setItem(`manage_token_${appSlug}`, manageToken);
@@ -821,6 +1025,11 @@
 
                 document.getElementById('manage-neat-linked').classList.toggle('hidden', !user.isNeatUser);
                 document.getElementById('manage-neat-unlinked').classList.toggle('hidden', !!user.isNeatUser);
+
+                // Estado de 2FA
+                const has2fa = !!user.totp2faEnabled;
+                document.getElementById('manage-2fa-on').dataset.wasEnabled = has2fa ? 'true' : 'false';
+                show2faSection(has2fa ? 'manage-2fa-on' : 'manage-2fa-off');
 
                 // Si el usuario es 100% Neat (sin password local todavía), el
                 // formulario de contraseña sirve para CREAR una, no cambiarla.
@@ -939,6 +1148,280 @@
             location.href = `${NEAT_OAUTH_URL}?${p}`;
         }
 
+        // ── Forgot / Reset password ──────────────────────────────────────────────
+
+        function showManageForgot() {
+            document.getElementById('manage-login-form-wrap').classList.add('hidden');
+            document.getElementById('manage-forgot-wrap').classList.remove('hidden');
+            document.getElementById('manage-reset-wrap').classList.add('hidden');
+            document.getElementById('manage-totp-wrap').classList.add('hidden');
+        }
+
+        function showManageLoginForm() {
+            document.getElementById('manage-login-form-wrap').classList.remove('hidden');
+            document.getElementById('manage-forgot-wrap').classList.add('hidden');
+            document.getElementById('manage-reset-wrap').classList.add('hidden');
+            document.getElementById('manage-totp-wrap').classList.add('hidden');
+            document.getElementById('manage-login-error').classList.add('hidden');
+        }
+
+        async function manageForgotPassword() {
+            const email = document.getElementById('manage-forgot-email').value.trim();
+            const errorEl = document.getElementById('manage-forgot-error');
+            const okEl = document.getElementById('manage-forgot-ok');
+            const btn = document.getElementById('manage-forgot-btn');
+            errorEl.classList.add('hidden');
+            okEl.classList.add('hidden');
+            if (!email) { errorEl.innerText = 'Ingresa tu correo.'; errorEl.classList.remove('hidden'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Enviando…';
+            try {
+                await fetch(`${API_BASE}/id/users/${appSlug}/forgot-password`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                // Siempre mostramos ok para no revelar si el email existe
+                okEl.classList.remove('hidden');
+            } catch (e) {
+                errorEl.innerText = e.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Enviar enlace';
+            }
+        }
+
+        // Se activa si la URL tiene ?reset_token=...
+        let _resetToken = null;
+
+        function checkResetToken() {
+            const params = new URLSearchParams(location.search);
+            const token = params.get('reset_token');
+            if (!token) return;
+            _resetToken = token;
+            // Mostrar el paso de reset directamente
+            document.getElementById('manage-login-form-wrap').classList.add('hidden');
+            document.getElementById('manage-forgot-wrap').classList.add('hidden');
+            document.getElementById('manage-reset-wrap').classList.remove('hidden');
+            document.getElementById('manage-totp-wrap').classList.add('hidden');
+        }
+
+        async function manageResetPassword() {
+            const password = document.getElementById('manage-reset-password').value;
+            const password2 = document.getElementById('manage-reset-password2').value;
+            const errorEl = document.getElementById('manage-reset-error');
+            const okEl = document.getElementById('manage-reset-ok');
+            const btn = document.getElementById('manage-reset-btn');
+            errorEl.classList.add('hidden');
+            okEl.classList.add('hidden');
+            if (password.length < 8) { errorEl.innerText = 'Mínimo 8 caracteres.'; errorEl.classList.remove('hidden'); return; }
+            if (password !== password2) { errorEl.innerText = 'Las contraseñas no coinciden.'; errorEl.classList.remove('hidden'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Guardando…';
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/reset-password`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: _resetToken, newPassword: password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo restablecer la contraseña');
+                okEl.classList.remove('hidden');
+                // Limpiar el token de la URL sin recargar
+                const url = new URL(location.href);
+                url.searchParams.delete('reset_token');
+                history.replaceState({}, '', url.toString());
+                setTimeout(() => {
+                    document.getElementById('manage-reset-wrap').classList.add('hidden');
+                    document.getElementById('manage-login-form-wrap').classList.remove('hidden');
+                }, 2000);
+            } catch (e) {
+                errorEl.innerText = e.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Guardar contraseña';
+            }
+        }
+
+        // ── 2FA — Login (canjear totp_pending_token) ─────────────────────────────
+
+        let _manageTotpPendingToken = null;
+
+        function showManageTotp(pendingToken) {
+            _manageTotpPendingToken = pendingToken;
+            document.getElementById('manage-login-form-wrap').classList.add('hidden');
+            document.getElementById('manage-forgot-wrap').classList.add('hidden');
+            document.getElementById('manage-reset-wrap').classList.add('hidden');
+            document.getElementById('manage-totp-wrap').classList.remove('hidden');
+            document.getElementById('manage-totp-code').value = '';
+            document.getElementById('manage-totp-error').classList.add('hidden');
+            document.getElementById('manage-totp-code').focus();
+        }
+
+        async function manageTotpSubmit() {
+            const code = document.getElementById('manage-totp-code').value.trim();
+            const errorEl = document.getElementById('manage-totp-error');
+            const btn = document.getElementById('manage-totp-btn');
+            errorEl.classList.add('hidden');
+            if (!code) { errorEl.innerText = 'Ingresa el código.'; errorEl.classList.remove('hidden'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Verificando…';
+            try {
+                const res = await fetch(`${API_BASE}/id/users/${appSlug}/manage/2fa/totp`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ totp_pending_token: _manageTotpPendingToken, code })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.access_token) throw new Error(data.error || 'Código incorrecto');
+                manageToken = data.access_token;
+                sessionStorage.setItem(`manage_token_${appSlug}`, manageToken);
+                document.getElementById('manage-login').classList.add('hidden');
+                document.getElementById('manage-dashboard').classList.remove('hidden');
+                manageLoadAccount();
+            } catch (e) {
+                errorEl.innerText = e.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Verificar';
+            }
+        }
+
+        // ── 2FA — Setup en el dashboard ───────────────────────────────────────────
+
+        function show2faSection(id) {
+            ['manage-2fa-off', 'manage-2fa-on', 'manage-2fa-setup', 'manage-2fa-backup', 'manage-2fa-disable'].forEach(s => {
+                document.getElementById(s).classList.toggle('hidden', s !== id);
+            });
+        }
+
+        async function manageSetup2fa() {
+            const btn = document.querySelector('#manage-2fa-off button');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+            try {
+                const data = await manageApiFetch(`/id/users/${appSlug}/manage/2fa/setup`, { method: 'POST' });
+                document.getElementById('manage-2fa-secret-text').innerText = data.secret;
+                // Dibujar QR con qrcode-generator o librería disponible
+                await drawQr(data.otpauth, 'manage-2fa-qr');
+                document.getElementById('manage-2fa-setup-code').value = '';
+                document.getElementById('manage-2fa-setup-error').classList.add('hidden');
+                show2faSection('manage-2fa-setup');
+            } catch (e) {
+                alert(e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'Activar 2FA'; }
+            }
+        }
+
+        async function drawQr(text, canvasId) {
+            // Generado 100% local con qrcode-generator (cargado por CDN una sola
+            // vez, sin datos del usuario). El secreto TOTP nunca sale del navegador
+            // — a diferencia de usar una API externa de QR, que vería el secreto
+            // en texto plano por la URL.
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            try {
+                const qr = qrcode(0, 'M'); // tipo 0 = auto-detecta versión, M = corrección media
+                qr.addData(text);
+                qr.make();
+                const moduleCount = qr.getModuleCount();
+                const cellSize = size / moduleCount;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, size, size);
+                ctx.fillStyle = '#000';
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (qr.isDark(row, col)) {
+                            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Fallback: si la librería no cargó (ej. red bloqueada), mostramos
+                // el secreto como texto — el usuario siempre puede copiarlo a mano.
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, size, size);
+                ctx.fillStyle = '#000';
+                ctx.font = '11px monospace';
+                ctx.fillText('No se pudo generar el QR.', 6, 16);
+                ctx.fillText('Copia el código de abajo', 6, 32);
+                ctx.fillText('en tu app de autenticación.', 6, 48);
+            }
+        }
+
+        function manageCancel2faSetup() {
+            show2faSection(document.getElementById('manage-2fa-on').dataset.wasEnabled === 'true' ? 'manage-2fa-on' : 'manage-2fa-off');
+        }
+
+        async function manageConfirm2fa() {
+            const code = document.getElementById('manage-2fa-setup-code').value.trim();
+            const errorEl = document.getElementById('manage-2fa-setup-error');
+            const btn = document.getElementById('manage-2fa-setup-btn');
+            errorEl.classList.add('hidden');
+            if (!code) { errorEl.innerText = 'Ingresa el código de 6 dígitos.'; errorEl.classList.remove('hidden'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            try {
+                const data = await manageApiFetch(`/id/users/${appSlug}/manage/2fa/verify`, {
+                    method: 'POST', body: JSON.stringify({ code })
+                });
+                // Mostrar backup codes
+                const list = document.getElementById('manage-2fa-backup-list');
+                if (list) {
+                    list.innerHTML = data.backupCodes.map(c =>
+                        `<code class="block font-mono text-sm bg-gray-100 dark:bg-white/5 rounded px-2 py-1">${c}</code>`
+                    ).join('');
+                }
+                show2faSection('manage-2fa-backup');
+            } catch (e) {
+                errorEl.innerText = e.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Confirmar';
+            }
+        }
+
+        function manageBackupCodesOk() {
+            show2faSection('manage-2fa-on');
+            // Recargar cuenta para sincronizar estado
+            manageLoadAccount();
+        }
+
+        function manageDisable2faShow() {
+            document.getElementById('manage-2fa-disable-code').value = '';
+            document.getElementById('manage-2fa-disable-error').classList.add('hidden');
+            show2faSection('manage-2fa-disable');
+        }
+
+        function manageCancel2faDisable() {
+            show2faSection('manage-2fa-on');
+        }
+
+        async function manageConfirmDisable2fa() {
+            const code = document.getElementById('manage-2fa-disable-code').value.trim();
+            const errorEl = document.getElementById('manage-2fa-disable-error');
+            const btn = document.getElementById('manage-2fa-disable-btn');
+            errorEl.classList.add('hidden');
+            if (!code) { errorEl.innerText = 'Ingresa el código.'; errorEl.classList.remove('hidden'); return; }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+            try {
+                await manageApiFetch(`/id/users/${appSlug}/manage/2fa/disable`, {
+                    method: 'POST', body: JSON.stringify({ code })
+                });
+                show2faSection('manage-2fa-off');
+                manageLoadAccount();
+            } catch (e) {
+                errorEl.innerText = e.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Desactivar';
+            }
+        }
+
         async function manageFinishLoginWithNeat(neatCode) {
             const verifier = sessionStorage.getItem('manage_login_verifier');
             sessionStorage.removeItem('manage_login_verifier');
@@ -953,7 +1436,14 @@
                     })
                 });
                 const data = await res.json();
-                if (!res.ok || !data.access_token) throw new Error(data.error || 'No se pudo iniciar sesión con Neat');
+                if (!res.ok) throw new Error(data.error || 'No se pudo iniciar sesión con Neat');
+
+                if (data.totp_required && data.totp_pending_token) {
+                    showManageTotp(data.totp_pending_token);
+                    return;
+                }
+
+                if (!data.access_token) throw new Error(data.error || 'No se pudo iniciar sesión con Neat');
 
                 manageToken = data.access_token;
                 sessionStorage.setItem(`manage_token_${appSlug}`, manageToken);
