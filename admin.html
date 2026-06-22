@@ -130,6 +130,7 @@ tr:hover td{background:var(--surface2)}
     <div class="logo"><div class="logo-icon">N</div>Neat Admin</div>
     <nav class="nav">
       <button class="nav-item active" onclick="go('usuarios')" id="nav-usuarios"><span class="nav-icon">👥</span>Usuarios</button>
+      <button class="nav-item" onclick="go('tenants')" id="nav-tenants"><span class="nav-icon">🏷️</span>Tenants (Neat ID)</button>
       <button class="nav-item" onclick="go('points')" id="nav-points"><span class="nav-icon">💰</span>Points</button>
       <button class="nav-item" onclick="go('oauth')" id="nav-oauth"><span class="nav-icon">🔑</span>OAuth Apps</button>
       <button class="nav-item" onclick="go('play')" id="nav-play"><span class="nav-icon">🎮</span>Neat Play</button>
@@ -163,6 +164,54 @@ tr:hover td{background:var(--surface2)}
                 <tbody id="userTable"></tbody>
               </table>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tenants (Neat ID) -->
+      <div id="screen-tenants" class="screen">
+        <div class="panel" id="tenantsListPanel">
+          <div class="panel-header">
+            <span class="panel-title">Tenants de Neat ID</span>
+            <button class="btn btn-ghost btn-sm" onclick="loadTenants()">↺ Actualizar</button>
+          </div>
+          <div class="panel-body">
+            <div class="search-row">
+              <input id="tenantSearch" placeholder="Buscar por nombre o slug..." oninput="filterTenants()">
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nombre</th><th>Slug</th><th>Dueño</th><th>Registros</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="tenantTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalle de un tenant: límites de KV storage -->
+        <div class="panel" id="tenantDetailPanel" style="display:none">
+          <div class="panel-header">
+            <span class="panel-title">Tenant: <span id="tdName"></span> <span style="color:var(--muted);font-weight:400">(<span id="tdSlug"></span>)</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="closeTenantDetail()">← Volver a la lista</button>
+          </div>
+          <div class="panel-body">
+            <p style="color:var(--muted);font-size:13px;margin-bottom:18px">
+              Límites del KV storage de este tenant. El privado es por usuario (id_app_user_kv); el público es un solo blob compartido por todo el tenant (id_app_public_kv) y admite un presupuesto más grande porque no se multiplica por usuario.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+              <div class="field" style="margin:0">
+                <label>KV privado (por usuario) — KB</label>
+                <input id="tdKvLimitKb" type="number" min="1">
+                <div style="color:var(--muted);font-size:11px;margin-top:4px">Techo absoluto: <span id="tdKvLimitCap"></span> KB</div>
+              </div>
+              <div class="field" style="margin:0">
+                <label>KV público (todo el tenant) — KB</label>
+                <input id="tdKvPublicLimitKb" type="number" min="1">
+                <div style="color:var(--muted);font-size:11px;margin-top:4px">Techo absoluto: <span id="tdKvPublicLimitCap"></span> KB</div>
+              </div>
+            </div>
+            <div id="tdKvErr" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
+            <button class="btn btn-primary" id="tdKvSaveBtn" onclick="saveKvLimits()">Guardar límites</button>
           </div>
         </div>
       </div>
@@ -392,13 +441,14 @@ function api(path, opts = {}) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const titles = {usuarios:"Usuarios", points:"Neat Points", oauth:"OAuth Apps", play:"Neat Play", social:"Social Logins"};
+const titles = {usuarios:"Usuarios", tenants:"Tenants (Neat ID)", points:"Neat Points", oauth:"OAuth Apps", play:"Neat Play", social:"Social Logins"};
 function go(section) {
   document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
   document.getElementById("nav-"+section).classList.add("active");
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-"+section).classList.add("active");
   document.getElementById("pageTitle").textContent = titles[section];
+  if (section === "tenants") loadTenants();
   if (section === "points") loadNPHistory();
   if (section === "oauth") loadOAuth();
   if (section === "play") loadPlay();
@@ -527,6 +577,104 @@ async function toggleSuspend(id, username, suspended) {
   await api(`/chat/users/${id}/suspend`, {method:"PUT", body: JSON.stringify({suspended})});
   toast(`${username} ${suspended ? "suspendido" : "desuspendido"}`);
   closeModal("userModal"); loadUsers();
+}
+
+// ── Tenants (Neat ID) ────────────────────────────────────────────────────────
+// Techos absolutos — deben coincidir con KV_PRIVATE_HARD_CAP_BYTES / KV_PUBLIC_HARD_CAP_BYTES
+// en el backend. Son solo para mostrar el límite en la UI; el backend valida
+// el techo real de todas formas, así que un desfase aquí no es un riesgo de
+// seguridad, solo un mensaje confuso si llegara a desactualizarse.
+const KV_PRIVATE_HARD_CAP_KB = 1024;       // 1MB
+const KV_PUBLIC_HARD_CAP_KB = 5 * 1024;    // 5MB
+
+let allTenants = [];
+let currentTenantSlug = null;
+
+async function loadTenants() {
+  const r = await api("/id/apps/me");
+  if (!r.ok) { toast("Error cargando tenants", "err"); return; }
+  allTenants = await r.json();
+  renderTenants(allTenants);
+}
+
+function filterTenants() {
+  const q = document.getElementById("tenantSearch").value.toLowerCase();
+  renderTenants(allTenants.filter(t =>
+    t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q)
+  ));
+}
+
+function renderTenants(tenants) {
+  const tb = document.getElementById("tenantTable");
+  if (!tenants.length) { tb.innerHTML = `<tr><td colspan="6" class="empty">Sin tenants</td></tr>`; return; }
+  tb.innerHTML = tenants.map(t => {
+    const regBadge = t.registrationsOpen === false
+      ? `<span class="badge badge-yellow">cerrados</span>`
+      : `<span class="badge badge-green">abiertos</span>`;
+    const statusBadge = t.suspended
+      ? `<span class="badge badge-red">suspendida</span>`
+      : `<span class="badge badge-green">activa</span>`;
+    return `<tr>
+      <td><strong>${t.name}</strong></td>
+      <td><span class="copy-id" title="Click para copiar" onclick="copyId('${t.slug}')">${t.slug}</span></td>
+      <td style="color:var(--muted)">${t.ownerUsername || "—"}</td>
+      <td>${regBadge}</td>
+      <td>${statusBadge}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openTenantDetail('${t.slug}')">Límites de KV</button></td>
+    </tr>`;
+  }).join("");
+}
+
+function openTenantDetail(slug) {
+  const t = allTenants.find(x => x.slug === slug);
+  if (!t) return;
+  currentTenantSlug = slug;
+  document.getElementById("tdName").textContent = t.name;
+  document.getElementById("tdSlug").textContent = t.slug;
+  document.getElementById("tdKvLimitKb").value = t.kvLimitBytes ? Math.round(t.kvLimitBytes / 1024) : 25;
+  document.getElementById("tdKvPublicLimitKb").value = t.kvPublicLimitBytes ? Math.round(t.kvPublicLimitBytes / 1024) : 100;
+  document.getElementById("tdKvLimitCap").textContent = KV_PRIVATE_HARD_CAP_KB;
+  document.getElementById("tdKvPublicLimitCap").textContent = KV_PUBLIC_HARD_CAP_KB;
+  document.getElementById("tdKvErr").style.display = "none";
+  document.getElementById("tenantsListPanel").style.display = "none";
+  document.getElementById("tenantDetailPanel").style.display = "block";
+}
+
+function closeTenantDetail() {
+  currentTenantSlug = null;
+  document.getElementById("tenantDetailPanel").style.display = "none";
+  document.getElementById("tenantsListPanel").style.display = "block";
+}
+
+async function saveKvLimits() {
+  const errEl = document.getElementById("tdKvErr");
+  errEl.style.display = "none";
+  const limitKb = parseInt(document.getElementById("tdKvLimitKb").value);
+  const publicLimitKb = parseInt(document.getElementById("tdKvPublicLimitKb").value);
+  if (!limitKb || limitKb <= 0 || !publicLimitKb || publicLimitKb <= 0) {
+    errEl.textContent = "Ambos límites deben ser números positivos.";
+    errEl.style.display = "block";
+    return;
+  }
+  const btn = document.getElementById("tdKvSaveBtn");
+  btn.disabled = true;
+  try {
+    const r = await api(`/id/apps/${currentTenantSlug}/kv-limit`, {
+      method: "PUT",
+      body: JSON.stringify({ limitKb, publicLimitKb })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || "No se pudo guardar."; errEl.style.display = "block"; return; }
+    // Reflejar en el cache local para que la lista no quede desactualizada
+    const t = allTenants.find(x => x.slug === currentTenantSlug);
+    if (t) { t.kvLimitBytes = d.kvLimitBytes; t.kvPublicLimitBytes = d.kvPublicLimitBytes; }
+    toast("Límites de KV guardados");
+  } catch {
+    errEl.textContent = "Error de conexión.";
+    errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── Neat Points ───────────────────────────────────────────────────────────────
