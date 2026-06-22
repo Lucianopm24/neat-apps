@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Probar tu Neat ID App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-gray-50 p-4 md:p-8 font-sans text-gray-800 min-h-screen">
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    
+    <!-- Encabezado -->
+    <div class="flex items-center gap-3 mb-8 border-b pb-4 border-gray-200">
+      <i class="ph-fill ph-shield-check text-4xl text-blue-600"></i>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Probar tu Neat ID App</h1>
+        <p class="text-sm text-gray-500">Prueba la integración OIDC con PKCE de tu Tenant de Neat ID de forma segura.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Formulario de Configuración -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <i class="ph ph-sliders text-xl"></i> Configuración
+        </h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tenant Slug</label>
+            <input type="text" id="tenantSlug" placeholder="ej. mi-organizacion" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            <p class="text-xs text-gray-400 mt-1 break-all">
+              Discovery URL: <span id="discoveryUrlPreview" class="font-mono text-blue-600">https://neat-apps-b.vercel.app/tenants/.../.well-known/openid-configuration</span>
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
+            <input type="text" id="clientId" placeholder="Tu client_id de Neat" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Scopes</label>
+            <input type="text" id="scopes" value="openid profile email" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+          </div>
+          
+          <div class="pt-4 flex gap-3">
+            <button id="btnLogin" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition">
+              <i class="ph ph-key text-xl"></i> Iniciar Autorización
+            </button>
+            <button id="btnReset" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition">
+              Limpiar
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Redirect URI actual: <br><span id="redirectUriDisplay" class="font-mono bg-gray-100 p-1 rounded inline-block mt-1 break-all"></span><br>
+            (Regístrala en tu consola de Neat ID).
+          </p>
+        </div>
+      </div>
+
+      <!-- Consola de Logs -->
+      <div class="bg-gray-900 rounded-xl shadow-sm border border-gray-800 flex flex-col overflow-hidden h-96 md:h-auto">
+        <div class="bg-gray-800 px-4 py-2 border-b border-gray-700 flex items-center">
+          <h2 class="text-sm font-medium text-gray-200 flex items-center gap-2">
+            <i class="ph ph-terminal text-lg"></i> Registro de Actividad
+          </h2>
+        </div>
+        <div id="logs" class="p-4 flex-1 overflow-y-auto space-y-2 font-mono text-xs">
+          <p class="text-gray-500 italic" id="logPlaceholder">Esperando acciones...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div id="results" class="hidden bg-white p-6 rounded-xl shadow-sm border border-green-200 mt-6">
+      <h2 class="text-lg font-semibold mb-4 text-green-700 flex items-center gap-2">
+        <i class="ph-fill ph-check-circle text-xl"></i> Autenticación Exitosa
+      </h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-sm font-bold text-gray-700 mb-2">Access Token</h3>
+          <textarea id="accessToken" readonly class="w-full h-48 p-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-xs text-gray-600 break-all resize-none outline-none"></textarea>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-gray-700 mb-2">ID Token (Decodificado)</h3>
+          <pre id="idToken" class="w-full h-48 p-3 bg-gray-50 border border-gray-200 rounded-lg font-mono text-xs text-blue-700 overflow-auto"></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Elementos DOM ---
+    const elTenantSlug = document.getElementById('tenantSlug');
+    const elDiscoveryUrlPreview = document.getElementById('discoveryUrlPreview');
+    const elClientId = document.getElementById('clientId');
+    const elScopes = document.getElementById('scopes');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnReset = document.getElementById('btnReset');
+    const elLogs = document.getElementById('logs');
+    const elLogPlaceholder = document.getElementById('logPlaceholder');
+    const elResults = document.getElementById('results');
+    const elAccessToken = document.getElementById('accessToken');
+    const elIdToken = document.getElementById('idToken');
+    const elRedirectUriDisplay = document.getElementById('redirectUriDisplay');
+
+    const redirectUri = window.location.origin + window.location.pathname;
+    elRedirectUriDisplay.textContent = redirectUri;
+
+    // --- Generación de URL OIDC ---
+    const getDiscoveryUrl = (slug) => {
+      const cleanSlug = slug.trim() || '...';
+      return `https://neat-apps-b.vercel.app/tenants/${cleanSlug}/.well-known/openid-configuration`;
+    };
+
+    const updatePreview = () => {
+      elDiscoveryUrlPreview.textContent = getDiscoveryUrl(elTenantSlug.value);
+    };
+
+    elTenantSlug.addEventListener('input', updatePreview);
+
+    // --- Funciones de Utilidad ---
+    const addLog = (message, type = 'info') => {
+      if (elLogPlaceholder) elLogPlaceholder.style.display = 'none';
+      const time = new Date().toLocaleTimeString();
+      let colorClass = 'text-blue-300';
+      if (type === 'error') colorClass = 'text-red-400';
+      if (type === 'success') colorClass = 'text-green-400';
+      
+      const logDiv = document.createElement('div');
+      logDiv.className = colorClass;
+      logDiv.innerHTML = `<span class="text-gray-500">[${time}]</span> ${message}`;
+      elLogs.appendChild(logDiv);
+      elLogs.scrollTop = elLogs.scrollHeight;
+    };
+
+    const generateRandomString = (length) => {
+      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+      let result = '';
+      const randomValues = new Uint8Array(length);
+      window.crypto.getRandomValues(randomValues);
+      for (let i = 0; i < length; i++) {
+        result += charset[randomValues[i] % charset.length];
+      }
+      return result;
+    };
+
+    const generateCodeChallenge = async (codeVerifier) => {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(codeVerifier);
+      const digest = await window.crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+    };
+
+    const decodeJWT = (token) => {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return { error: 'No se pudo decodificar el token' };
+      }
+    };
+
+    const setLoading = (loading) => {
+      btnLogin.disabled = loading;
+      if (loading) {
+        btnLogin.innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> Procesando...';
+        btnLogin.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        btnLogin.innerHTML = '<i class="ph ph-key text-xl"></i> Iniciar Autorización';
+        btnLogin.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    };
+
+    // --- Lógica Principal ---
+    const handleLogin = async () => {
+      const tenantSlug = elTenantSlug.value.trim();
+      const clientId = elClientId.value.trim();
+      const scopes = elScopes.value.trim();
+
+      if (!tenantSlug) {
+        addLog('Falta escribir el Tenant Slug', 'error');
+        return;
+      }
+      if (!clientId) {
+        addLog('Falta configurar el Client ID', 'error');
+        return;
+      }
+
+      const discoveryUrl = getDiscoveryUrl(tenantSlug);
+
+      setLoading(true);
+      elLogs.innerHTML = '';
+      elResults.classList.add('hidden');
+      addLog('Iniciando flujo PKCE para Neat ID...');
+
+      try {
+        addLog(`Obteniendo configuración de: ${discoveryUrl}`);
+        const res = await fetch(discoveryUrl);
+        if (!res.ok) throw new Error('No se pudo resolver el OpenID Configuration del Tenant. Verifica el Slug.');
+        const config = await res.json();
+        
+        const authEndpoint = config.authorization_endpoint;
+        const tokenEndpoint = config.token_endpoint;
+        addLog(`Endpoints: Auth(${authEndpoint}), Token(${tokenEndpoint})`);
+
+        const codeVerifier = generateRandomString(64);
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        const state = generateRandomString(16);
+        
+        addLog(`Verifier: ${codeVerifier.substring(0, 10)}...`);
+        addLog(`Challenge: ${codeChallenge}`);
+
+        sessionStorage.setItem('oidc_code_verifier', codeVerifier);
+        sessionStorage.setItem('oidc_state', state);
+        sessionStorage.setItem('oidc_token_endpoint', tokenEndpoint);
+        sessionStorage.setItem('oidc_client_id', clientId);
+        sessionStorage.setItem('oidc_redirect_uri', redirectUri);
+        sessionStorage.setItem('oidc_tenant_slug', tenantSlug);
+
+        const authUrl = new URL(authEndpoint);
+        authUrl.searchParams.append('client_id', clientId);
+        authUrl.searchParams.append('response_type', 'code');
+        authUrl.searchParams.append('scope', scopes);
+        authUrl.searchParams.append('redirect_uri', redirectUri);
+        authUrl.searchParams.append('state', state);
+        authUrl.searchParams.append('code_challenge', codeChallenge);
+        authUrl.searchParams.append('code_challenge_method', 'S256');
+
+        addLog('Redirigiendo a Neat ID...');
+        window.location.href = authUrl.toString();
+      } catch (error) {
+        addLog(`Error: ${error.message}`, 'error');
+        setLoading(false);
+      }
+    };
+
+    const handleCallback = async (code, state) => {
+      setLoading(true);
+      btnReset.classList.remove('hidden');
+      addLog(`Código de autorización recibido: ${code.substring(0, 10)}...`, 'success');
+
+      const savedState = sessionStorage.getItem('oidc_state');
+      if (state !== savedState) {
+        addLog('Error: El state no coincide. Posible CSRF.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      const tokenEndpoint = sessionStorage.getItem('oidc_token_endpoint');
+      const clientId = sessionStorage.getItem('oidc_client_id');
+      const codeVerifier = sessionStorage.getItem('oidc_code_verifier');
+      const savedRedirectUri = sessionStorage.getItem('oidc_redirect_uri');
+
+      addLog('Intercambiando código por tokens en Neat ID...');
+
+      try {
+        const body = new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          code: code,
+          redirect_uri: savedRedirectUri,
+          code_verifier: codeVerifier
+        });
+
+        const res = await fetch(tokenEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString()
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error_description || errData.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        addLog('Tokens de Neat ID obtenidos exitosamente.', 'success');
+
+        elResults.classList.remove('hidden');
+        elAccessToken.value = data.access_token || 'No se recibió access_token';
+        
+        if (data.id_token) {
+          elIdToken.textContent = JSON.stringify(decodeJWT(data.id_token), null, 2);
+        } else {
+          elIdToken.textContent = 'No se recibió id_token';
+        }
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+        sessionStorage.removeItem('oidc_code_verifier');
+        sessionStorage.removeItem('oidc_state');
+      } catch (error) {
+        addLog(`Error obteniendo tokens: ${error.message} (Revisa que tu tenant admita CORS para este origen)`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // --- Inicialización ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const error = urlParams.get('error');
+
+      const savedClientId = sessionStorage.getItem('oidc_client_id');
+      const savedSlug = sessionStorage.getItem('oidc_tenant_slug');
+      if (savedClientId) elClientId.value = savedClientId;
+      if (savedSlug) {
+        elTenantSlug.value = savedSlug;
+        updatePreview();
+      }
+
+      if (error) {
+        addLog(`Error Auth: ${error} - ${urlParams.get('error_description')}`, 'error');
+        btnReset.classList.remove('hidden');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (code) {
+        handleCallback(code, state);
+      }
+
+      btnLogin.addEventListener('click', handleLogin);
+      btnReset.addEventListener('click', () => {
+        elLogs.innerHTML = '<p class="text-gray-500 italic" id="logPlaceholder">Esperando acciones...</p>';
+        elResults.classList.add('hidden');
+        elAccessToken.value = '';
+        elIdToken.textContent = '';
+        btnReset.classList.add('hidden');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    });
+  </script>
+</body>
+</html>
