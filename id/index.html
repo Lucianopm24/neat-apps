@@ -349,14 +349,12 @@
             const isLinkingReturn = isLinkingReturnPath && !!qp.get('code');
 
             // Si volvemos de Neat (/SLUG/neat-callback) pero el viaje empezó
-            // desde el panel /manage, el path YA NO tiene /manage (Neat solo
-            // conoce la URL fija registrada en redirectUris). Sin este chequeo,
-            // boot() trataría el regreso como un login OAuth normal en vez de
-            // devolvernos al panel — los flags quedaron guardados antes de salir.
-            const returningToManage = isLinkingReturn && (
-                sessionStorage.getItem('manage_linking_in_progress') ||
-                sessionStorage.getItem('manage_neat_login_in_progress')
-            );
+            // desde el panel /manage ("Continuar con Neat" para entrar), el
+            // path YA NO tiene /manage (Neat solo conoce la URL fija
+            // registrada en redirectUris). Sin este chequeo, boot() trataría
+            // el regreso como un login OAuth normal en vez de devolvernos al
+            // panel — el flag quedó guardado antes de salir hacia Neat.
+            const returningToManage = isLinkingReturn && !!sessionStorage.getItem('manage_neat_login_in_progress');
 
             if (!appSlug || (!isManagePath && !returningToManage && !tenantRedirectUri && !isLinkingReturn)) {
                 return bootError("Falta información", "Esta página necesita que la app de origen indique 'app' y 'redirect_uri'. Vuelve a la aplicación e intenta de nuevo.");
@@ -625,17 +623,14 @@
         }
 
         // ── Arranque ─────────────────────────────────────────────────────────
-        // OJO: la misma ruta /SLUG/neat-callback sirve para 3 casos distintos
-        // (login normal, vincular dentro del flujo OAuth, y vincular/entrar
-        // desde /manage) — solo sessionStorage distingue cuál es cuál. Si el
+        // OJO: la misma ruta /SLUG/neat-callback sirve para 2 casos distintos
+        // (login normal del tenant, y "Continuar con Neat" para entrar a
+        // /manage) — solo sessionStorage distingue cuál es cuál. Si el
         // retorno es de manage, boot() ya llama a bootManage() internamente;
         // handleLinkingReturn() es SOLO para el flujo OAuth normal del tenant,
         // y no debe dispararse en el caso de manage (no hay lastLocalCode ni
         // tenant esperando un redirect en ese caso).
-        const isManageReturn = isLinkingReturnPath && (
-            sessionStorage.getItem('manage_linking_in_progress') ||
-            sessionStorage.getItem('manage_neat_login_in_progress')
-        );
+        const isManageReturn = isLinkingReturnPath && !!sessionStorage.getItem('manage_neat_login_in_progress');
 
         if (isLinkingReturnPath && qp.get('code') && !isManageReturn) {
             boot().then(() => handleLinkingReturn(qp.get('code')));
@@ -655,19 +650,17 @@
             document.getElementById('manage-logo-wrap').style.backgroundColor = color;
             document.getElementById('manage-logo-initial').innerText = appData.name[0].toUpperCase();
 
-            // ¿Venimos de vuelta de vincular Neat desde el panel (ya logueado)?
-            const linkingFromManage = sessionStorage.getItem('manage_linking_in_progress');
-            // ¿O venimos de "Continuar con Neat" para ENTRAR al panel (sin sesión previa)?
+            // El flujo de "vincular Neat desde dentro de /manage" ya no tiene
+            // botón en la UI (no era confiable desde aquí — ver mensaje en el
+            // dashboard). Si quedó un flag huérfano de una prueba anterior con
+            // la versión vieja (pestaña cerrada a medias, recarga, etc.), lo
+            // limpiamos aquí para que nunca vuelva a desviar el flujo de login.
+            sessionStorage.removeItem('manage_linking_in_progress');
+            sessionStorage.removeItem('manage_link_verifier');
+
+            // ¿Venimos de "Continuar con Neat" para ENTRAR al panel (sin sesión previa)?
             const neatLoginInProgress = sessionStorage.getItem('manage_neat_login_in_progress');
             const savedToken = sessionStorage.getItem(`manage_token_${appSlug}`);
-
-            if (isLinkingReturnPath && qp.get('code') && linkingFromManage) {
-                sessionStorage.removeItem('manage_linking_in_progress');
-                manageToken = savedToken;
-                document.getElementById('manage-dashboard').classList.remove('hidden');
-                manageFinishLinkNeat(qp.get('code'));
-                return;
-            }
 
             if (isLinkingReturnPath && qp.get('code') && neatLoginInProgress) {
                 sessionStorage.removeItem('manage_neat_login_in_progress');
@@ -831,46 +824,6 @@
             // Panel simple — sin sistema de toasts propio, basta un alert
             // discreto para errores de revocación puntuales.
             alert(msg);
-        }
-
-        // ── Vincular Neat desde el panel (distinto del flujo de vinculación
-        // dentro de un login OAuth — aquí no hay tenant esperando un code) ──
-        async function manageLinkNeatStart() {
-            const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
-            const challengeBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-            const challenge = base64url(new Uint8Array(challengeBuf));
-
-            sessionStorage.setItem('manage_link_verifier', verifier);
-            sessionStorage.setItem('manage_linking_in_progress', '1');
-
-            const p = new URLSearchParams({
-                client_id: appData.internalClientId,
-                redirect_uri: NEAT_LINKING_CALLBACK,
-                scope: "openid profile email",
-                code_challenge: challenge,
-                code_challenge_method: "S256"
-            });
-            location.href = `${NEAT_OAUTH_URL}?${p}`;
-        }
-
-        async function manageFinishLinkNeat(neatCode) {
-            const verifier = sessionStorage.getItem('manage_link_verifier');
-            sessionStorage.removeItem('manage_link_verifier');
-            try {
-                await manageApiFetch(`/id/users/${appSlug}/link-neat`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        neatCode,
-                        localAccessToken: manageToken,
-                        redirectUri: NEAT_LINKING_CALLBACK,
-                        codeVerifier: verifier
-                    })
-                });
-                manageLoadAccount();
-            } catch (e) {
-                showManageToastFallback('No se pudo vincular: ' + e.message);
-                manageLoadAccount();
-            }
         }
 
         async function manageUnlinkNeat() {
