@@ -317,7 +317,7 @@
                 <div id="tab-groups" class="tab-panel hidden">
                     <div class="flex items-center justify-between mb-4">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Grupos con roles. Salen en el ID token como <code class="text-xs bg-gray-100 dark:bg-white/10 px-1 rounded">groups</code>.</p>
-                        <button onclick="openCreateGroupModal()" class="btn-secondary shrink-0">+ Nuevo grupo</button>
+                        <button id="btn-new-group" onclick="openCreateGroupModal()" class="btn-secondary shrink-0">+ Nuevo grupo</button>
                     </div>
                     <div id="groups-list" class="space-y-3"></div>
                     <div id="groups-empty" class="hidden text-center py-12 text-sm text-gray-500 dark:text-gray-400">Sin grupos todavía.</div>
@@ -1549,6 +1549,8 @@
 
         async function loadGroups() {
             document.getElementById('group-detail').classList.add('hidden');
+            document.getElementById('groups-list').classList.remove('hidden');
+            document.getElementById('btn-new-group').classList.remove('hidden');
             document.getElementById('groups-list').innerHTML = '';
             document.getElementById('groups-empty').classList.add('hidden');
             try {
@@ -1633,7 +1635,7 @@
             document.getElementById('group-detail-name').innerText = name;
             document.getElementById('groups-list').classList.add('hidden');
             document.getElementById('groups-empty').classList.add('hidden');
-            document.querySelector('[onclick="openCreateGroupModal()"]').parentElement.querySelector('button:last-child')?.classList?.add('hidden');
+            document.getElementById('btn-new-group').classList.add('hidden');
             document.getElementById('group-detail').classList.remove('hidden');
             await loadMembers();
         }
@@ -1642,6 +1644,7 @@
             currentGroupKey = null;
             document.getElementById('group-detail').classList.add('hidden');
             document.getElementById('groups-list').classList.remove('hidden');
+            document.getElementById('btn-new-group').classList.remove('hidden');
             loadGroups();
         }
 
