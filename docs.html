@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neat — Documentación de OAuth y Tenants (Neat ID)</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --blue-light: #e8f0fe;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --yellow: #f9ab00;
+    --yellow-light: #fef7e0;
+    --red: #d93025;
+    --red-light: #fce8e6;
+    --purple: #8430ce;
+    --purple-light: #f3e8fd;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-400: #9aa0a6;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --code-bg: #1e1e2e;
+    --code-text: #e4e4f0;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', 'Roboto', sans-serif;
+    color: var(--gray-900);
+    background: var(--gray-50);
+    line-height: 1.6;
+  }
+
+  /* ─────────── Layout ─────────── */
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--gray-200);
+    padding: 24px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 24px 20px;
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 16px;
+  }
+
+  .brand-icon {
+    width: 34px; height: 34px;
+    background: var(--blue);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-family: 'Google Sans', sans-serif;
+  }
+
+  .brand-text { font-family: 'Google Sans', sans-serif; font-weight: 700; font-size: 17px; }
+  .brand-sub { font-size: 11px; color: var(--gray-600); }
+
+  .nav-section { padding: 0 12px; margin-bottom: 4px; }
+  .nav-section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--gray-400); padding: 14px 12px 6px;
+  }
+  .nav-link {
+    display: block; padding: 7px 12px; border-radius: 8px; font-size: 13.5px;
+    color: var(--gray-800); text-decoration: none; transition: background .12s;
+  }
+  .nav-link:hover { background: var(--gray-100); }
+  .nav-link.indent { padding-left: 26px; font-size: 13px; color: var(--gray-600); }
+
+  .content {
+    flex: 1;
+    max-width: 980px;
+    padding: 48px 56px 120px;
+  }
+
+  /* ─────────── Typography ─────────── */
+  h1 { font-family: 'Google Sans', sans-serif; font-size: 32px; font-weight: 700; margin: 0 0 8px; }
+  h2 {
+    font-family: 'Google Sans', sans-serif; font-size: 24px; font-weight: 700;
+    margin: 56px 0 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);
+    scroll-margin-top: 24px;
+  }
+  h2:first-of-type { border-top: none; padding-top: 0; }
+  h3 {
+    font-family: 'Google Sans', sans-serif; font-size: 18px; font-weight: 600;
+    margin: 32px 0 12px; scroll-margin-top: 24px;
+  }
+  h4 { font-size: 14.5px; font-weight: 700; margin: 22px 0 8px; color: var(--gray-800); }
+  p { margin: 0 0 14px; color: var(--gray-800); font-size: 14.5px; }
+  .lede { font-size: 16px; color: var(--gray-600); margin-bottom: 28px; }
+  ul, ol { margin: 0 0 16px; padding-left: 22px; font-size: 14.5px; color: var(--gray-800); }
+  li { margin-bottom: 6px; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { font-weight: 600; }
+  code {
+    font-family: 'Roboto Mono', monospace;
+    background: var(--gray-100);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 0.88em;
+    color: #b91c5c;
+  }
+
+  /* ─────────── Top badge / header ─────────── */
+  .doc-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 24px; margin-bottom: 8px; flex-wrap: wrap;
+  }
+  .badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px;
+  }
+  .pill-blue { background: var(--blue-light); color: var(--blue-dark); }
+  .pill-green { background: var(--green-light); color: var(--green); }
+  .pill-purple { background: var(--purple-light); color: var(--purple); }
+  .pill-yellow { background: var(--yellow-light); color: #8a6100; }
+  .pill-gray { background: var(--gray-100); color: var(--gray-600); }
+
+  /* ─────────── Cards / boxes ─────────── */
+  .card {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+    padding: 20px 24px; margin: 20px 0; box-shadow: var(--shadow);
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .callout {
+    display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius);
+    margin: 18px 0; font-size: 13.5px; line-height: 1.55;
+  }
+  .callout-icon { font-size: 17px; flex-shrink: 0; line-height: 1.4; }
+  .callout-info { background: var(--blue-light); color: #0b3d8c; }
+  .callout-warn { background: var(--yellow-light); color: #6b4e00; }
+  .callout-danger { background: var(--red-light); color: #8c1c13; }
+  .callout-tip { background: var(--green-light); color: #0d5c2c; }
+  .callout p { margin: 0; color: inherit; }
+  .callout strong { color: inherit; }
+
+  /* ─────────── Tables ─────────── */
+  .table-wrap { overflow-x: auto; margin: 18px 0; border: 1px solid var(--gray-200); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    background: var(--gray-50); text-align: left; padding: 10px 14px;
+    font-weight: 600; color: var(--gray-700); border-bottom: 1px solid var(--gray-200);
+    white-space: nowrap; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--gray-600);
+  }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--gray-50); }
+  td code, th code { white-space: nowrap; }
+
+  .method {
+    font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 11px;
+    padding: 2px 8px; border-radius: 5px; display: inline-block; min-width: 46px; text-align: center;
+  }
+  .m-get { background: var(--blue-light); color: var(--blue-dark); }
+  .m-post { background: var(--green-light); color: var(--green); }
+  .m-put { background: var(--yellow-light); color: #8a6100; }
+  .m-delete { background: var(--red-light); color: var(--red); }
+
+  /* ─────────── Code blocks ─────────── */
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: var(--radius); padding: 16px 18px; overflow-x: auto;
+    font-size: 12.8px; line-height: 1.6; margin: 16px 0;
+    font-family: 'Roboto Mono', monospace;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .code-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--gray-400); margin-bottom: -8px; display: block;
+  }
+  .tok-key { color: #f6c177; }
+  .tok-str { color: #a6da95; }
+  .tok-com { color: #6e6a86; font-style: italic; }
+  .tok-fn { color: #8aadf4; }
+  .tok-kw { color: #c6a0f6; }
+
+  /* ─────────── Diagram wrapper ─────────── */
+  .diagram-wrap {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+    padding: 24px; margin: 20px 0; overflow-x: auto; box-shadow: var(--shadow);
+  }
+  .diagram-caption { text-align: center; font-size: 12.5px; color: var(--gray-600); margin-top: 8px; }
+
+  /* ─────────── Step list ─────────── */
+  .steps { list-style: none; padding: 0; margin: 20px 0; }
+  .steps li {
+    display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--gray-100);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--blue); color: #fff; font-size: 12.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { flex: 1; font-size: 14px; }
+  .step-body strong { display: block; margin-bottom: 2px; font-size: 14.5px; }
+
+  /* ─────────── Endpoint heading ─────────── */
+  .endpoint-head {
+    display: flex; align-items: center; gap: 10px; margin: 28px 0 4px;
+    font-family: 'Roboto Mono', monospace; font-size: 14px;
+  }
+  .endpoint-desc { font-size: 13.5px; color: var(--gray-600); margin: 4px 0 14px; }
+
+  /* ─────────── TOC active state on scroll (simple) ─────────── */
+  .toc-back-top {
+    position: fixed; bottom: 28px; right: 36px;
+    background: var(--blue); color: #fff; border-radius: 50%;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; box-shadow: var(--shadow-md); cursor: pointer; text-decoration: none;
+    opacity: 0.9;
+  }
+  .toc-back-top:hover { opacity: 1; }
+
+  hr.sep { border: none; border-top: 1px solid var(--gray-200); margin: 36px 0; }
+
+  .domain-tag {
+    font-family: 'Roboto Mono', monospace; font-size: 12px; background: var(--gray-900);
+    color: #fff; padding: 3px 9px; border-radius: 6px; display: inline-block;
+  }
+
+  @media print {
+    .sidebar, .toc-back-top { display: none; }
+    .content { max-width: 100%; padding: 0; }
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content { padding: 28px 20px 100px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ═══════════════ SIDEBAR / TOC ═══════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">N</div>
+      <div>
+        <div class="brand-text">Neat</div>
+        <div class="brand-sub">Docs internas · OAuth &amp; Tenants</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <a class="nav-link" href="#intro">Introducción</a>
+      <a class="nav-link" href="#arquitectura">Arquitectura general</a>
+      <a class="nav-link" href="#dominios">Dominios y responsabilidades</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Neat OAuth (cuenta global)</div>
+      <a class="nav-link" href="#neat-oauth-overview">Cómo funciona</a>
+      <a class="nav-link" href="#neat-oauth-scopes">Scopes</a>
+      <a class="nav-link" href="#neat-oauth-flujo">Flujo paso a paso</a>
+      <a class="nav-link" href="#neat-oauth-endpoints">Endpoints</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Neat ID (Tenants)</div>
+      <a class="nav-link" href="#tenants-overview">Qué es un Tenant</a>
+      <a class="nav-link" href="#tenants-crear">Crear un Tenant (admin.html)</a>
+      <a class="nav-link" href="#tenants-clients">Clients de un Tenant</a>
+      <a class="nav-link" href="#tenants-login-local">Login local (email/password)</a>
+      <a class="nav-link" href="#tenants-login-neat">"Continuar con Neat"</a>
+      <a class="nav-link" href="#tenants-link-neat">Vincular cuenta Neat</a>
+      <a class="nav-link" href="#tenants-social">Login social (terceros)</a>
+      <a class="nav-link" href="#tenants-manage">Panel /manage del usuario final</a>
+      <a class="nav-link" href="#tenants-token">Intercambio de code (/id/token)</a>
+      <a class="nav-link" href="#tenants-endpoints">Referencia de endpoints</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Extras</div>
+      <a class="nav-link" href="#kv-storage">KV Storage</a>
+      <a class="nav-link" href="#grupos-invitaciones">Grupos e invitaciones</a>
+      <a class="nav-link" href="#oidc-discovery">Discovery OIDC</a>
+      <a class="nav-link" href="#seguridad">Notas de seguridad</a>
+    </div>
+  </nav>
+
+  <!-- ═══════════════ CONTENT ═══════════════ -->
+  <main class="content" id="top">
+
+    <h1 id="intro">OAuth de Neat &amp; Sistema de Tenants (Neat ID)</h1>
+    <p class="lede">Documentación técnica del flujo de autenticación de Neat: el OAuth de la cuenta global de Neat, y el sistema multi-tenant <strong>Neat ID</strong> que permite a cualquier desarrollador crear su propia app con login propio (email/password, "Continuar con Neat" o login social) sin escribir un backend de autenticación.</p>
+
+    <div class="badge-row">
+      <span class="pill pill-blue">OAuth 2.0 + PKCE</span>
+      <span class="pill pill-green">Multi-tenant</span>
+      <span class="pill pill-purple">OIDC-compatible</span>
+      <span class="pill pill-yellow">JWT (HS256)</span>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <p><strong>Audiencia:</strong> este documento está pensado para quien mantiene la infraestructura de Neat y para desarrolladores que integran un Tenant (una app propia) contra Neat ID. Se basa directamente en el código fuente del backend (<code>neat-apps-b.vercel.app</code>) y en los tres frontends: <code>oauth.html</code>, <code>index.html</code> y <code>admin.html</code>.</p>
+    </div>
+
+    <h2 id="arquitectura">Arquitectura general</h2>
+    <p>Neat tiene en realidad <strong>dos sistemas de autenticación apilados</strong>:</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="margin-top:0">1. Neat OAuth (cuenta global)</h4>
+        <p style="margin-bottom:0">El sistema de cuentas "de toda la vida" de Neat (<code>users</code>). Es la identidad raíz: la que usa Neat Forums, Neat Chatter, Neat Points, etc. Funciona como un proveedor OAuth 2.0 clásico con scopes propios del ecosistema Neat.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">2. Neat ID (Tenants)</h4>
+        <p style="margin-bottom:0">Una capa multi-tenant construida <em>encima</em> del OAuth global. Cualquier usuario de Neat puede crear un <strong>Tenant</strong> (una "App" en <code>admin.html</code>) que obtiene su propio pool de usuarios (<code>id_app_users</code>), su propia pantalla de login hosteada, y puede aceptar login local, login social, o "Continuar con Neat".</p>
+      </div>
+    </div>
+
+    <p>La pieza que conecta ambos sistemas es un <strong>client OAuth interno</strong> (PKCE, público) que Neat genera automáticamente para cada Tenant al crearlo. Ese client interno es el que usa la hosted login page para pedirle a un usuario "¿confirmas que quieres entrar a <em>Tenant X</em> con tu cuenta Neat?" — exactamente la misma pantalla de <code>oauth.html</code> que usaría cualquier app de terceros.</p>
+
+    <div class="diagram-wrap" id="diagram-overview">
+<svg viewBox="0 0 920 330" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:Inter,sans-serif;">
+  <defs>
+    <marker id="arrow1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5f6368"/></marker>
+  </defs>
+  <!-- Layer: Neat global -->
+  <rect x="20" y="20" width="880" height="110" rx="14" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+  <text x="40" y="46" font-size="13" font-weight="700" fill="#1557b0">CAPA 1 — Neat OAuth (cuenta global)</text>
+  <rect x="40" y="58" width="170" height="56" rx="10" fill="#ffffff" stroke="#1a73e8" stroke-width="1.2"/>
+  <text x="125" y="82" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">users</text>
+  <text x="125" y="98" font-size="10.5" text-anchor="middle" fill="#5f6368">cuenta Neat</text>
+  <rect x="240" y="58" width="220" height="56" rx="10" fill="#ffffff" stroke="#1a73e8" stroke-width="1.2"/>
+  <text x="350" y="82" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">oauth_clients / oauth_codes</text>
+  <text x="350" y="98" font-size="10.5" text-anchor="middle" fill="#5f6368">/oauth/authorize · /oauth/token</text>
+  <rect x="490" y="58" width="220" height="56" rx="10" fill="#ffffff" stroke="#1a73e8" stroke-width="1.2"/>
+  <text x="600" y="82" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">oauth.html</text>
+  <text x="600" y="98" font-size="10.5" text-anchor="middle" fill="#5f6368">neat.qzz.io/oauth</text>
+  <rect x="740" y="58" width="140" height="56" rx="10" fill="#fef7e0" stroke="#f9ab00" stroke-width="1.2"/>
+  <text x="810" y="82" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">scopes</text>
+  <text x="810" y="98" font-size="10.5" text-anchor="middle" fill="#5f6368">profile, email…</text>
+
+  <!-- connector arrow between layers -->
+  <line x1="460" y1="130" x2="460" y2="168" stroke="#9aa0a6" stroke-width="2" marker-end="url(#arrow1)"/>
+  <text x="475" y="153" font-size="10.5" fill="#5f6368">client interno (PKCE)</text>
+
+  <!-- Layer: Neat ID -->
+  <rect x="20" y="178" width="880" height="132" rx="14" fill="#f3e8fd" stroke="#8430ce" stroke-width="1.5"/>
+  <text x="40" y="204" font-size="13" font-weight="700" fill="#6a1b9a">CAPA 2 — Neat ID (Tenants / Multi-tenant)</text>
+
+  <rect x="40" y="216" width="190" height="74" rx="10" fill="#ffffff" stroke="#8430ce" stroke-width="1.2"/>
+  <text x="135" y="240" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">admin.html</text>
+  <text x="135" y="256" font-size="10.5" text-anchor="middle" fill="#5f6368">id.neat.qzz.io/admin</text>
+  <text x="135" y="272" font-size="10" text-anchor="middle" fill="#8430ce">dueño del Tenant</text>
+
+  <rect x="260" y="216" width="190" height="74" rx="10" fill="#ffffff" stroke="#8430ce" stroke-width="1.2"/>
+  <text x="355" y="240" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">index.html</text>
+  <text x="355" y="256" font-size="10.5" text-anchor="middle" fill="#5f6368">id.neat.qzz.io/&lt;slug&gt;</text>
+  <text x="355" y="272" font-size="10" text-anchor="middle" fill="#8430ce">usuario final del Tenant</text>
+
+  <rect x="480" y="216" width="190" height="74" rx="10" fill="#ffffff" stroke="#8430ce" stroke-width="1.2"/>
+  <text x="575" y="240" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">id_apps / id_app_users</text>
+  <text x="575" y="256" font-size="10.5" text-anchor="middle" fill="#5f6368">id_app_clients</text>
+  <text x="575" y="272" font-size="10" text-anchor="middle" fill="#5f6368">pool aislado por slug</text>
+
+  <rect x="700" y="216" width="180" height="74" rx="10" fill="#ffffff" stroke="#8430ce" stroke-width="1.2"/>
+  <text x="790" y="240" font-size="12" text-anchor="middle" fill="#202124" font-weight="600">/id/token</text>
+  <text x="790" y="256" font-size="10.5" text-anchor="middle" fill="#5f6368">/id/userinfo</text>
+  <text x="790" y="272" font-size="10" text-anchor="middle" fill="#5f6368">access_token del Tenant</text>
+</svg>
+</div>
+    <p class="diagram-caption">Vista de alto nivel: el Tenant nunca ve contraseñas de Neat. Solo recibe un <code>code</code> y lo cambia por un token de <strong>su propio</strong> sistema (Neat ID), no por un token de la cuenta global.</p>
+
+    <h2 id="dominios">Dominios y responsabilidades</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dominio</th><th>Qué sirve</th><th>Rol en el flujo</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="domain-tag">neat.qzz.io/oauth</span></td>
+            <td><code>oauth.html</code></td>
+            <td>Pantalla de consentimiento OAuth de la <strong>cuenta global de Neat</strong>. Aquí el usuario elige su cuenta Neat y aprueba scopes. Equivalente a la pantalla "Iniciar sesión con Google".</td>
+          </tr>
+          <tr>
+            <td><span class="domain-tag">id.neat.qzz.io</span></td>
+            <td><code>index.html</code> (raíz / <code>/&lt;slug&gt;</code>) y <code>admin.html</code> (<code>/admin</code>)</td>
+            <td><code>index.html</code> es la <strong>hosted login page</strong> de cada Tenant (login local, registro, "Continuar con Neat", login social, panel <code>/manage</code>). <code>admin.html</code> es el panel donde el dueño de un Tenant administra su app, clients, usuarios, grupos y proveedores sociales.</td>
+          </tr>
+          <tr>
+            <td><span class="domain-tag">neat-apps-b.vercel.app</span></td>
+            <td>API backend (Express)</td>
+            <td>Toda la lógica vive aquí: emisión y validación de <code>code</code>/tokens, base de datos (MongoDB), envío de emails, login social vía OIDC discovery, etc. Tanto <code>oauth.html</code> como <code>index.html</code> y <code>admin.html</code> son <em>solo frontend</em> — todas sus llamadas van a este backend.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="neat-oauth-overview">Neat OAuth — Cómo funciona</h2>
+    <p>Es un proveedor <strong>OAuth 2.0 + PKCE</strong> estándar sobre la cuenta global de Neat (colección <code>users</code>). Cualquier app externa (o el propio sistema Neat ID, como veremos después) puede registrar un <em>client</em> y pedirle a un usuario de Neat que autorice acceso a ciertos <em>scopes</em> de su cuenta.</p>
+
+    <ul>
+      <li>Soporta <strong>flujo público (PKCE)</strong> — sin <code>client_secret</code>, usando <code>code_challenge</code>/<code>code_verifier</code> — y <strong>flujo confidencial clásico</strong> con <code>client_secret</code>.</li>
+      <li>El <code>code</code> de autorización expira a los <strong>5 minutos</strong> y es de un solo uso.</li>
+      <li>El <code>access_token</code> resultante es un JWT firmado (HS256). Su duración depende del scope: <strong>24 horas</strong> para tokens normales, <strong>30 días</strong> para tokens con scope <code>account</code> (acceso completo).</li>
+      <li>Si se pide el scope <code>openid</code>, además del <code>access_token</code> se emite un <code>id_token</code> (JWT con claims <code>sub</code>, <code>username</code>, <code>email</code>, <code>verified</code>).</li>
+    </ul>
+
+    <h3 id="neat-oauth-scopes">Scopes disponibles</h3>
+    <p>Definidos en <code>oauth.html</code> (objeto <code>SCOPE_META</code>) y validados server-side en <code>POST /oauth/authorize</code>:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Scope</th><th>Descripción</th><th>Tipo</th></tr></thead>
+        <tbody>
+          <tr><td><code>openid</code></td><td>Identificación estándar OpenID Connect (habilita <code>id_token</code>)</td><td><span class="pill pill-gray">normal</span></td></tr>
+          <tr><td><code>profile</code></td><td>Username, bio, avatar y estado de verificación</td><td><span class="pill pill-gray">normal</span></td></tr>
+          <tr><td><code>email</code></td><td>Dirección de correo electrónico</td><td><span class="pill pill-gray">normal</span></td></tr>
+          <tr><td><code>forums</code></td><td>Leer, crear y comentar en Neat Forums</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>forms</code></td><td>Crear encuestas y ver respuestas en Neat Forms</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>watch</code></td><td>Ver y subir videos en Neat Watch</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>points</code></td><td>Ver saldo y transferir Neat Points</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>chatter</code></td><td>Leer y enviar mensajes en Neat Chatter</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>notes</code></td><td>Crear, editar y borrar notas del usuario</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>ruletas</code></td><td>Crear, editar y borrar ruletas del usuario</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>web</code></td><td>Publicar/modificar la página personal del usuario</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>ntfy</code></td><td>Activar y leer el canal de notificaciones push</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>kv</code></td><td>Leer un resumen consolidado de los datos del usuario (filtrado por los demás scopes otorgados)</td><td><span class="pill pill-yellow">sensible</span></td></tr>
+          <tr><td><code>account</code></td><td>Control total de la cuenta — equivalente a la contraseña. Token de 30 días en vez de 24h.</td><td><span class="pill pill-red" style="background:var(--red-light);color:var(--red)">peligroso</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <p>Los scopes <strong>sensibles</strong> llegan <em>desmarcados</em> por defecto en <code>oauth.html</code> aunque la app los haya pedido — el usuario debe activarlos manualmente, y si el client no está verificado se le pide confirmación extra. El scope <code>account</code> siempre muestra una advertencia explícita ("equivale a tu contraseña") antes de poder activarse.</p>
+    </div>
+
+    <h3 id="neat-oauth-flujo">Flujo paso a paso (Authorization Code + PKCE)</h3>
+
+    <ol class="steps" style="list-style:none;padding:0;margin:20px 0;">
+      <li class="steps">
+        <span class="step-num">1</span>
+        <div class="step-body"><strong>Redirect inicial</strong>La app de terceros redirige al usuario a <code>https://neat.qzz.io/oauth.html</code> con query params: <code>client_id</code>, <code>redirect_uri</code>, <code>scope</code>, <code>state</code>, <code>code_challenge</code>, <code>code_challenge_method</code>.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">2</span>
+        <div class="step-body"><strong>Carga de la info del client</strong><code>oauth.html</code> llama a <code>GET /oauth/clients/:clientId</code> (público) para mostrar nombre, badge de "app verificada" y armar la lista de scopes pedidos.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">3</span>
+        <div class="step-body"><strong>Selección de cuenta / login</strong>El usuario elige una cuenta guardada en <code>localStorage</code> (<code>neat_oauth_accounts</code>) o inicia sesión con <code>POST /chat/login</code>. Las cuentas se guardan localmente junto con su propio <code>token</code> de sesión real (no OAuth).</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">4</span>
+        <div class="step-body"><strong>Ajuste de scopes</strong>El usuario activa/desactiva los scopes sensibles. Si activa <code>account</code>, ve la advertencia de "acceso completo".</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">5</span>
+        <div class="step-body"><strong>Autorizar</strong><code>POST /oauth/authorize</code> (con el token de sesión real del usuario en el header) crea un registro en <code>oauth_codes</code> y devuelve un <code>code</code> de un solo uso, válido 5 minutos.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">6</span>
+        <div class="step-body"><strong>Redirect de vuelta</strong><code>oauth.html</code> redirige el navegador a <code>redirect_uri?code=...&amp;state=...</code>.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">7</span>
+        <div class="step-body"><strong>Intercambio del code</strong>El backend de la app de terceros llama a <code>POST /oauth/token</code> con el <code>code</code> y, según el tipo de client, <code>code_verifier</code> (PKCE) o <code>client_secret</code> (confidencial). Recibe <code>access_token</code> (y <code>id_token</code> si pidió <code>openid</code>).</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">8</span>
+        <div class="step-body"><strong>Consumo del token</strong>La app usa el <code>access_token</code> como <code>Authorization: Bearer ...</code> contra <code>GET /oauth/userinfo</code> o <code>GET /oauth/kv</code>, que filtran la respuesta según los scopes concedidos.</div>
+      </li>
+    </ol>
+
+    <div class="diagram-wrap" id="diagram-neat-oauth">
+<svg viewBox="0 0 920 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:Inter,sans-serif;">
+  <defs>
+    <marker id="arr2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#1a73e8"/></marker>
+  </defs>
+  <!-- lifelines -->
+  <g font-size="12" font-weight="700" fill="#202124">
+    <text x="70" y="28" text-anchor="middle">Usuario</text>
+    <text x="280" y="28" text-anchor="middle">App de terceros</text>
+    <text x="520" y="28" text-anchor="middle">oauth.html</text>
+    <text x="760" y="28" text-anchor="middle">neat-apps-b (API)</text>
+  </g>
+  <line x1="70" y1="40" x2="70" y2="400" stroke="#dadce0" stroke-width="1.5"/>
+  <line x1="280" y1="40" x2="280" y2="400" stroke="#dadce0" stroke-width="1.5"/>
+  <line x1="520" y1="40" x2="520" y2="400" stroke="#dadce0" stroke-width="1.5"/>
+  <line x1="760" y1="40" x2="760" y2="400" stroke="#dadce0" stroke-width="1.5"/>
+
+  <!-- step 1 -->
+  <line x1="70" y1="60" x2="280" y2="60" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="100" y="54" font-size="10.5" fill="#5f6368">1. clic "Iniciar sesión"</text>
+
+  <line x1="280" y1="86" x2="520" y2="86" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="295" y="80" font-size="10.5" fill="#5f6368">2. redirect: client_id, redirect_uri, scope, code_challenge</text>
+
+  <line x1="520" y1="112" x2="760" y2="112" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="535" y="106" font-size="10.5" fill="#5f6368">3. GET /oauth/clients/:clientId</text>
+  <line x1="760" y1="132" x2="520" y2="132" stroke="#9aa0a6" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <text x="600" y="126" font-size="10" fill="#5f6368">nombre, verificado</text>
+
+  <line x1="520" y1="158" x2="70" y2="158" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="120" y="152" font-size="10.5" fill="#5f6368">4. elegir cuenta / login / ajustar scopes</text>
+
+  <line x1="520" y1="184" x2="760" y2="184" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="535" y="178" font-size="10.5" fill="#5f6368">5. POST /oauth/authorize (Bearer sesión Neat)</text>
+  <line x1="760" y1="204" x2="520" y2="204" stroke="#9aa0a6" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <text x="600" y="198" font-size="10" fill="#5f6368">{ code }  (TTL 5 min)</text>
+
+  <line x1="520" y1="230" x2="280" y2="230" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="320" y="224" font-size="10.5" fill="#5f6368">6. redirect_uri?code=...&amp;state=...</text>
+
+  <line x1="280" y1="256" x2="760" y2="256" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="330" y="250" font-size="10.5" fill="#5f6368">7. POST /oauth/token (code + code_verifier / client_secret)</text>
+  <line x1="760" y1="276" x2="280" y2="276" stroke="#1e8e3e" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <text x="380" y="270" font-size="10" fill="#1e8e3e">access_token + id_token</text>
+
+  <line x1="280" y1="302" x2="760" y2="302" stroke="#1a73e8" stroke-width="1.6" marker-end="url(#arr2)"/>
+  <text x="330" y="296" font-size="10.5" fill="#5f6368">8. GET /oauth/userinfo  (Bearer access_token)</text>
+  <line x1="760" y1="322" x2="280" y2="322" stroke="#1e8e3e" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+  <text x="380" y="316" font-size="10" fill="#1e8e3e">perfil filtrado por scopes</text>
+
+  <rect x="40" y="350" width="850" height="40" rx="8" fill="#fef7e0"/>
+  <text x="465" y="374" font-size="11" text-anchor="middle" fill="#6b4e00">El usuario nunca comparte su contraseña con la "App de terceros" — solo aprueba dentro de oauth.html.</text>
+</svg>
+</div>
+    <p class="diagram-caption">Flujo Authorization Code + PKCE de Neat OAuth (cuenta global)</p>
+
+    <h4>Ejemplo — armar la URL de autorización</h4>
+    <span class="code-label">JavaScript (lado cliente)</span>
+<pre><span class="tok-com">// 1. Generar el par PKCE</span>
+<span class="tok-kw">const</span> verifier = randomString(64);
+<span class="tok-kw">const</span> challenge = base64url(<span class="tok-kw">await</span> crypto.subtle.digest(<span class="tok-str">"SHA-256"</span>, encode(verifier)));
+
+<span class="tok-com">// 2. Redirigir al usuario</span>
+<span class="tok-kw">const</span> params = <span class="tok-kw">new</span> <span class="tok-fn">URLSearchParams</span>({
+  client_id: <span class="tok-str">"&lt;tu_client_id&gt;"</span>,
+  redirect_uri: <span class="tok-str">"https://tu-app.com/callback"</span>,
+  scope: <span class="tok-str">"openid profile email"</span>,
+  code_challenge: challenge,
+  code_challenge_method: <span class="tok-str">"S256"</span>,
+  state: crypto.randomUUID()
+});
+location.href = <span class="tok-str">`https://neat.qzz.io/oauth.html?${params}`</span>;
+</pre>
+
+    <span class="code-label">Intercambio del code (backend)</span>
+<pre><span class="tok-kw">const</span> res = <span class="tok-kw">await</span> <span class="tok-fn">fetch</span>(<span class="tok-str">"https://neat-apps-b.vercel.app/oauth/token"</span>, {
+  method: <span class="tok-str">"POST"</span>,
+  headers: { <span class="tok-str">"Content-Type"</span>: <span class="tok-str">"application/json"</span> },
+  body: <span class="tok-fn">JSON.stringify</span>({
+    code: req.query.code,
+    clientId: <span class="tok-str">"&lt;tu_client_id&gt;"</span>,
+    redirectUri: <span class="tok-str">"https://tu-app.com/callback"</span>,
+    codeVerifier: verifierGuardadoEnSesion
+  })
+});
+<span class="tok-kw">const</span> { access_token, id_token, expires_in, scopes } = <span class="tok-kw">await</span> res.json();
+</pre>
+
+    <h3 id="neat-oauth-endpoints">Referencia de endpoints — Neat OAuth</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Auth</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/oauth/clients</code></td><td>Sesión Neat</td><td>Registrar un nuevo client OAuth (límite: 3 gratis, 75 NP por extra, ilimitado con Neat Plus).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/clients</code></td><td>Admin</td><td>Listar todos los clients (sin secrets).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/clients/me/list</code></td><td>Sesión Neat</td><td>Listar los clients propios (o todos, si admin).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/clients/:clientId</code></td><td>Pública</td><td>Info pública del client (nombre, redirectUris, verificado) — usada por <code>oauth.html</code>.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/clients/:clientId/secret</code></td><td>Owner / admin</td><td>Revelar el <code>clientSecret</code> de un client propio.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/oauth/clients/:clientId</code></td><td>Sesión Neat</td><td>Editar un client (nombre, redirectUris, scopes).</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/oauth/clients/:clientId/verify</code></td><td>Admin</td><td>Marcar un client como "app verificada" (badge azul en <code>oauth.html</code>).</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/oauth/clients/:clientId</code></td><td>Owner / admin</td><td>Eliminar un client.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/oauth/authorize</code></td><td>Sesión Neat</td><td>Generar el <code>code</code> tras el consentimiento del usuario.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/oauth/token</code></td><td>Client</td><td>Canjear <code>code</code> por <code>access_token</code> (+ <code>id_token</code> si aplica). Soporta JSON y <code>form-urlencoded</code> estándar.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/oauth/revoke</code></td><td>Sesión Neat</td><td>Revocar un token propio.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/tokens</code></td><td>Sesión Neat</td><td>Listar tokens activos del usuario (apps con acceso concedido).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/userinfo</code></td><td>Bearer (scope <code>profile</code>)</td><td>Perfil del usuario, filtrado por scopes del token.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/oauth/kv</code></td><td>Bearer (scope <code>kv</code>)</td><td>Export consolidado de datos del usuario, cada bloque filtrado por su propio scope.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="tenants-overview">Neat ID — Qué es un Tenant</h2>
+    <p>Un <strong>Tenant</strong> (llamado internamente <code>id_app</code> en la base de datos, y simplemente "App" en el panel <code>admin.html</code>) es un espacio de autenticación independiente: tiene su propio pool de usuarios (<code>id_app_users</code>), su propia URL de login hosteada, su propio branding, y puede tener múltiples <strong>clients</strong> OAuth (web, móvil, etc.).</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🏷️</span>
+      <p>Cada Tenant se identifica por un <code>slug</code> único (ej. <code>innernet</code>). Ese slug determina su URL de login: <code>id.neat.qzz.io/innernet</code>, y su panel de cuenta de usuario final: <code>id.neat.qzz.io/innernet/manage</code>.</p>
+    </div>
+
+    <p>Cuando se crea un Tenant, el backend genera automáticamente <strong>dos cosas</strong> además de la propia App:</p>
+    <ul>
+      <li>Un <strong>client interno</strong> (PKCE, público, sin secret) en la colección <code>oauth_clients</code> del sistema de Neat OAuth global — este es el que permite el botón "Continuar con Neat". Sus <code>redirectUris</code> están fijas: <code>neat-apps-b.vercel.app/id/callback</code> y <code>id.neat.qzz.io/&lt;slug&gt;/neat-callback</code>.</li>
+      <li>Un <strong>client "Default"</strong> en <code>id_app_clients</code> — confidencial (con <code>clientSecret</code>), usado por el login local/registro hasta que el dev cree clients propios.</li>
+    </ul>
+
+    <h3 id="tenants-crear">Crear un Tenant (panel <code>admin.html</code>)</h3>
+    <p><code>admin.html</code> es el panel de administración general. El dueño de un Tenant entra con su <strong>cuenta global de Neat</strong> (<code>POST /chat/login</code> — mismo sistema que el resto de Neat, no el de Tenants) y desde ahí gestiona sus Apps.</p>
+
+    <div class="endpoint-head"><span class="method m-post">POST</span> /id/apps</div>
+    <p class="endpoint-desc">Crea un nuevo Tenant. Límite: <strong>1 app gratis</strong> por usuario, ilimitadas con Neat Plus.</p>
+
+    <span class="code-label">Body</span>
+<pre>{
+  <span class="tok-key">"name"</span>: <span class="tok-str">"InnerNet"</span>,
+  <span class="tok-key">"description"</span>: <span class="tok-str">"Red social interna del equipo"</span>,
+  <span class="tok-key">"redirectUris"</span>: [<span class="tok-str">"https://innernet.app/callback"</span>],
+  <span class="tok-key">"logoUrl"</span>: <span class="tok-str">"https://innernet.app/logo.png"</span>,
+  <span class="tok-key">"primaryColor"</span>: <span class="tok-str">"#6366f1"</span>,
+  <span class="tok-key">"homepageUrl"</span>: <span class="tok-str">"https://innernet.app"</span>
+}</pre>
+
+    <span class="code-label">Respuesta</span>
+<pre>{
+  <span class="tok-key">"slug"</span>: <span class="tok-str">"innernet"</span>,
+  <span class="tok-key">"name"</span>: <span class="tok-str">"InnerNet"</span>,
+  <span class="tok-key">"branding"</span>: { <span class="tok-key">"logoUrl"</span>: ..., <span class="tok-key">"primaryColor"</span>: <span class="tok-str">"#6366f1"</span> },
+  <span class="tok-key">"defaultClient"</span>: { <span class="tok-key">"clientId"</span>: <span class="tok-str">"..."</span>, <span class="tok-key">"clientSecret"</span>: <span class="tok-str">"..."</span>, <span class="tok-key">"isPublic"</span>: <span class="tok-kw">false</span> },
+  <span class="tok-key">"internalClientId"</span>: <span class="tok-str">"..."</span>,
+  <span class="tok-key">"appKey"</span>: <span class="tok-str">"..."</span>,
+  <span class="tok-key">"loginUrl"</span>: <span class="tok-str">"https://id.neat.qzz.io/?app=innernet"</span>,
+  <span class="tok-key">"createdAt"</span>: <span class="tok-str">"..."</span>
+}</pre>
+
+    <div class="callout callout-danger">
+      <span class="callout-icon">🔒</span>
+      <p><code>clientSecret</code> solo se devuelve <strong>una vez</strong>, en el momento de creación (o al rotar el secret). No se puede volver a consultar después. <code>appKey</code> en cambio es pública y siempre recuperable — es la credencial usada por apps <em>sin backend</em> para leer/escribir su propio KV storage.</p>
+    </div>
+
+    <p>El slug se genera automáticamente a partir del <code>name</code> y nunca puede coincidir con una ruta reservada del frontend (ej. <code>admin</code>), para no romper el ruteo de <code>id.neat.qzz.io</code>.</p>
+
+    <h3 id="tenants-clients">Clients de un Tenant</h3>
+    <p>Un Tenant puede tener varios <em>clients</em> — por ejemplo uno <strong>confidencial</strong> para su backend web y otro <strong>público (PKCE)</strong> para su app móvil. Se gestionan desde la pestaña "Clients" de <code>admin.html</code>.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Tiene <code>clientSecret</code></th><th>Cómo se autentica en <code>/id/token</code></th><th>Uso típico</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Confidential</strong></td><td>Sí</td><td><code>client_secret</code> en el body</td><td>Backend del dev (Node, Python, etc.)</td></tr>
+          <tr><td><strong>Public (PKCE)</strong></td><td>No</td><td><code>code_verifier</code> que coincide con el <code>code_challenge</code> original</td><td>SPA, app móvil, cualquier cliente que no puede guardar secrets de forma segura</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="endpoint-head"><span class="method m-post">POST</span> /id/apps/:slug/clients</div>
+    <p class="endpoint-desc">Crear un client adicional. Body: <code>{ name, redirectUris, isPublic }</code>. Devuelve <code>clientId</code> (+ <code>clientSecret</code> si es confidencial).</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/clients</code></td><td>Listar clients del Tenant (sin secrets).</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/clients/:clientId</code></td><td>Editar nombre, redirectUris o suspender el client.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/clients/:clientId/rotate-secret</code></td><td>Rotar el <code>clientSecret</code> (invalida el anterior de inmediato).</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug/clients/:clientId</code></td><td>Eliminar el client (revoca sus sesiones activas).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="tenants-login-local">Login local (email / password)</h3>
+    <p>Esta es la pantalla principal de <code>index.html</code> cuando se accede a <code>id.neat.qzz.io/&lt;slug&gt;?redirect_uri=...</code>. El flujo entero ocurre <strong>dentro</strong> de la hosted login page — el code que produce ya es del Tenant, no de Neat global.</p>
+
+    <ol class="steps">
+      <li class="steps">
+        <span class="step-num">1</span>
+        <div class="step-body"><strong>Boot de la página</strong>Al cargar, <code>index.html</code> detecta el <code>slug</code> por el path (<code>/innernet</code>) y llama en paralelo a <code>GET /id/apps/:slug/public</code> (branding, nombre) y <code>GET /id/apps/:slug/page-token</code> (un JWT corto de 15 min que autoriza login/registro en esta carga de página).</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">2</span>
+        <div class="step-body"><strong>Registro (si es nuevo)</strong><code>POST /id/users/:slug/register</code> con <code>{ email, password, username, internalToken }</code>. Si el Tenant tiene los registros cerrados, requiere además un <code>inviteToken</code> válido.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">3</span>
+        <div class="step-body"><strong>Login</strong><code>POST /id/users/:slug/login</code> con <code>{ email, password, internalToken, redirectUri, state, codeChallenge, codeChallengeMethod, clientId }</code>. Si el usuario tiene 2FA, responde <code>{ totp_required: true, totp_pending_token }</code> en vez del code.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">4</span>
+        <div class="step-body"><strong>Code del Tenant</strong>El backend genera un <code>code</code> (tipo <code>id_app_local</code>) en <code>oauth_codes</code>, asociado al <code>idAppUserId</code> (no a un <code>username</code> de Neat global), y devuelve <code>{ code, redirectUri, state, pageSessionToken }</code>.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">5</span>
+        <div class="step-body"><strong>Oferta de vincular Neat</strong>Antes de redirigir, <code>index.html</code> muestra una pantalla opcional ("link-neat-offer") ofreciendo vincular la cuenta recién logueada con la cuenta global de Neat. El usuario puede aceptar o continuar directo.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">6</span>
+        <div class="step-body"><strong>Redirect final</strong>El navegador va a <code>redirectUri?code=...&amp;state=...</code> — la URL del Tenant, registrada en su client.</div>
+      </li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <p>El <code>internalToken</code> (de <code>page-token</code>) es distinto del <code>code</code> OAuth: es solo un JWT de corta duración que prueba que el login/registro viene realmente de la hosted page de ese <code>slug</code>, no de una request falsificada directa al backend.</p>
+    </div>
+
+    <h3 id="tenants-login-neat">"Continuar con Neat" (login con la cuenta global)</h3>
+    <p>Este es el punto donde ambos sistemas se conectan. Desde la hosted login page, el botón "Continuar con Neat" no llama a la API del Tenant — redirige a <code>oauth.html</code> (la pantalla de consentimiento de Neat global) usando el <strong>client interno PKCE</strong> que se creó junto con el Tenant.</p>
+
+    <div class="diagram-wrap" id="diagram-continuar-neat">
+<svg viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:Inter,sans-serif;">
+  <defs>
+    <marker id="arr3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#8430ce"/></marker>
+  </defs>
+  <g font-size="12" font-weight="700" fill="#202124">
+    <text x="70" y="28" text-anchor="middle">Usuario</text>
+    <text x="280" y="28" text-anchor="middle">index.html</text>
+    <text x="280" y="44" font-size="10" font-weight="400" fill="#5f6368" text-anchor="middle">(id.neat.qzz.io/&lt;slug&gt;)</text>
+    <text x="520" y="28" text-anchor="middle">oauth.html</text>
+    <text x="760" y="28" text-anchor="middle">/id/callback</text>
+    <text x="760" y="44" font-size="10" font-weight="400" fill="#5f6368" text-anchor="middle">(backend)</text>
+  </g>
+  <line x1="70" y1="54" x2="70" y2="430" stroke="#dadce0" stroke-width="1.5"/>
+  <line x1="280" y1="54" x2="280" y2="430" stroke="#dadce0" stroke-width="1.5"/>
+  <line x1="520" y1="54" x2="520" y2="430" stroke="#dadce0" stroke-width="1.5"/>
+  <line x1="760" y1="54" x2="760" y2="430" stroke="#dadce0" stroke-width="1.5"/>
+
+  <line x1="70" y1="74" x2="280" y2="74" stroke="#8430ce" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <text x="90" y="68" font-size="10.5" fill="#5f6368">1. clic "Continuar con Neat"</text>
+
+  <rect x="240" y="86" width="80" height="22" rx="6" fill="#f3e8fd" stroke="#8430ce" stroke-width="1"/>
+  <text x="280" y="101" font-size="9.5" text-anchor="middle" fill="#6a1b9a">armar state</text>
+
+  <line x1="280" y1="124" x2="520" y2="124" stroke="#8430ce" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <text x="295" y="118" font-size="10.5" fill="#5f6368">2. client_id=internalClientId, redirect_uri=/id/callback, state=appSlug+...</text>
+
+  <line x1="520" y1="150" x2="70" y2="150" stroke="#8430ce" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <text x="130" y="144" font-size="10.5" fill="#5f6368">3. login + consentimiento (cuenta Neat global)</text>
+
+  <line x1="520" y1="176" x2="760" y2="176" stroke="#8430ce" stroke-width="1.6" marker-end="url(#arr3)"/>
+  <text x="535" y="170" font-size="10.5" fill="#5f6368">4. redirect: code Neat + state  (NO vuelve a index.html)</text>
+
+  <rect x="700" y="190" width="180" height="46" rx="8" fill="#f3e8fd" stroke="#8430ce" stroke-width="1"/>
+  <text x="790" y="208" font-size="9.5" text-anchor="middle" fill="#6a1b9a">decodifica state</text>
+  <text x="790" y="222" font-size="9.5" text-anchor="middle" fill="#6a1b9a">canjea code Neat</text>
+
+  <line x1="760" y1="250" x2="760" y2="250" stroke="#8430ce" stroke-width="1.6"/>
+  <text x="700" y="268" font-size="10" fill="#5f6368" text-anchor="middle">5. POST /oauth/token + GET /oauth/userinfo</text>
+  <text x="700" y="282" font-size="10" fill="#5f6368" text-anchor="middle">(el backend se llama a sí mismo, capa Neat OAuth)</text>
+
+  <rect x="660" y="296" width="260" height="56" rx="8" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1"/>
+  <text x="790" y="316" font-size="10" text-anchor="middle" fill="#0b3d8c" font-weight="600">6. resolver / crear id_app_user</text>
+  <text x="790" y="332" font-size="9.5" text-anchor="middle" fill="#0b3d8c">por neatUserId (o email @neat.qzz.io)</text>
+  <text x="790" y="346" font-size="9.5" text-anchor="middle" fill="#0b3d8c">emite code tipo id_app_neat</text>
+
+  <line x1="760" y1="370" x2="280" y2="370" stroke="#1e8e3e" stroke-width="1.8" marker-end="url(#arr3)"/>
+  <text x="320" y="364" font-size="10.5" fill="#1e8e3e">7. redirect directo al Tenant: redirectUri?code=...&amp;state=tenantState</text>
+
+  <rect x="40" y="390" width="850" height="40" rx="8" fill="#fce8e6"/>
+  <text x="465" y="414" font-size="11" text-anchor="middle" fill="#8c1c13">El paso 7 va directo al redirect_uri del Tenant — index.html no interviene en este retorno.</text>
+</svg>
+</div>
+    <p class="diagram-caption">"Continuar con Neat": el usuario nunca ve credenciales del Tenant, solo aprueba en la pantalla de Neat global.</p>
+
+    <ol class="steps">
+      <li class="steps">
+        <span class="step-num">1</span>
+        <div class="step-body"><strong>Armar el <code>state</code></strong>El frontend codifica en base64url un JSON con todo lo necesario para terminar el login después: <code>{ appSlug, clientId, redirectUri, codeChallenge, codeChallengeMethod, tenantState, codeVerifier }</code>.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">2</span>
+        <div class="step-body"><strong>Redirigir a <code>oauth.html</code></strong>Con <code>client_id = internalClientId</code> del Tenant y, crucialmente, <code>redirect_uri = https://neat-apps-b.vercel.app/id/callback</code> (el <strong>backend</strong>, no la hosted page).</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">3</span>
+        <div class="step-body"><strong>Usuario aprueba en Neat global</strong>Misma pantalla de <code>oauth.html</code> descrita arriba, con scope <code>openid profile email</code>.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">4</span>
+        <div class="step-body"><strong><code>GET /id/callback</code></strong>Neat redirige aquí con <code>code</code> + <code>state</code>. El backend decodifica el <code>state</code>, intercambia el <code>code</code> Neat por un <code>access_token</code> Neat (llamando a su <em>propio</em> <code>/oauth/token</code>), y obtiene el perfil con <code>/oauth/userinfo</code>.</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">5</span>
+        <div class="step-body"><strong>Resolver / crear <code>id_app_user</code></strong>Busca un usuario del Tenant ya vinculado a ese <code>neatUserId</code>. Si no existe pero hay un usuario local con email <code>@neat.qzz.io</code> coincidente, lo vincula. Si no existe ninguno, crea uno nuevo (salvo que el Tenant tenga registros cerrados).</div>
+      </li>
+      <li class="steps">
+        <span class="step-num">6</span>
+        <div class="step-body"><strong>Code del Tenant + redirect</strong>Emite un <code>code</code> (tipo <code>id_app_neat</code>) y redirige <em>directo</em> al <code>redirectUri</code> del Tenant — el navegador <strong>nunca vuelve</strong> a pasar por la hosted login page en este caso.</div>
+      </li>
+    </ol>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <p>Regla de sincronización importante: si el <code>id_app_user</code> ya tiene <code>passwordHash</code> (cuenta local con contraseña propia), su <code>email</code>/<code>username</code> <strong>nunca</strong> se sobrescriben con los de Neat — solo se actualiza <code>lastNeatSync</code>. Solo se sincronizan esos campos para usuarios 100% Neat (sin password local), porque no tienen una identidad local que proteger.</p>
+    </div>
+
+    <h3 id="tenants-link-neat">Vincular cuenta Neat desde una sesión local activa</h3>
+    <p>Distinto del caso anterior: aquí el usuario <strong>ya inició sesión localmente</strong> (email/password) en el Tenant, y quiere además vincular su cuenta Neat — para poder entrar después con cualquiera de los dos métodos. El retorno, en este caso, sí vuelve a la hosted page (no al backend), en una ruta dedicada: <code>id.neat.qzz.io/&lt;slug&gt;/neat-callback</code>.</p>
+
+    <ol class="steps">
+      <li class="steps"><span class="step-num">1</span><div class="step-body"><strong>Guardar estado en <code>sessionStorage</code></strong>Antes de salir, la hosted page guarda <code>neat_link_verifier</code>, <code>neat_link_page_token</code> (el <code>pageSessionToken</code> del login local) y los datos del code local pendiente.</div></li>
+      <li class="steps"><span class="step-num">2</span><div class="step-body"><strong>Redirect a <code>oauth.html</code></strong>Con <code>redirect_uri = id.neat.qzz.io/&lt;slug&gt;/neat-callback</code> (vuelve a la propia página, no al backend).</div></li>
+      <li class="steps"><span class="step-num">3</span><div class="step-body"><strong><code>POST /id/users/:slug/link-neat</code></strong>Body: <code>{ neatCode, localAccessToken, redirectUri, codeVerifier }</code>. <code>localAccessToken</code> acepta tres tipos de token: <code>id_app</code> (sesión real), <code>id_app_page_session</code> (token corto de 10 min del login recién hecho) o <code>manage_session</code> (desde el panel de cuenta).</div></li>
+      <li class="steps"><span class="step-num">4</span><div class="step-body"><strong>Validación de unicidad</strong>El backend verifica que esa cuenta Neat no esté ya vinculada a <em>otro</em> usuario de este mismo Tenant antes de guardar <code>neatUserId</code>.</div></li>
+      <li class="steps"><span class="step-num">5</span><div class="step-body"><strong>Continuar el login original</strong>Una vez vinculado, la página retoma el <code>code</code> local que ya tenía pendiente y redirige al Tenant normalmente.</div></li>
+    </ol>
+
+    <p>Para desvincular: <span class="method m-delete">DELETE</span> <code>/id/users/:slug/link-neat</code> (requiere token <code>id_app</code> o <code>manage_session</code>). Solo se permite si el usuario <strong>tiene contraseña local</strong> — si no, perdería todo acceso a su cuenta.</p>
+
+    <h3 id="tenants-social">Login social (Google, GitHub, etc.)</h3>
+    <p>Cada Tenant puede habilitar proveedores OIDC de terceros, de dos formas: proveedores <strong>globales</strong> (configurados una vez por Neat y reutilizables por cualquier Tenant) o proveedores <strong>propios del Tenant</strong> (su propio <code>client_id</code>/discovery URL). Ambos se gestionan desde la pestaña "Social" de <code>admin.html</code>.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/social/global</code></td><td>Crear un proveedor global (solo backend/admin de Neat).</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/social</code></td><td>Crear un proveedor propio del Tenant.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/social/available</code></td><td>Pública — lista los proveedores activos para mostrar botones en la hosted page.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/users/:slug/social/:key/start</code></td><td>Inicia el flujo: redirige al <code>authorizationEndpoint</code> del proveedor (PKCE generado en el backend).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/users/:slug/social/:key/callback</code></td><td>El proveedor redirige aquí; el backend canjea el code, obtiene el perfil y resuelve/crea el <code>id_app_user</code>.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/social/link-existing</code></td><td>Confirma con password local y vincula el proveedor social a una cuenta existente con el mismo email.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>El patrón es el mismo que "Continuar con Neat", pero genérico para cualquier proveedor OIDC:</p>
+    <ol class="steps">
+      <li class="steps"><span class="step-num">1</span><div class="step-body"><strong>Start</strong>El backend genera un <code>flowId</code> + par PKCE, lo guarda en <code>social_login_flows</code> junto con los datos OAuth del Tenant (client, redirectUri, state), y redirige al proveedor externo.</div></li>
+      <li class="steps"><span class="step-num">2</span><div class="step-body"><strong>Callback del proveedor</strong>Recibe <code>code</code> + <code>state</code> (el <code>flowId</code>). Canjea el code en el <code>tokenEndpoint</code> del proveedor y llama a su <code>userinfoEndpoint</code>.</div></li>
+      <li class="steps"><span class="step-num">3</span><div class="step-body"><strong>Resolución de cuenta</strong>Busca por <code>social_&lt;key&gt;_sub</code>. Si no existe pero el email coincide con una cuenta con password local, ofrece vincular (<code>link_token</code>, pantalla "link-social" en <code>index.html</code>). Si no hay coincidencia, crea un <code>id_app_user</code> nuevo con <code>emailVerified: true</code> (entrar por OAuth social ya es prueba de identidad).</div></li>
+      <li class="steps"><span class="step-num">4</span><div class="step-body"><strong>Code y redirect</strong>Emite un code (tipo <code>id_app_social</code>) y redirige directo al Tenant — igual que con Neat global, no vuelve a pasar por la hosted page.</div></li>
+    </ol>
+
+    <h3 id="tenants-manage">Panel <code>/manage</code> — cuenta del usuario final</h3>
+    <p>Ruta: <code>id.neat.qzz.io/&lt;slug&gt;/manage</code>. Es <strong>deliberadamente independiente del flujo OAuth</strong>: no usa <code>client_id</code>, <code>client_secret</code>, <code>code</code> ni PKCE. El usuario entra directo con su email/contraseña de ese Tenant para gestionar su propia cuenta (cambiar password, ver sesiones activas, activar 2FA, vincular/desvincular Neat).</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔑</span>
+      <p>El token que emite este panel tiene <code>type: "manage_session"</code> — distinto de <code>type: "id_app"</code> (el de OAuth normal). Esto es intencional: un token de <code>manage</code> nunca debe servir en <code>/id/userinfo</code>, <code>/id/token</code> ni en el KV storage, y viceversa. Vida corta: <strong>30 minutos</strong>.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/manage/login</code></td><td>Login directo email+password, sin OAuth. Puede requerir TOTP.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/manage/login-with-neat</code></td><td>Entrar al panel usando la cuenta global de Neat en vez de password local.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/users/:slug/manage/me</code></td><td>Datos de la cuenta actual.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/users/:slug/manage/password</code></td><td>Cambiar contraseña local.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/users/:slug/manage/sessions</code></td><td>Listar sesiones OAuth activas (tokens <code>id_app</code> emitidos).</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/users/:slug/manage/sessions/:sessionId</code></td><td>Revocar una sesión específica.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/manage/2fa/setup</code> · <code>/verify</code> · <code>/disable</code></td><td>Activar / confirmar / desactivar TOTP.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/manage/2fa/totp</code></td><td>Verificar el código TOTP pendiente (login normal o de manage).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="tenants-token">Intercambio de code → token (<code>/id/token</code>)</h3>
+    <p>Equivalente a <code>/oauth/token</code> pero para el ecosistema de Tenants. Lo llama el <strong>backend del desarrollador</strong> (o el frontend, si su client es público/PKCE) para canjear cualquier <code>code</code> de tipo <code>id_app_local</code>, <code>id_app_neat</code> o <code>id_app_social</code> por un <code>access_token</code> real.</p>
+
+    <div class="diagram-wrap" id="diagram-token-exchange">
+<svg viewBox="0 0 920 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:Inter,sans-serif;">
+  <defs>
+    <marker id="arr4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5f6368"/></marker>
+  </defs>
+
+  <rect x="30" y="20" width="220" height="60" rx="10" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.3"/>
+  <text x="140" y="45" font-size="12" text-anchor="middle" font-weight="600" fill="#0b3d8c">Login local</text>
+  <text x="140" y="62" font-size="10.5" text-anchor="middle" fill="#5f6368">code: id_app_local</text>
+
+  <rect x="30" y="100" width="220" height="60" rx="10" fill="#f3e8fd" stroke="#8430ce" stroke-width="1.3"/>
+  <text x="140" y="125" font-size="12" text-anchor="middle" font-weight="600" fill="#6a1b9a">Continuar con Neat</text>
+  <text x="140" y="142" font-size="10.5" text-anchor="middle" fill="#5f6368">code: id_app_neat</text>
+
+  <rect x="30" y="180" width="220" height="60" rx="10" fill="#fef7e0" stroke="#f9ab00" stroke-width="1.3"/>
+  <text x="140" y="205" font-size="12" text-anchor="middle" font-weight="600" fill="#8a6100">Login social</text>
+  <text x="140" y="222" font-size="10.5" text-anchor="middle" fill="#5f6368">code: id_app_social</text>
+
+  <line x1="250" y1="50" x2="420" y2="130" stroke="#9aa0a6" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <line x1="250" y1="130" x2="420" y2="130" stroke="#9aa0a6" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <line x1="250" y1="210" x2="420" y2="130" stroke="#9aa0a6" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+  <rect x="430" y="90" width="200" height="80" rx="12" fill="#fff" stroke="#202124" stroke-width="1.6"/>
+  <text x="530" y="120" font-size="13" text-anchor="middle" font-weight="700" fill="#202124">POST /id/token</text>
+  <text x="530" y="138" font-size="10" text-anchor="middle" fill="#5f6368">client_secret (confidential)</text>
+  <text x="530" y="152" font-size="10" text-anchor="middle" fill="#5f6368">o code_verifier (público)</text>
+
+  <line x1="630" y1="130" x2="780" y2="130" stroke="#1e8e3e" stroke-width="1.8" marker-end="url(#arr4)"/>
+
+  <rect x="660" y="40" width="220" height="60" rx="10" fill="#e6f4ea" stroke="#1e8e3e" stroke-width="1.3"/>
+  <text x="770" y="65" font-size="12" text-anchor="middle" font-weight="600" fill="#0d5c2c">access_token</text>
+  <text x="770" y="82" font-size="10" text-anchor="middle" fill="#5f6368">type: "id_app" · 24h</text>
+
+  <rect x="660" y="170" width="220" height="60" rx="10" fill="#e6f4ea" stroke="#1e8e3e" stroke-width="1.3"/>
+  <text x="770" y="195" font-size="12" text-anchor="middle" font-weight="600" fill="#0d5c2c">id_token (OIDC)</text>
+  <text x="770" y="212" font-size="10" text-anchor="middle" fill="#5f6368">iss: id.neat.qzz.io</text>
+
+  <line x1="770" y1="100" x2="770" y2="170" stroke="#bdbdbd" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <rect x="40" y="255" width="840" height="35" rx="8" fill="#f1f3f4"/>
+  <text x="460" y="277" font-size="11" text-anchor="middle" fill="#5f6368">Los tres orígenes son indistinguibles para /id/token: solo importa que el code sea válido, no usado y no expirado.</text>
+</svg>
+</div>
+    <p class="diagram-caption">Intercambio de code por token — válido sin importar si el login original fue local, con Neat o social.</p>
+
+    <span class="code-label">Request</span>
+<pre><span class="tok-kw">const</span> res = <span class="tok-kw">await</span> <span class="tok-fn">fetch</span>(<span class="tok-str">"https://neat-apps-b.vercel.app/id/token"</span>, {
+  method: <span class="tok-str">"POST"</span>,
+  headers: { <span class="tok-str">"Content-Type"</span>: <span class="tok-str">"application/json"</span> },
+  body: <span class="tok-fn">JSON.stringify</span>({
+    code: <span class="tok-str">"&lt;code recibido en tu redirect_uri&gt;"</span>,
+    client_id: <span class="tok-str">"&lt;tu clientId&gt;"</span>,
+    client_secret: <span class="tok-str">"&lt;tu clientSecret&gt;"</span>,  <span class="tok-com">// omitir si tu client es público (PKCE)</span>
+    redirect_uri: <span class="tok-str">"https://innernet.app/callback"</span>,
+    code_verifier: <span class="tok-str">"&lt;solo si usaste PKCE&gt;"</span>
+  })
+});
+<span class="tok-kw">const</span> { access_token, id_token, expires_in, scope } = <span class="tok-kw">await</span> res.json();
+</pre>
+
+    <span class="code-label">access_token (payload del JWT)</span>
+<pre>{
+  <span class="tok-key">"type"</span>: <span class="tok-str">"id_app"</span>,
+  <span class="tok-key">"appSlug"</span>: <span class="tok-str">"innernet"</span>,
+  <span class="tok-key">"sub"</span>: <span class="tok-str">"&lt;id_app_user._id&gt;"</span>,
+  <span class="tok-key">"username"</span>: <span class="tok-str">"..."</span>,
+  <span class="tok-key">"email"</span>: <span class="tok-str">"..."</span>,
+  <span class="tok-key">"neatUserId"</span>: <span class="tok-str">"&lt;o null&gt;"</span>,
+  <span class="tok-key">"isNeatUser"</span>: <span class="tok-kw">true</span> | <span class="tok-kw">false</span>,
+  <span class="tok-key">"groups"</span>: { <span class="tok-str">"moderadores"</span>: [<span class="tok-str">"admin"</span>] }
+}</pre>
+
+    <p>Cada intercambio exitoso guarda además una sesión en <code>id_app_sessions</code> (visible y revocable desde <code>/manage/sessions</code>) y el token expira a las <strong>24 horas</strong>.</p>
+
+    <h4>Userinfo del Tenant</h4>
+    <div class="endpoint-head"><span class="method m-get">GET</span> /id/userinfo</div>
+    <p class="endpoint-desc">Con <code>Authorization: Bearer &lt;access_token&gt;</code> (debe ser tipo <code>id_app</code>). Devuelve <code>{ sub, username, email, appSlug, isNeatUser, neatUserId, verified, createdAt, groups }</code>.</p>
+
+    <h3 id="tenants-endpoints">Referencia completa de endpoints — Neat ID</h3>
+
+    <h4>Apps (Tenants)</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Auth</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps</code></td><td>Sesión Neat</td><td>Crear Tenant.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/me</code></td><td>Sesión Neat</td><td>Listar mis Tenants (o todos, si admin).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/public</code></td><td>Pública</td><td>Branding y config pública — usada por la hosted login page.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug</code></td><td>Owner / admin</td><td>Editar nombre, branding, redirectUris por defecto.</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug</code></td><td>Owner / admin</td><td>Eliminar el Tenant.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/registrations</code></td><td>Owner / admin</td><td>Abrir/cerrar registros públicos.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/require-email-verification</code></td><td>Owner / admin</td><td>Forzar verificación de email antes de poder loguearse.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/kv-limit</code></td><td>Owner / admin</td><td>Configurar límite de KV storage privado/público.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/stats</code></td><td>Owner / admin</td><td>Estadísticas del Tenant (usuarios, sesiones, etc.).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps</code></td><td>Admin global</td><td>Listar todos los Tenants existentes.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/suspend</code></td><td>Admin global</td><td>Suspender un Tenant completo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Usuarios finales del Tenant</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Auth</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/register</code></td><td><code>internalToken</code></td><td>Registro local (email/password).</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/login</code></td><td><code>internalToken</code></td><td>Login local → code OAuth del Tenant.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/users/:slug/verify-email</code></td><td>Token del email</td><td>Confirmar verificación de correo.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/resend-verification</code></td><td>—</td><td>Reenviar correo de verificación.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/forgot-password</code></td><td>—</td><td>Solicitar enlace de recuperación.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/reset-password</code></td><td>Token del email</td><td>Establecer nueva contraseña.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/page-token</code></td><td>Pública</td><td>Emite el <code>internalToken</code> de 15 min para esta carga de página.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/users</code></td><td>Tenant (owner/admin)</td><td>Listar usuarios del Tenant.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/users/:userId</code></td><td>Tenant</td><td>Detalle de un usuario.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/users/:userId/suspend</code></td><td>Tenant</td><td>Suspender/reactivar un usuario.</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug/users/:userId</code></td><td>Tenant</td><td>Eliminar un usuario del Tenant.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/users</code></td><td>Tenant</td><td>Crear un usuario manualmente (sin pasar por registro público).</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/revoke</code></td><td>Tenant</td><td>Revocar sesiones/tokens emitidos para este Tenant.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Núcleo OAuth / OIDC del Tenant</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/callback</code></td><td>Callback interno de "Continuar con Neat" — nunca se llama manualmente, lo usa <code>oauth.html</code> al redirigir.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/token</code></td><td>Canjear code (local/Neat/social) por <code>access_token</code> + <code>id_token</code>.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/userinfo</code></td><td>Perfil del usuario del Tenant.</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/users/:slug/link-neat</code></td><td>Vincular cuenta Neat a una sesión local activa.</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/users/:slug/link-neat</code></td><td>Desvincular (requiere password local).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="kv-storage">KV Storage</h2>
+    <p>Pensado para Tenants <strong>sin backend propio</strong> — apps puramente frontend que igual necesitan persistir datos. Dos espacios separados:</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="margin-top:0">KV privado <span class="pill pill-blue">por usuario</span></h4>
+        <p style="margin-bottom:0">Un blob JSON por usuario. Para escribir el dato de un usuario se necesita <strong>siempre</strong> su propio <code>access_token</code> — ni siquiera la <code>appKey</code> pública alcanza por sí sola (modelo equivalente a "anon key" + RLS de Supabase). Límite configurable, 25KB por defecto, 1MB como techo absoluto.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">KV público <span class="pill pill-purple">por Tenant</span></h4>
+        <p style="margin-bottom:0">Un solo blob compartido por todo el Tenant (config global, leaderboard, etc.). Lectura sin auth para cualquiera; escritura <strong>exclusiva del backend del dev</strong> vía <code>x-client-id</code> + <code>x-client-secret</code> — la <code>appKey</code> nunca puede escribirlo, para que ningún visitante corrompa el dato compartido.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Quién puede escribir</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/kv/:userId</code></td><td>—</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/kv/:userId</code></td><td><code>appKey</code> + <code>access_token</code> propio, o <code>x-client-id</code>/<code>x-client-secret</code></td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/kv/:userId/items</code></td><td>Igual que arriba</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug/kv/:userId/items/:itemId</code></td><td>Igual que arriba</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/public-kv</code></td><td>—</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/public-kv</code></td><td>Solo <code>x-client-id</code>/<code>x-client-secret</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="grupos-invitaciones">Grupos e invitaciones</h2>
+    <p>Para Tenants con registros cerrados o con roles internos (ej. "moderadores", "admins-del-tenant"):</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Método</th><th>Ruta</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/invitations</code></td><td>Crear un enlace de invitación (con <code>maxUses</code> y expiración).</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/invitations</code></td><td>Listar invitaciones del Tenant.</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug/invitations/:token</code></td><td>Revocar una invitación.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/invitations/:token/validate</code></td><td>Pública — valida el token antes de mostrar el registro (<code>?inviteToken=</code>).</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td><code>/id/apps/:slug/groups</code></td><td>Crear un grupo/rol.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/groups</code></td><td>Listar grupos.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/groups/:key</code></td><td>Editar un grupo.</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug/groups/:key</code></td><td>Eliminar un grupo.</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td><code>/id/apps/:slug/groups/:key/members</code></td><td>Listar miembros.</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td><code>/id/apps/:slug/groups/:key/members/:userId</code></td><td>Agregar/editar rol de un miembro.</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td><code>/id/apps/:slug/groups/:key/members/:userId</code></td><td>Quitar a un miembro.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Los grupos de un usuario viajan dentro del <code>access_token</code> y de <code>/id/userinfo</code> como <code>groups: { "&lt;groupKey&gt;": ["rol1", "rol2"] }</code> — útil para implementar permisos en el backend del Tenant sin otra consulta.</p>
+
+    <h2 id="oidc-discovery">Discovery OIDC</h2>
+    <p>Neat ID expone discovery <strong>global</strong> y discovery <strong>por Tenant</strong> (path-based, ya que un solo dominio sirve N pools de usuarios distintos — mismo patrón multi-tenant que WorkOS o Clerk):</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ruta</th><th>Alcance</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET /id/.well-known/openid-configuration</code></td><td>Configuración OIDC global del sistema Neat ID.</td></tr>
+          <tr><td><code>GET /tenants/:tenant/.well-known/openid-configuration</code></td><td>Configuración específica de un Tenant — incluye <code>issuer</code> con el slug en el path, branding, y los mismos <code>token_endpoint</code>/<code>userinfo_endpoint</code> globales (el client implícito ya queda resuelto por Tenant).</td></tr>
+          <tr><td><code>GET /id/.well-known/jwks.json</code></td><td>JWKS — actualmente vacío porque los tokens usan HS256 (firma simétrica), no RS256.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="seguridad">Notas de seguridad</h2>
+    <ul>
+      <li><strong>PKCE obligatorio en clients públicos:</strong> si un client es <code>isPublic: true</code>, el backend rechaza el intercambio si el code original no tuvo <code>code_challenge</code> — un client público nunca puede usar <code>client_secret</code> como alternativa.</li>
+      <li><strong>Validación estricta de <code>redirect_uri</code>:</strong> en cada paso (autorización, callback de Neat, callback social, intercambio de token) se compara contra la lista exacta registrada en el client correspondiente. No hay coincidencia parcial ni wildcards.</li>
+      <li><strong>Separación de tipos de token:</strong> <code>oauth</code> (Neat global), <code>id_app</code> (Tenant), <code>id_app_page_session</code> (puente de 10 min), <code>manage_session</code> (panel de cuenta), <code>totp_pending</code> (2FA pendiente). Cada middleware valida explícitamente el <code>type</code> esperado — un token de un contexto nunca es válido en otro, aunque esté correctamente firmado.</li>
+      <li><strong>Aislamiento entre Tenants:</strong> todas las consultas a <code>id_app_users</code>, <code>id_app_clients</code>, <code>id_app_memberships</code>, etc. están filtradas por <code>appSlug</code> — un usuario del Tenant A nunca es visible ni accesible desde el Tenant B, aunque comparta la misma cuenta Neat global vinculada.</li>
+      <li><strong>Vinculación 1-a-1 con Neat global:</strong> un mismo <code>neatUserId</code> no puede vincularse dos veces dentro del <em>mismo</em> Tenant — pero sí puede estar vinculado en N Tenants distintos (cada uno con su propio <code>id_app_user</code> independiente).</li>
+      <li><strong>requireAuth bloquea tokens OAuth:</strong> endpoints de gestión sensible (crear/borrar Tenants, rotar secrets, cambiar password) usan <code>requireAuth</code>, que rechaza explícitamente cualquier token <code>type: "oauth"</code> — solo sirven con una sesión real de Neat (login directo), nunca con un token obtenido por una app de terceros.</li>
+    </ul>
+
+
+
+  </main>
+</div>
+
+<a href="#top" class="toc-back-top" title="Volver arriba">↑</a>
+
+</body>
+</html>
