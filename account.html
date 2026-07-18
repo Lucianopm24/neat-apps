@@ -356,6 +356,13 @@
     pointer-events: none;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── API Keys para agentes ── */
+  .key-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--gray-200,#e5e7eb); border-radius:10px; margin-bottom:8px; flex-wrap:wrap; }
+  .key-id { font-family:ui-monospace,Menlo,monospace; font-size:13px; }
+  .key-meta { font-size:12px; color:var(--gray-600,#6b7280); }
+  .key-revoked { opacity:.5; text-decoration:line-through; }
+  .key-new { font-family:ui-monospace,Menlo,monospace; font-size:13px; word-break:break-all; padding:12px; border-radius:10px; border:1px dashed var(--gray-600,#6b7280); margin:10px 0; user-select:all; }
 </style>
 </head>
 <body>
@@ -467,6 +474,36 @@
       </div>
     </div>
 
+    <!-- API Keys para agentes -->
+    <div class="card" id="cardAgentKeys">
+      <div class="card-header">
+        <h2>API Keys para agentes 🦞</h2>
+        <p>Dale a tu agente de IA acceso a tu cuaderno de notas. Tú creas y revocas las llaves — tu agente nunca puede tocar tu cuenta ni tu contraseña.</p>
+      </div>
+      <div class="card-body">
+        <div id="agentKeysList"></div>
+        <div class="field-row">
+          <div class="field">
+            <label>Nombre de la key (¿para qué agente es?)</label>
+            <input type="text" id="newKeyLabel" placeholder="Ej: Claw, mi asistente" maxlength="60">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnCreateKey" onclick="createAgentKey()">Crear API key</button>
+        </div>
+        <div id="newKeyBox" style="display:none">
+          <div class="key-new" id="newKeyValue"></div>
+          <div class="field-hint">⚠️ Se muestra <strong>una sola vez</strong>. Cópiala y dásela a tu agente junto a <a href="https://agents.neat.qzz.io/docs.md" target="_blank" rel="noopener">agents.neat.qzz.io/docs.md</a>. Si la pierdes, revócala y crea otra.</div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="copyNewKey()">📋 Copiar key</button>
+          </div>
+        </div>
+        <div class="msg ok" id="keysMsgOk"></div>
+        <div class="msg err" id="keysMsgErr"></div>
+        <div class="field-hint" style="margin-top:8px">Para agentes y curiosos: <a href="https://agents.neat.qzz.io" target="_blank" rel="noopener">agents.neat.qzz.io</a> — incluye <code>llms.txt</code> y quickstart en markdown.</div>
+      </div>
+    </div>
+
     <!-- Export data -->
     <div class="card">
       <div class="card-header">
@@ -525,6 +562,7 @@ function toggleTheme() {
 window.onload = async () => {
   if (!token) return showScreen("screenLogin");
   await loadMe();
+  loadAgentKeys();
 };
 
 function showScreen(id) {
@@ -712,6 +750,66 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ── API Keys para agentes (agents.neat.qzz.io) ───────────────────────────────
+function keysMsg(el, text) { el.textContent = text || ""; el.classList.toggle("visible", !!text); }
+
+async function loadAgentKeys() {
+  const list = document.getElementById("agentKeysList");
+  list.innerHTML = '<div class="key-meta">Cargando…</div>';
+  try {
+    const r = await fetch(`${API}/agents/keys`, { headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (!r.ok || !d.success) { list.innerHTML = ""; return keysMsg(document.getElementById("keysMsgErr"), (d.error && d.error.message) || "No se pudieron cargar las keys."); }
+    const keys = d.data || [];
+    if (!keys.length) { list.innerHTML = '<div class="key-meta">Aún no tienes keys. Crea la primera para tu agente 🦞</div>'; return; }
+    list.innerHTML = keys.map(k => `
+      <div class="key-row">
+        <div>
+          <span class="key-id ${k.revoked ? "key-revoked" : ""}">${k.id}…</span>
+          <div class="key-meta">${k.label || "sin nombre"} · creada ${(k.created_at || "").slice(0, 10)} ${k.revoked ? "· revocada" : ""}</div>
+        </div>
+        ${k.revoked ? "" : `<button class="btn btn-ghost" onclick="revokeAgentKey('${k.id}')">Revocar</button>`}
+      </div>`).join("");
+  } catch { list.innerHTML = ""; keysMsg(document.getElementById("keysMsgErr"), "Error de red cargando las keys."); }
+}
+
+async function createAgentKey() {
+  const btn = document.getElementById("btnCreateKey");
+  keysMsg(document.getElementById("keysMsgOk")); keysMsg(document.getElementById("keysMsgErr"));
+  btn.disabled = true; btn.textContent = "Creando…";
+  try {
+    const r = await fetch(`${API}/agents/keys`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ label: document.getElementById("newKeyLabel").value.trim() || null }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) { keysMsg(document.getElementById("keysMsgErr"), (d.error && d.error.message) || "No se pudo crear la key."); return; }
+    document.getElementById("newKeyValue").textContent = d.data.key;
+    document.getElementById("newKeyBox").style.display = "block";
+    document.getElementById("newKeyLabel").value = "";
+    toast("Key creada — cópiala ahora, solo se muestra una vez ⚠️");
+    await loadAgentKeys();
+  } catch { keysMsg(document.getElementById("keysMsgErr"), "Error de red creando la key."); }
+  finally { btn.disabled = false; btn.textContent = "Crear API key"; }
+}
+
+async function revokeAgentKey(id) {
+  if (!confirm(`¿Revocar la key ${id}…? El agente que la use perderá acceso de inmediato.`)) return;
+  try {
+    const r = await fetch(`${API}/agents/keys/${id}`, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (!r.ok || !d.success) { keysMsg(document.getElementById("keysMsgErr"), (d.error && d.error.message) || "No se pudo revocar."); return; }
+    toast("Key revocada ✓");
+    await loadAgentKeys();
+  } catch { keysMsg(document.getElementById("keysMsgErr"), "Error de red revocando la key."); }
+}
+
+function copyNewKey() {
+  const v = document.getElementById("newKeyValue").textContent;
+  navigator.clipboard.writeText(v).then(() => toast("Copiada 📋")).catch(() => toast("No se pudo copiar"));
 }
 </script>
 </body>
