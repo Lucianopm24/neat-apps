@@ -691,7 +691,7 @@ document.getElementById('userSubmit').addEventListener('click', async () => {
   const err = document.getElementById('userErr');
   if (!u || !p) { err.textContent = 'Usuario y contraseña requeridos'; return; }
   try {
-    const r = await fetch(`${API}${isReg ? '/auth/register' : '/auth/login'}`, {
+    const r = await fetch(`${API}${isReg ? '/auth/register' : '/chat/login'}`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(isReg
         ? { username: u, password: p, website: document.getElementById('uWebsite').value }
