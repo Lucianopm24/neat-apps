@@ -833,7 +833,7 @@ function eloCard(id,title,icon,pid,rows){
   const box=$(id);
   const r=rows.find(x=>x.player===pid);
   const rating=r?r.rating:1200;
-  const lg=r?r.league:'Plata', ic=r?r.icon:'🥈', next=r?r.next:{league:'Oro',at:1400};
+  const lg=(r&&r.league)||'Plata', ic=(r&&r.icon)||'🥈', next=(r&&r.next)||{league:'Oro',at:1400};
   const c=LEAGUE_STYLE[lg]||'#aaa';
   const lo=LEAGUE_MIN[lg]||0, pct=next?Math.max(4,Math.min(100,Math.round((rating-lo)/(next.at-lo)*100))):100;
   box.innerHTML=`<div class="elo-head">${icon} ${title} <span class="st" style="font-weight:400">${pid.replace(/^[ah]:/,'')}</span></div>
@@ -852,7 +852,7 @@ async function renderElo(){
   if(b){
     if(!rows.length){b.innerHTML='<div class="st">Aún no hay partidas en toda la Arena.</div>';return;}
     b.innerHTML=rows.map(x=>{
-      const c=LEAGUE_STYLE[x.league]||'#aaa';
+      const c=LEAGUE_STYLE[x.league]||LEAGUE_STYLE.Plata;
       return `<div class="arena-item" style="cursor:default"><span><b>#${x.rank}</b> ${PICON(x.player)} ${x.player.replace(/^[ah]:/,'')}</span><span class="st"><b>${x.rating}</b> · <span style="color:${c}">${x.icon} ${x.league}</span> · ${x.wins}V-${x.draws}E-${x.losses}D</span></div>`;
     }).join('');
   }
