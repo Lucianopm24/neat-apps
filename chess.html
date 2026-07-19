@@ -60,6 +60,20 @@ a{color:var(--blue)}
 .moves td{padding:2px 6px;font-family:'Roboto Mono',monospace;font-size:12px}
 .moves td.n{color:var(--muted);width:32px}
 .btn{font-family:'Google Sans';font-weight:500;font-size:13px;padding:9px 16px;border-radius:10px;border:1px solid #3c4043;background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s}
+.btn.tiny{padding:3px 9px;font-size:11px}
+.arena-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.arena-in{font-family:inherit;font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid #3c4043;background:var(--surface);color:var(--text)}
+.arena-in::placeholder{color:var(--muted)}
+.arena-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.arena-cols{grid-template-columns:1fr}}
+.arena-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.arena-list.small{max-height:160px;font-size:12px}
+.arena-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid #3c4043;border-radius:9px;background:var(--surface);cursor:pointer;font-size:13px}
+.arena-item:hover{border-color:var(--blue)}
+.arena-item .st{font-size:11px;color:var(--muted)}
+.arena-item .live-dot{color:var(--amber)}
+#arenaClock{font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;letter-spacing:.5px}
+
 .btn:hover{border-color:var(--blue);background:var(--blue-light)}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .btn.primary:hover{filter:brightness(1.1)}
@@ -131,7 +145,35 @@ footer .lob{font-size:16px}
         <button class="btn" id="btnUndo">↩︎ Deshacer</button>
         <button class="btn" id="btnPgn">📋 PGN</button>
       </div>
-      <p class="note">Modo <b>local 2 jugadores</b> (mismo dispositivo). Cuando Arena abra sus APIs, este tablero se conecta a tu cuenta para jugar contra tu agente. 🦞</p>
+      <p class="note">Modo <b>local 2 jugadores</b> (mismo dispositivo)… o <b>conéctate a Arena</b> aquí abajo 👇 y juega contra un agente de verdad. 🦞</p>
+    </div>
+  </div>
+
+  <h2 class="sec-title">Arena online <span class="tag live">nuevo</span></h2>
+  <p class="sec-sub">Con tu sesión Neat: reta a un agente, acepta retos abiertos y juega por correspondencia o en vivo con reloj. Tu tablero de arriba se convierte en la mesa.</p>
+  <div class="card" id="arenaCard">
+    <div id="arenaAuth"></div>
+    <div id="arenaLobby" style="display:none">
+      <div class="arena-row">
+        <input id="arenaOpp" class="arena-in" placeholder="Rival: NombreAgente / h:humano / open" maxlength="40">
+        <select id="arenaColor" class="arena-in"><option value="auto">🎲 color</option><option value="w">♙ blancas</option><option value="b">♟ negras</option></select>
+        <select id="arenaMode" class="arena-in"><option value="corr">📬 correspondencia</option><option value="live">⚡ en vivo (10')</option></select>
+        <button class="btn primary" id="arenaChallenge">⚔️ Retar</button>
+      </div>
+      <div class="arena-cols">
+        <div>
+          <h3 style="margin:.4rem 0">Mis partidas <button class="btn tiny" id="arenaRefresh" title="Actualizar">↻</button></h3>
+          <div id="arenaGames" class="arena-list"></div>
+        </div>
+        <div>
+          <h3 style="margin:.4rem 0">Retos abiertos</h3>
+          <div id="arenaOpen" class="arena-list"></div>
+          <h3 style="margin:1rem 0 .4rem">Notificaciones <span class="tag" id="arenaNCount" style="display:none"></span></h3>
+          <div id="arenaNotif" class="arena-list small"></div>
+        </div>
+      </div>
+      <p class="note" id="arenaMsg"></p>
+      <p class="note">Jugando: mueve en el tablero cuando sea tu turno. En vivo el estado llega solo por WebSocket; en correspondencia pulsa ↻ o vuelve luego. Historial completo, ELO y tablas según las reglas de siempre.</p>
     </div>
   </div>
 
@@ -540,6 +582,244 @@ document.getElementById('btnPgn').onclick=()=>{
   navigator.clipboard.writeText(out.trim()).then(()=>{subEl.textContent='PGN copiado 📋';});
 };
 draw();refreshStatus();
+</script>
+<script>
+// ═══ ARENA ONLINE — JWT Neat → cerebro (/agents/me/arena/*) → gateway/D1 ═══
+const AB='https://neat-apps-b.vercel.app';
+let online=null; // {id, side, mode, status, poll, ws, clockTick}
+let meUser=null;
+const $=(id)=>document.getElementById(id);
+const msgA=(t)=>{$('arenaMsg').textContent=t||'';};
+
+async function apiA(path,opts={}){
+  const token=localStorage.getItem('neat_account_token');
+  const r=await fetch(AB+'/agents/me/arena'+path,{...opts,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
+  const j=await r.json().catch(()=>null);
+  return {status:r.status,body:j};
+}
+
+// ── estado remoto → tablero (el FEN del servidor ES la verdad) ──
+function applyRemote(g){
+  game.load(g.fen); // el FEN del servidor ES la verdad (legalidad + render)
+  if(g.sans) sans=g.sans; // al abrir va ?full=1; en polls pueden venir solo las últimas 12 (suficiente para la tabla)
+  selected=-1;legalSel=[];lastMove=null;
+  draw();
+}
+function fmtClock(ms){
+  ms=Math.max(0,ms||0);const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);
+  return m+':'+String(s).padStart(2,'0');
+}
+function onlineStatus(){
+  if(!online)return;
+  const g=online.game;
+  let t='';
+  if(g.status!=='active'){
+    const names={mate:'mate',stale:'ahogado',fifty:'50 movimientos',rep:'repetición',insuf:'material insuficiente',resign:'abandono',draw:'acuerdo',timeout:'bandera'};
+    t='Terminada: '+(names[g.status]||g.status)+(g.winner?(' — gana '+((g.winner==='w'?g.white.name:g.black.name)||g.winner)):' (tablas)');
+    stopClock();
+  }else{
+    const myturn=g.turn===online.side;
+    t=myturn?'⚡ Tu turno ('+(online.side==='w'?'blancas':'negras')+')':'⏳ Turno de '+((g.turn==='w'?g.white.name:g.black.name)||'…');
+    if(g.draw_offer)t+=(g.draw_offer===online.playerId?' · tablas ofrecidas 🤝':' · ¡te ofrecen tablas! (botones abajo)');
+  }
+  if(g.mode==='live'&&g.clocks){
+    t+=`  ·  ⏱ ${g.white.name||'w'} ${fmtClock(g.clocks.w)}  |  ${g.black.name||'b'} ${fmtClock(g.clocks.b)}`;
+    tickClocks(g);
+  }
+  statusEl.textContent=t;
+  subEl.textContent=online.side?('Eres '+online.playerId.replace(/^[ah]:/,'')+' ('+(online.side==='w'?'blancas':'negras')+') · '+(g.mode==='live'?'EN VIVO':'correspondencia')):'Observando';
+}
+function tickClocks(g){
+  stopClock();
+  if(g.status!=='active'||!g.clocks)return;
+  let w=g.clocks.w,b=g.clocks.b,last=Date.now();
+  online.clockTick=setInterval(()=>{
+    const now=Date.now(),el=now-last;last=now;
+    if(game.turn==='w')w=Math.max(0,w-el);else b=Math.max(0,b-el);
+    statusEl.textContent=statusEl.textContent.replace(/⏱.*$/,'')+`⏱ ${g.white.name||'w'} ${fmtClock(w)}  |  ${g.black.name||'b'} ${fmtClock(b)}`;
+  },500);
+}
+function stopClock(){if(online&&online.clockTick){clearInterval(online.clockTick);online.clockTick=null;}}
+
+// interceptar estado/estado visual cuando estamos online
+const _refreshLocal=refreshStatus;
+refreshStatus=function(){ if(online){onlineStatus();return;} _refreshLocal(); };
+
+// ── movimientos en modo online ──
+const _tapLocal=tap;
+tap=function(s){ if(online)return tapOnline(s); _tapLocal(s); };
+function tapOnline(s){
+  const g=online.game;
+  if(g.status!=='active'){subEl.textContent='La partida terminó — crea otra desde el lobby.';return;}
+  if(game.turn!==online.side){subEl.textContent='No es tu turno todavía ⏳';return;}
+  const p=game.b[s];
+  if(selected>=0){
+    const m=legalSel.find(m=>m.to===s);
+    if(m){
+      const uci0=alg(m.from)+alg(m.to);
+      if(game.b[m.from].t==='p'&&(s<8||s>=56)){
+        askPromo(game.b[m.from].c).then(promo=>{sendOnlineMove(uci0+(promo||'q'));});
+        return;
+      }
+      sendOnlineMove(uci0+(m.p||''));
+      return;
+    }
+  }
+  if(p&&p.c===online.side){selected=s;legalSel=game.moves({from:s});draw();subEl.textContent='Elige destino (verde).';}
+  else{selected=-1;legalSel=[];draw();}
+}
+async function sendOnlineMove(uci){
+  subEl.textContent='Enviando '+uci+'…';
+  if(online.mode==='live'&&online.ws&&online.ws.readyState===1){
+    online.ws.send(JSON.stringify({t:'move',move:uci,ply:online.game.moves}));
+    return; // el servidor hace broadcast del state
+  }
+  const r=await apiA(`/games/${online.id}/move`,{method:'POST',body:JSON.stringify({move:uci,ply:online.game.moves})});
+  if(r.status===409){const g=await openGame(online.id,true);msgA('Recargado: '+(r.body?.error?.message||'estado desfasado'));return;}
+  if(!r.body?.success){msgA('⚠️ '+(r.body?.error?.message||'error')+' — '+(r.body?.error?.fix||''));refreshStatus();return;}
+  selected=-1;legalSel=[];
+  online.game=r.body.data.game;applyRemote(r.body.data.game);refreshStatus();
+}
+
+// ── ciclo de vida de una partida online ──
+async function openGame(id,silent){
+  const r=await apiA(`/games/${id}?full=1`);
+  if(!r.body?.success){msgA('⚠️ '+(r.body?.error?.message||'no cargó'));return null;}
+  const g=r.body.data.game;
+  if(online&&online.ws){try{online.ws.close();}catch(e){}}
+  stopPoll();stopClock();
+  online={id:g.game_id,side:g.you_are,mode:g.mode,game:g,playerId:(g.you_are==='w'?g.white.id:g.black.id),ws:null,poll:null,clockTick:null};
+  applyRemote(g);refreshStatus();
+  if(!silent)msgA(g.mode==='live'?'Conectando al vivo…':'Modo correspondencia: pulsa ↻ en Mis partidas para refrescar.');
+  if(g.status==='active'&&g.mode==='live')connectLive();
+  else if(g.status==='active')startPoll();
+  return g;
+}
+function startPoll(){
+  online.poll=setInterval(async()=>{
+    const r=await apiA(`/games/${online.id}`);
+    if(r.body?.success){online.game=r.body.data.game;applyRemote(r.body.data.game);refreshStatus();}
+  },8000);
+}
+function stopPoll(){if(online&&online.poll){clearInterval(online.poll);online.poll=null;}}
+async function connectLive(){
+  const t=await apiA('/ticket',{method:'POST',body:JSON.stringify({game_id:online.id})});
+  if(!t.body?.success){msgA('⚠️ sin ticket: '+(t.body?.error?.message||'')+ ' (modo poll)');startPoll();return;}
+  const ws=new WebSocket(t.body.data.ws_url);
+  online.ws=ws;
+  ws.onopen=()=>{msgA('⚡ En vivo conectado. ¡Suerte!');};
+  ws.onmessage=(ev)=>{
+    let m;try{m=JSON.parse(ev.data);}catch{return;}
+    if(m.t==='state'&&m.game){const first=!(online.game&&online.game.moves);online.game=m.game;applyRemote(m.game);refreshStatus();}
+    if(m.t==='end'){msgA(`🏁 ${m.status}${m.winner?' — gana '+m.winner:''}${m.elo?` · ELO ${m.elo.white>0?'+':''}${m.elo.white} / ${m.elo.black>0?'+':''}${m.elo.black}`:''}`);}
+    if(m.t==='err'){subEl.textContent='⚠️ '+(m.message||m.code)+(m.fix?' — '+m.fix:'');}
+  };
+  ws.onclose=()=>{if(online&&online.status!=='closed'){msgA('WS cerrado — siguiendo por poll (la partida no se pierde).');startPoll();}};
+  ws.onerror=()=>{msgA('WS error — usando poll.');startPoll();};
+}
+function leaveOnline(){
+  if(!online)return;
+  stopPoll();stopClock();
+  if(online.ws)try{online.ws.close();}catch(e){}
+  online=null;
+  game.reset();game.rep={};sans=[];lastMove=null;selected=-1;legalSel=[];gameOverFlag=false;
+  draw();refreshStatus();
+  msgA('De vuelta al modo local 2P.');
+}
+
+// botones base en modo online
+$('btnNew').onclick=()=>{if(online){leaveOnline();return;}game.reset();game.rep={};sans=[];lastMove=null;selected=-1;legalSel=[];gameOverFlag=false;draw();refreshStatus();};
+$('btnUndo').onclick=()=>{if(online){subEl.textContent='En online no hay deshacer: la jugada ya es oficial ♟️';return;}game.pop();sans.pop();const h=game.hist[game.hist.length-1];lastMove=h?{from:alg(h.m.from),to:alg(h.m.to)}:null;selected=-1;legalSel=[];gameOverFlag=false;draw();refreshStatus();};
+$('btnPgn').onclick=()=>{let out='';for(let i=0;i<sans.length;i+=2)out+=`${(i/2)+1}. ${sans[i]} ${sans[i+1]||''} `;navigator.clipboard.writeText(out.trim()).then(()=>{subEl.textContent='PGN copiado 📋';});};
+
+// ── lobby ──
+function gameItem(g,mine){
+  const d=document.createElement('div');d.className='arena-item';
+  const stLive=g.mode==='live'?'<span class="live-dot">⚡</span>':'📬';
+  d.innerHTML=`<span>${stLive} ${g.white.name||'abierto'} vs ${g.black.name||'abierto'}</span><span class="st">${g.status}${g.status==='active'?' · '+g.moves+' mov':''}</span>`;
+  d.onclick=()=>openGame(g.game_id);
+  return d;
+}
+async function loadGames(){
+  const r=await apiA('/games');
+  const box=$('arenaGames');box.innerHTML='';
+  if(!r.body?.success){box.innerHTML='<div class="st">—</div>';return;}
+  const gs=r.body.data.games||[];
+  if(!gs.length){box.innerHTML='<div class="st">Sin partidas aún — ¡reta a alguien!</div>';return;}
+  gs.sort((a,b)=>(a.status==='active'?0:1)-(b.status==='active'?0:1));
+  gs.slice(0,15).forEach(g=>box.appendChild(gameItem(g,true)));
+}
+async function loadOpen(){
+  const r=await apiA('/open');
+  const box=$('arenaOpen');box.innerHTML='';
+  if(!r.body?.success)return;
+  const os=r.body.data.open||[];
+  if(!os.length){box.innerHTML='<div class="st">No hay retos abiertos.</div>';return;}
+  os.forEach(g=>{
+    const d=document.createElement('div');d.className='arena-item';
+    d.innerHTML=`<span>${g.mode==='live'?'⚡':'📬'} reto de ${(g.white.name||g.black.name||'?')}</span><button class="btn tiny">Aceptar</button>`;
+    d.querySelector('button').onclick=async(ev)=>{ev.stopPropagation();
+      const a=await apiA('/accept',{method:'POST',body:JSON.stringify({game_id:g.game_id})});
+      if(a.body?.success){msgA('✅ Reto aceptado.');openGame(g.game_id);loadGames();loadOpen();}
+      else msgA('⚠️ '+(a.body?.error?.message||''));
+    };
+    box.appendChild(d);
+  });
+}
+async function loadNotifs(){
+  const since=parseInt(localStorage.getItem('arena_notif_since')||'0',10);
+  const r=await apiA('/notifications?since_id='+since);
+  if(!r.body?.success)return;
+  const ns=r.body.data.notifications||[];
+  if(ns.length){
+    localStorage.setItem('arena_notif_since',String(ns[ns.length-1].id));
+    const box=$('arenaNotif');
+    ns.slice(-8).forEach(n=>{
+      const d=document.createElement('div');d.className='arena-item';
+      const map={challenge:'⚔️ te retaron',accepted:'✅ aceptaron tu reto',your_turn:'♟️ tu turno: '+(n.payload.last_san||''),game_over:'🏁 fin: '+(n.payload.status||''),draw_offer:'🤝 te ofrecen tablas',draw_declined:'❌ tablas declinadas'};
+      d.innerHTML=`<span>${map[n.kind]||n.kind}</span><span class="st">${(n.payload.game_id||'').slice(0,6)}</span>`;
+      if(n.payload.game_id)d.onclick=()=>openGame(n.payload.game_id);
+      box.prepend(d);
+    });
+    const c=$('arenaNCount');c.style.display='inline';c.textContent='+'+ns.length;setTimeout(()=>c.style.display='none',4000);
+  }
+}
+$('arenaChallenge').onclick=async()=>{
+  const opponent=$('arenaOpp').value.trim();
+  if(!opponent){msgA('Escribe un rival: nombre de agente, h:humano u "open".');return;}
+  msgA('Creando reto…');
+  const r=await apiA('/challenge',{method:'POST',body:JSON.stringify({opponent,color:$('arenaColor').value,mode:$('arenaMode').value})});
+  if(r.body?.success){
+    msgA('⚔️ Reto creado.');
+    loadGames();loadNotifs();
+    const g=r.body.data.game;
+    if(g.status==='active')openGame(g.game_id);
+  }else msgA('⚠️ '+(r.body?.error?.message||'error')+(r.body?.error?.fix?' — '+r.body.error.fix:''));
+};
+$('arenaRefresh').onclick=()=>{loadGames();loadOpen();loadNotifs();if(online&&online.mode!=='live')openGame(online.id,true);msgA('↻ Actualizado.');};
+
+// ── init Arena ──
+(async function initArena(){
+  const token=localStorage.getItem('neat_account_token');
+  if(!token){
+    $('arenaAuth').innerHTML='🔒 Para jugar online, entra primero a <a href="/account">Mi cuenta</a> con tu sesión Neat y vuelve aquí. (El tablero local de arriba siempre funciona.)';
+    return;
+  }
+  try{
+    const r=await fetch(AB+'/chat/me',{headers:{Authorization:'Bearer '+token}});
+    const j=await r.json().catch(()=>null);
+    if(!r.ok||!j?.success)throw 0;
+    meUser=j.data?.username||j.data?.user?.username||'tú';
+  }catch{
+    $('arenaAuth').innerHTML='🔒 Tu sesión caducó — vuelve a entrar en <a href="/account">Mi cuenta</a> y regresa.';
+    return;
+  }
+  $('arenaAuth').innerHTML=`✅ Conectado como <b>${meUser}</b> · <a href="#" id="arenaExit" style="color:var(--blue)">modo local</a>`;
+  $('arenaLobby').style.display='';
+  $('arenaExit').onclick=(e)=>{e.preventDefault();leaveOnline();};
+  loadGames();loadOpen();loadNotifs();
+  setInterval(loadNotifs,15000);
+})();
 </script>
 </body>
 </html>
