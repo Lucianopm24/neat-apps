@@ -104,6 +104,11 @@ details.dash-pass summary:hover{color:var(--text)}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .btn.primary:hover{filter:brightness(1.1)}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.replay{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;justify-content:center}
+.replay .btn{padding:6px 11px}
+.replay .btn:disabled{opacity:.35;cursor:default}
+.replay .rpinfo{font-size:12px;color:var(--muted);min-width:88px;text-align:center;font-family:'Roboto Mono',monospace}
+.moves td.cur{background:var(--blue-light);border-radius:6px;font-weight:700}
 .fen-box{font-family:'Roboto Mono',monospace;font-size:10.5px;color:var(--muted);word-break:break-all;background:var(--surface);padding:8px 10px;border-radius:8px;margin-top:10px}
 /* coronación */
 .promo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
@@ -233,6 +238,14 @@ footer .lob{font-size:16px}
         <button class="btn" id="btnFlip">🔄 Girar</button>
         <button class="btn" id="btnUndo">↩︎ Deshacer</button>
         <button class="btn" id="btnPgn">📋 PGN</button>
+      </div>
+      <div class="replay" id="replayBar" hidden>
+        <button class="btn" id="rpStart" title="Primera posición">⏮</button>
+        <button class="btn" id="rpPrev" title="Jugada anterior (←)">◀</button>
+        <span id="rpInfo" class="rpinfo">▶ revisar</span>
+        <button class="btn" id="rpNext" title="Jugada siguiente (→)">▶</button>
+        <button class="btn" id="rpEnd" title="Posición final">⏭</button>
+        <button class="btn" id="rpExit" title="Volver al presente" hidden>✖</button>
       </div>
       <p class="note">Modo <b>local 2 jugadores</b> (mismo dispositivo)… o <b>conéctate a Arena</b> aquí abajo 👇 y reta a un agente de verdad.</p>
     </div>
@@ -645,6 +658,12 @@ function drawMoves(){
   for(let i=0;i<sans.length;i+=2){
     const tr=document.createElement('tr');
     tr.innerHTML=`<td class="n">${(i/2)+1}.</td><td>${sans[i]||''}</td><td>${sans[i+1]||''}</td>`;
+    if(replay){ // en revisión: marca dónde estás y permite saltar con clic
+      if(i===replay.idx-1)tr.children[1].classList.add('cur');
+      if(i+1===replay.idx-1)tr.children[2].classList.add('cur');
+      tr.children[1].onclick=()=>rpGo(i+1);
+      tr.children[2].onclick=()=>{if(sans[i+1])rpGo(i+2);};
+    }
     tbody.appendChild(tr);
   }
   document.getElementById('movesBox').scrollTop=1e6;
@@ -728,6 +747,7 @@ draw();refreshStatus();
 const AB='https://neat-apps-b.vercel.app';
 let online=null; // {id, side, mode, status, poll, ws, clockTick}
 let meUser=null;
+let replay=null; // modo revisión: {sans:[],ucis:[],idx} — recorrer la partida jugada a jugada
 const $=(id)=>document.getElementById(id);
 const msgA=(t)=>{$('arenaMsg').textContent=t||'';};
 // ¿Agente 🤖 o humano 👤? El id de jugador lo dice: a:Nombre / h:nombre
@@ -744,11 +764,84 @@ async function apiA(path,opts={}){
 
 // ── estado remoto → tablero (el FEN del servidor ES la verdad) ──
 function applyRemote(g){
+  if(replay){ // estás revisando historia: el presente se guarda pero NO pisa el tablero
+    if(online)online.game=g;
+    const n=g.moves||(g.sans?g.sans.length:0);
+    if(n>replay.sans.length)$('rpInfo').textContent=replay.idx+'/'+replay.sans.length+' ⏳ hay nuevas';
+    return;
+  }
   game.load(g.fen); // el FEN del servidor ES la verdad (legalidad + render)
   if(g.sans) sans=g.sans; // al abrir va ?full=1; en polls pueden venir solo las últimas 12 (suficiente para la tabla)
   selected=-1;legalSel=[];lastMove=null;
   draw();
 }
+// ── modo revisión 🔁: el servidor ya guarda TODAS las jugadas (sans) → reejecutarlas desde el inicio ──
+const rpSan=s=>String(s).replace(/[+#?!]+/g,'');
+function resolveUcis(list){ // SANs → UCIs sobre el propio motor (fía la legalidad al motor validado por perft)
+  game.reset();game.rep={};
+  const ucis=[];
+  try{
+    for(const s of list){
+      const ms=game.moves();
+      const m=ms.find(x=>game.san(x)===s)||ms.find(x=>rpSan(game.san(x))===rpSan(s));
+      if(!m)return null;
+      const u=alg(m.from)+alg(m.to)+(m.p||'');
+      game.move(u);ucis.push(u);
+    }
+  }catch(e){return null;}
+  return ucis;
+}
+function showReplay(){
+  const t=replay.idx;
+  game.reset();game.rep={};selected=-1;legalSel=[];lastMove=null;gameOverFlag=false;
+  for(let i=0;i<t;i++)game.move(replay.ucis[i]);
+  sans=replay.sans.slice(0,t);
+  if(t>0){const u=replay.ucis[t-1];lastMove={from:u.slice(0,2),to:u.slice(2,4)};}
+  draw();
+  const fin=online&&online.game&&online.game.status!=='active';
+  const N=replay.sans.length;
+  $('rpInfo').textContent=t+'/'+N+(t===0?' · inicio':(t===N&&fin?' · final 🏁':''));
+  $('rpStart').disabled=$('rpPrev').disabled=(t===0);
+  $('rpNext').disabled=$('rpEnd').disabled=(t===N);
+  statusEl.textContent='🔁 Modo revisión · jugada '+t+' de '+N;
+  subEl.textContent=fin?'Partida terminada — navega con ◀ ▶, las flechas del teclado o clic en la tabla.':'Pulsa ✖ para volver al presente (si hay jugadas nuevas, se ven al salir).';
+}
+function exitReplay(msg){
+  replay=null;
+  $('rpExit').hidden=true;
+  if(online&&online.game){applyRemote(online.game);refreshStatus();}
+  if(msg)msgA(msg);
+}
+async function enterReplay(preloaded,silent){
+  if(!online)return;
+  let g=preloaded;
+  if(!g){
+    const r=await apiA(`/games/${online.id}?full=1`);
+    if(!r.body?.success){if(!silent)subEl.textContent='⚠️ no cargó la partida para revisar';return;}
+    g=r.body.data.game;
+  }
+  const ucis=resolveUcis(g.sans||[]);
+  if(!ucis){if(!silent)subEl.textContent='⚠️ No pude reconstruir las jugadas (SAN inesperado).';return;}
+  online.game=g;stopClock();
+  replay={sans:(g.sans||[]),ucis,idx:(g.sans||[]).length};
+  $('rpExit').hidden=false;
+  showReplay();
+  if(!silent)msgA('🔁 Revisión: ⏮ ◀ ▶ ⏭, flechas del teclado o clic en la tabla.');
+}
+function rpGo(i){if(!replay)return;replay.idx=Math.max(0,Math.min(replay.sans.length,i));showReplay();}
+$('rpStart').onclick=()=>{replay?rpGo(0):enterReplay();};
+$('rpPrev').onclick=()=>{replay?rpGo(replay.idx-1):enterReplay();};
+$('rpNext').onclick=()=>{replay?rpGo(replay.idx+1):enterReplay();};
+$('rpEnd').onclick=()=>{replay?rpGo(replay.sans.length):enterReplay();};
+$('rpExit').onclick=()=>exitReplay('De vuelta al presente ▶.');
+document.addEventListener('keydown',e=>{
+  if(!replay)return;
+  if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName||''))return;
+  if(e.key==='ArrowLeft'){e.preventDefault();rpGo(replay.idx-1);}
+  else if(e.key==='ArrowRight'){e.preventDefault();rpGo(replay.idx+1);}
+  else if(e.key==='Home'){e.preventDefault();rpGo(0);}
+  else if(e.key==='End'){e.preventDefault();rpGo(replay.sans.length);}
+});
 function fmtClock(ms){
   ms=Math.max(0,ms||0);const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);
   return m+':'+String(s).padStart(2,'0');
@@ -787,11 +880,11 @@ function stopClock(){if(online&&online.clockTick){clearInterval(online.clockTick
 
 // interceptar estado/estado visual cuando estamos online
 const _refreshLocal=refreshStatus;
-refreshStatus=function(){ if(online){onlineStatus();return;} _refreshLocal(); };
+refreshStatus=function(){ if(replay)return; if(online){onlineStatus();return;} _refreshLocal(); };
 
 // ── movimientos en modo online ──
 const _tapLocal=tap;
-tap=function(s){ if(online)return tapOnline(s); _tapLocal(s); };
+tap=function(s){ if(online){ if(replay){subEl.textContent='🔁 Modo revisión: pulsa ✖ para volver a jugar.';return;} return tapOnline(s);} _tapLocal(s); };
 function tapOnline(s){
   const g=online.game;
   if(g.status!=='active'){subEl.textContent='La partida terminó — crea otra desde el lobby.';return;}
@@ -881,8 +974,10 @@ async function openGame(id,silent){
   const g=r.body.data.game;
   if(online&&online.ws){try{online.ws.close();}catch(e){}}
   stopPoll();stopClock();
+  replay=null;$('rpExit').hidden=true;$('replayBar').hidden=false;
   online={id:g.game_id,side:g.you_are,mode:g.mode,game:g,playerId:(g.you_are==='w'?g.white.id:g.black.id),ws:null,poll:null,clockTick:null};
   applyRemote(g);refreshStatus();
+  if(g.status!=='active')enterReplay(g,true); // partida terminada → directo al modo revisión 🎬
   if(!silent)msgA(g.mode==='live'?'Conectando al vivo…':'Modo correspondencia: pulsa ↻ en Mis partidas para refrescar.');
   if(g.status==='active'&&g.mode==='live')connectLive();
   else if(g.status==='active')startPoll();
@@ -913,6 +1008,7 @@ async function connectLive(){
 function leaveOnline(){
   if(!online)return;
   stopPoll();stopClock();
+  replay=null;$('replayBar').hidden=true;$('rpExit').hidden=true;
   if(online.ws)try{online.ws.close();}catch(e){}
   online=null;
   game.reset();game.rep={};sans=[];lastMove=null;selected=-1;legalSel=[];gameOverFlag=false;
@@ -923,7 +1019,7 @@ function leaveOnline(){
 // botones base en modo online
 $('btnNew').onclick=()=>{if(online){leaveOnline();return;}game.reset();game.rep={};sans=[];lastMove=null;selected=-1;legalSel=[];gameOverFlag=false;draw();refreshStatus();};
 $('btnUndo').onclick=()=>{if(online){subEl.textContent='En online no hay deshacer: la jugada ya es oficial ♟️';return;}game.pop();sans.pop();const h=game.hist[game.hist.length-1];lastMove=h?{from:alg(h.m.from),to:alg(h.m.to)}:null;selected=-1;legalSel=[];gameOverFlag=false;draw();refreshStatus();};
-$('btnPgn').onclick=()=>{let out='';for(let i=0;i<sans.length;i+=2)out+=`${(i/2)+1}. ${sans[i]} ${sans[i+1]||''} `;navigator.clipboard.writeText(out.trim()).then(()=>{subEl.textContent='PGN copiado 📋';});};
+$('btnPgn').onclick=()=>{const src=replay?replay.sans:sans;let out='';for(let i=0;i<src.length;i+=2)out+=`${(i/2)+1}. ${src[i]} ${src[i+1]||''} `;navigator.clipboard.writeText(out.trim()).then(()=>{subEl.textContent='PGN copiado 📋';});};
 
 // ── lobby ──
 function gameItem(g,mine){
