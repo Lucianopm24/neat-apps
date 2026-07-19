@@ -242,7 +242,7 @@ footer .lob{font-size:16px}
       </div>
       <div class="arena-cols">
         <div>
-          <h3 style="margin:.4rem 0">Mis partidas <button class="btn tiny" id="arenaRefresh" title="Actualizar">↻</button></h3>
+          <h3 style="margin:.4rem 0">Mis partidas <button class="btn tiny" id="arenaRefresh" title="Actualizar">↻</button> <span class="st" style="font-weight:400;font-size:.8rem">🤖 agente · 👤 humano</span></h3>
           <div id="arenaGames" class="arena-list"></div>
         </div>
         <div>
@@ -707,6 +707,10 @@ let online=null; // {id, side, mode, status, poll, ws, clockTick}
 let meUser=null;
 const $=(id)=>document.getElementById(id);
 const msgA=(t)=>{$('arenaMsg').textContent=t||'';};
+// ¿Agente 🤖 o humano 👤? El id de jugador lo dice: a:Nombre / h:nombre
+const PICON=id=>id&&id.startsWith('a:')?'🤖':(id&&id.startsWith('h:')?'👤':'❔');
+const PLBL=id=>id&&id.startsWith('a:')?'agente':(id&&id.startsWith('h:')?'humano':'?');
+const pname=p=>(p&&p.name)?(PICON(p.id)+' '+p.name):'abierto';
 
 async function apiA(path,opts={}){
   const token=localStorage.getItem('neat_account_token');
@@ -732,19 +736,19 @@ function onlineStatus(){
   let t='';
   if(g.status!=='active'){
     const names={mate:'mate',stale:'ahogado',fifty:'50 movimientos',rep:'repetición',insuf:'material insuficiente',resign:'abandono',draw:'acuerdo',timeout:'bandera'};
-    t='Terminada: '+(names[g.status]||g.status)+(g.winner?(' — gana '+((g.winner==='w'?g.white.name:g.black.name)||g.winner)):' (tablas)');
+    t='Terminada: '+(names[g.status]||g.status)+(g.winner?(' — gana '+(g.winner==='w'?pname(g.white):pname(g.black))):' (tablas)');
     stopClock();
   }else{
     const myturn=g.turn===online.side;
-    t=myturn?'⚡ Tu turno ('+(online.side==='w'?'blancas':'negras')+')':'⏳ Turno de '+((g.turn==='w'?g.white.name:g.black.name)||'…');
+    t=myturn?'⚡ Tu turno ('+(online.side==='w'?'blancas':'negras')+')':'⏳ Turno de '+(g.turn==='w'?pname(g.white):pname(g.black));
     if(g.draw_offer)t+=(g.draw_offer===online.playerId?' · tablas ofrecidas 🤝':' · ¡te ofrecen tablas! (botones abajo)');
   }
   if(g.mode==='live'&&g.clocks){
-    t+=`  ·  ⏱ ${g.white.name||'w'} ${fmtClock(g.clocks.w)}  |  ${g.black.name||'b'} ${fmtClock(g.clocks.b)}`;
+    t+=`  ·  ⏱ ${pname(g.white)} ${fmtClock(g.clocks.w)}  |  ${pname(g.black)} ${fmtClock(g.clocks.b)}`;
     tickClocks(g);
   }
   statusEl.textContent=t;
-  subEl.textContent=online.side?('Eres '+online.playerId.replace(/^[ah]:/,'')+' ('+(online.side==='w'?'blancas':'negras')+') · '+(g.mode==='live'?'EN VIVO':'correspondencia')):'Observando';
+  subEl.textContent=online.side?('Eres '+PICON(online.playerId)+' '+online.playerId.replace(/^[ah]:/,'')+' ('+PLBL(online.playerId)+', '+(online.side==='w'?'blancas':'negras')+') · '+(g.mode==='live'?'EN VIVO':'correspondencia')):'Observando';
 }
 function tickClocks(g){
   stopClock();
@@ -753,7 +757,7 @@ function tickClocks(g){
   online.clockTick=setInterval(()=>{
     const now=Date.now(),el=now-last;last=now;
     if(game.turn==='w')w=Math.max(0,w-el);else b=Math.max(0,b-el);
-    statusEl.textContent=statusEl.textContent.replace(/⏱.*$/,'')+`⏱ ${g.white.name||'w'} ${fmtClock(w)}  |  ${g.black.name||'b'} ${fmtClock(b)}`;
+    statusEl.textContent=statusEl.textContent.replace(/⏱.*$/,'')+`⏱ ${pname(g.white)} ${fmtClock(w)}  |  ${pname(g.black)} ${fmtClock(b)}`;
   },500);
 }
 function stopClock(){if(online&&online.clockTick){clearInterval(online.clockTick);online.clockTick=null;}}
@@ -853,7 +857,7 @@ $('btnPgn').onclick=()=>{let out='';for(let i=0;i<sans.length;i+=2)out+=`${(i/2)
 function gameItem(g,mine){
   const d=document.createElement('div');d.className='arena-item';
   const stLive=g.mode==='live'?'<span class="live-dot">⚡</span>':'📬';
-  d.innerHTML=`<span>${stLive} ${g.white.name||'abierto'} vs ${g.black.name||'abierto'}</span><span class="st">${g.status}${g.status==='active'?' · '+g.moves+' mov':''}</span>`;
+  d.innerHTML=`<span>${stLive} ${pname(g.white)} vs ${pname(g.black)}</span><span class="st">${g.status}${g.status==='active'?' · '+g.moves+' mov':''}</span>`;
   d.onclick=()=>openGame(g.game_id);
   return d;
 }
@@ -874,7 +878,7 @@ async function loadOpen(){
   if(!os.length){box.innerHTML='<div class="st">No hay retos abiertos.</div>';return;}
   os.forEach(g=>{
     const d=document.createElement('div');d.className='arena-item';
-    d.innerHTML=`<span>${g.mode==='live'?'⚡':'📬'} reto de ${(g.white.name||g.black.name||'?')}</span><button class="btn tiny">Aceptar</button>`;
+    d.innerHTML=`<span>${g.mode==='live'?'⚡':'📬'} reto de ${PICON(g.white.name?g.white.id:g.black.id)} ${(g.white.name||g.black.name||'?')} <span class="st">(${PLBL(g.white.name?g.white.id:g.black.id)})</span></span><button class="btn tiny">Aceptar</button>`;
     d.querySelector('button').onclick=async(ev)=>{ev.stopPropagation();
       const a=await apiA('/accept',{method:'POST',body:JSON.stringify({game_id:g.game_id})});
       if(a.body?.success){msgA('✅ Reto aceptado.');openGame(g.game_id);loadGames();loadOpen();}
