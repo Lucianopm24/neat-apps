@@ -362,6 +362,11 @@
   .key-id { font-family:ui-monospace,Menlo,monospace; font-size:13px; }
   .key-meta { font-size:12px; color:var(--gray-600,#6b7280); }
   .key-revoked { opacity:.5; text-decoration:line-through; }
+  /* ── Audit del agente (qué hizo mi agente) ── */
+  .audit-row { display:flex; gap:10px; padding:9px 12px; border:1px solid var(--gray-200,#e5e7eb); border-radius:10px; margin-bottom:7px; align-items:flex-start; }
+  .audit-ico { font-size:16px; line-height:1.2; flex-shrink:0; }
+  .audit-txt { font-size:13px; word-break:break-word; }
+  .audit-meta { font-size:11px; color:var(--gray-600,#6b7280); margin-top:2px; }
   .key-new { font-family:ui-monospace,Menlo,monospace; font-size:13px; word-break:break-all; padding:12px; border-radius:10px; border:1px dashed var(--gray-600,#6b7280); margin:10px 0; user-select:all; }
 </style>
 </head>
@@ -504,6 +509,21 @@
       </div>
     </div>
 
+    <!-- Audit: qué hizo mi agente (R1) -->
+    <div class="card" id="cardAgentAudit">
+      <div class="card-header">
+        <h2>Actividad de tu agente 🕵️</h2>
+        <p>Transparencia: todo lo que tu agente ha hecho con tu cuenta (notas, avisos, mensajes). Cada acción lleva su sello — tu agente nunca actúa de incógnito.</p>
+      </div>
+      <div class="card-body">
+        <div id="auditList"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="loadAgentAudit()">↻ Actualizar</button>
+        </div>
+        <div class="msg err" id="auditMsgErr"></div>
+      </div>
+    </div>
+
     <!-- Export data -->
     <div class="card">
       <div class="card-header">
@@ -563,6 +583,7 @@ window.onload = async () => {
   if (!token) return showScreen("screenLogin");
   await loadMe();
   loadAgentKeys();
+  loadAgentAudit();
 };
 
 function showScreen(id) {
@@ -805,6 +826,42 @@ async function revokeAgentKey(id) {
     toast("Key revocada ✓");
     await loadAgentKeys();
   } catch { keysMsg(document.getElementById("keysMsgErr"), "Error de red revocando la key."); }
+}
+
+// ── Audit: qué hizo mi agente (R1) ──────────────────────────────────────────
+function esc(t) { const d = document.createElement("div"); d.textContent = t == null ? "" : String(t); return d.innerHTML; }
+const AUDIT_ICONS = { note: "📝", nudge: "🔔", chat_message: "💬" };
+const AUDIT_LABELS = { note: "Nota", nudge: "Aviso 🔔", chat_message: "Mensaje en chat" };
+
+function auditWhen(x) {
+  try { return new Date(x).toLocaleString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  catch { return ""; }
+}
+
+async function loadAgentAudit() {
+  const list = document.getElementById("auditList");
+  if (!list) return;
+  list.innerHTML = '<div class="key-meta">Cargando…</div>';
+  keysMsg(document.getElementById("auditMsgErr"));
+  try {
+    const r = await fetch(`${API}/agents/me/audit?limit=30`, { headers: { Authorization: "Bearer " + token } });
+    if (r.status === 404) { list.innerHTML = '<div class="key-meta">Disponible cuando se despliegue la nueva versión del cerebro 🚧</div>'; return; }
+    const d = await r.json();
+    if (!r.ok || !d.success) { list.innerHTML = ""; return keysMsg(document.getElementById("auditMsgErr"), (d.error && d.error.message) || "No se pudo cargar la actividad."); }
+    const events = d.events || d.data || [];
+    if (!events.length) { list.innerHTML = '<div class="key-meta">Tu agente aún no ha hecho nada con tu cuenta. Cuando trabaje, lo verás aquí 🦞</div>'; return; }
+    list.innerHTML = events.map(e => {
+      const txt = e.kind === "note" ? (e.title || "(sin título)") : (e.message || e.preview || "");
+      const extra = e.kind === "note" && e.visibility === "public" ? " · pública" : "";
+      return `<div class="audit-row">
+        <div class="audit-ico">${AUDIT_ICONS[e.kind] || "🦞"}</div>
+        <div>
+          <div class="audit-txt">${esc(txt)}</div>
+          <div class="audit-meta">${AUDIT_LABELS[e.kind] || e.kind} · ${auditWhen(e.createdAt)}${extra}</div>
+        </div>
+      </div>`;
+    }).join("");
+  } catch { list.innerHTML = ""; keysMsg(document.getElementById("auditMsgErr"), "Error de red cargando la actividad."); }
 }
 
 function copyNewKey() {
