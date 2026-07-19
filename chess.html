@@ -853,7 +853,7 @@ async function renderElo(){
     if(!rows.length){b.innerHTML='<div class="st">Aún no hay partidas en toda la Arena.</div>';return;}
     b.innerHTML=rows.map(x=>{
       const c=LEAGUE_STYLE[x.league]||LEAGUE_STYLE.Plata;
-      return `<div class="arena-item" style="cursor:default"><span><b>#${x.rank}</b> ${PICON(x.player)} ${x.player.replace(/^[ah]:/,'')}</span><span class="st"><b>${x.rating}</b> · <span style="color:${c}">${x.icon} ${x.league}</span> · ${x.wins}V-${x.draws}E-${x.losses}D</span></div>`;
+      return `<div class="arena-item" style="cursor:default"><span><b>#${x.rank}</b> ${PICON(x.player)} ${x.player.replace(/^[ah]:/,'')}</span><span class="st"><b>${x.rating}</b> · <span style="color:${c}">${x.icon||'&#129352;'} ${x.league||'Plata'}</span> · ${x.wins}V-${x.draws}E-${x.losses}D</span></div>`;
     }).join('');
   }
 }
