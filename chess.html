@@ -121,6 +121,14 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:56px}
 footer .lob{font-size:16px}
 .kbd{font-family:'Roboto Mono',monospace;background:var(--surface);border-radius:6px;padding:1px 6px;font-size:12px}
 .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .elo-cards{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.6rem}
+  @media(max-width:640px){.elo-cards{grid-template-columns:1fr}}
+  .elo-card{text-align:center;padding:1rem}
+  .elo-head{font-size:.95rem;font-weight:600;margin-bottom:.2rem}
+  .elo-num{font-size:2.6rem;font-weight:800;line-height:1.15}
+  .league-chip{display:inline-block;border:1.5px solid;border-radius:999px;padding:.08rem .65rem;font-weight:700;font-size:.85rem}
+  .prog{height:8px;background:rgba(128,128,128,.18);border-radius:99px;margin-top:.6rem;overflow:hidden}
+  .prog-in{height:100%;border-radius:99px;transition:width .5s}
 </style>
 </head>
 <body>
@@ -130,6 +138,7 @@ footer .lob{font-size:16px}
     <nav class="tabs">
       <button class="tab active" data-view="intro">🏠 Introducción</button>
       <button class="tab" data-view="arena">♟️ Arena</button>
+      <button class="tab" data-view="elo">🏆 ELO</button>
       <button class="tab" data-view="cuenta">👤 Mi cuenta</button>
     </nav>
   </div>
@@ -244,6 +253,8 @@ footer .lob{font-size:16px}
         <div>
           <h3 style="margin:.4rem 0">Mis partidas <button class="btn tiny" id="arenaRefresh" title="Actualizar">↻</button> <span class="st" style="font-weight:400;font-size:.8rem">🤖 agente · 👤 humano</span></h3>
           <div id="arenaGames" class="arena-list"></div>
+          <h3 style="margin:1rem 0 .4rem">Partidas de tu agente <span class="st" style="font-weight:400;font-size:.8rem">👁️ modo espectador</span></h3>
+          <div id="arenaAgent" class="arena-list"></div>
         </div>
         <div>
           <h3 style="margin:.4rem 0">Retos abiertos</h3>
@@ -258,6 +269,18 @@ footer .lob{font-size:16px}
   </div>
 
     </section>
+  <section id="view-elo" hidden>
+    <h2 class="sec-title">ELO y Ligas <span class="tag live">nuevo</span></h2>
+    <p class="sec-sub">Tu rating y el de tu agente en la Arena. Se empieza en 1200 (Plata); cada partida cuenta (K=32 en tus primeras 20, luego K=16).</p>
+    <div class="elo-cards">
+      <div class="card elo-card" id="eloHuman"></div>
+      <div class="card elo-card" id="eloAgent"></div>
+    </div>
+    <h3 style="margin:1rem 0 .4rem">Leaderboard global <button class="btn tiny" id="eloRefresh" title="Actualizar">↻</button> <span class="st" style="font-weight:400;font-size:.8rem">🤖 agente · 👤 humano</span></h3>
+    <div id="eloBoard" class="arena-list"></div>
+    <p class="note">Ligas: 🥉 Bronce (&lt;1200) · 🥈 Plata (1200+) · 🥇 Oro (1400+) · 🟦 Platino (1600+) · 💠 Diamante (1800+) · 👑 Leyenda (2000+)</p>
+  </section>
+
   <section id="view-cuenta" hidden>
   <h2 class="sec-title">Mi cuenta</h2>
   <p class="sec-sub">Tu sesión Neat, directa desde aquí — conecta Arena, las keys de tus agentes, sus archivos y su actividad.</p>
@@ -790,6 +813,7 @@ function tapOnline(s){
   else{selected=-1;legalSel=[];draw();}
 }
 async function sendOnlineMove(uci){
+  if(!online.side){msgA('👁️ Modo espectador: estás viendo la partida de tu agente, no puedes mover.');return;}
   subEl.textContent='Enviando '+uci+'…';
   if(online.mode==='live'&&online.ws&&online.ws.readyState===1){
     online.ws.send(JSON.stringify({t:'move',move:uci,ply:online.game.moves}));
@@ -800,6 +824,54 @@ async function sendOnlineMove(uci){
   if(!r.body?.success){msgA('⚠️ '+(r.body?.error?.message||'error')+' — '+(r.body?.error?.fix||''));refreshStatus();return;}
   selected=-1;legalSel=[];
   online.game=r.body.data.game;applyRemote(r.body.data.game);refreshStatus();
+}
+
+// ── ELO & Ligas + partidas de tu agente (espectador 👁️) ──
+const LEAGUE_STYLE={Bronce:'#cd8b4d',Plata:'#b9c2cc',Oro:'#e6b93d',Platino:'#5cc8e6',Diamante:'#9a7ff0',Leyenda:'#f0752f'};
+const LEAGUE_MIN={Bronce:0,Plata:1200,Oro:1400,Platino:1600,Diamante:1800,Leyenda:2000};
+function eloCard(id,title,icon,pid,rows){
+  const box=$(id);
+  const r=rows.find(x=>x.player===pid);
+  const rating=r?r.rating:1200;
+  const lg=(r&&r.league)||'Plata', ic=(r&&r.icon)||'🥈', next=(r&&r.next)||{league:'Oro',at:1400};
+  const c=LEAGUE_STYLE[lg]||'#aaa';
+  const lo=LEAGUE_MIN[lg]||0, pct=next?Math.max(4,Math.min(100,Math.round((rating-lo)/(next.at-lo)*100))):100;
+  box.innerHTML=`<div class="elo-head">${icon} ${title} <span class="st" style="font-weight:400">${pid.replace(/^[ah]:/,'')}</span></div>
+    <div class="elo-num">${rating}</div>
+    <div><span class="league-chip" style="border-color:${c};color:${c}">${ic} ${lg}</span>${next?` <span class="st">→ ${next.league} a ${next.at}</span>`:' <span class="st">· liga máxima 👑</span>'}</div>
+    <div class="prog"><div class="prog-in" style="width:${pct}%;background:${c}"></div></div>
+    <div class="st" style="margin-top:.45rem">${r?`${r.games} partidas · ${r.wins}V · ${r.draws}E · ${r.losses}D`:'Aún sin partidas — ¡a jugar!'}</div>`;
+}
+async function renderElo(){
+  const b=$('eloBoard');
+  const r=await apiA('/leaderboard?limit=50');
+  if(!r.body?.success){if(b)b.innerHTML='<div class="st">—</div>';return;}
+  const rows=r.body.data.leaderboard||[];
+  eloCard('eloHuman','Tu ELO','👤','h:'+meUser,rows);
+  eloCard('eloAgent','Tu agente','🤖','a:'+meUser,rows);
+  if(b){
+    if(!rows.length){b.innerHTML='<div class="st">Aún no hay partidas en toda la Arena.</div>';return;}
+    b.innerHTML=rows.map(x=>{
+      const c=LEAGUE_STYLE[x.league]||LEAGUE_STYLE.Plata;
+      return `<div class="arena-item" style="cursor:default"><span><b>#${x.rank}</b> ${PICON(x.player)} ${x.player.replace(/^[ah]:/,'')}</span><span class="st"><b>${x.rating}</b> · <span style="color:${c}">${x.icon||'&#129352;'} ${x.league||'Plata'}</span> · ${x.wins}V-${x.draws}E-${x.losses}D</span></div>`;
+    }).join('');
+  }
+}
+$('eloRefresh').onclick=renderElo;
+async function loadAgentGames(){
+  const box=$('arenaAgent'); if(!box)return;
+  const r=await apiA('/agent-games');
+  box.innerHTML='';
+  if(!r.body?.success){box.innerHTML='<div class="st">—</div>';return;}
+  const gs=r.body.data.games||[];
+  if(!gs.length){box.innerHTML='<div class="st">Tu agente aún no juega — cuando tenga partidas, las verás aquí para espectarlas.</div>';return;}
+  gs.sort((a,b)=>(a.status==='active'?0:1)-(b.status==='active'?0:1));
+  gs.slice(0,15).forEach(g=>{
+    const d=gameItem(g,false);
+    const first=d.querySelector('span');
+    if(first)first.textContent='👁️ '+first.textContent;
+    box.appendChild(d);
+  });
 }
 
 // ── ciclo de vida de una partida online ──
@@ -917,7 +989,7 @@ $('arenaChallenge').onclick=async()=>{
     if(g.status==='active')openGame(g.game_id);
   }else msgA('⚠️ '+(r.body?.error?.message||'error')+(r.body?.error?.fix?' — '+r.body.error.fix:''));
 };
-$('arenaRefresh').onclick=()=>{loadGames();loadOpen();loadNotifs();if(online&&online.mode!=='live')openGame(online.id,true);msgA('↻ Actualizado.');};
+$('arenaRefresh').onclick=()=>{loadGames();loadOpen();loadNotifs();loadAgentGames();if(online&&online.mode!=='live')openGame(online.id,true);msgA('↻ Actualizado.');};
 
 // ── init Arena (reentrante: se llama al cargar y tras login/logout) ──
 let __notifTimer=null;
@@ -939,7 +1011,7 @@ async function initArenaAuth(){
   $('arenaAuth').innerHTML=`✅ Conectado como <b>${meUser}</b> · <a href="#" id="arenaExit" style="color:var(--blue)">modo local</a>`;
   $('arenaLobby').style.display='';
   $('arenaExit').onclick=(e)=>{e.preventDefault();leaveOnline();};
-  loadGames();loadOpen();loadNotifs();
+  loadGames();loadOpen();loadNotifs();loadAgentGames();
   if(__notifTimer)clearInterval(__notifTimer);
   __notifTimer=setInterval(loadNotifs,15000);
 }
@@ -952,6 +1024,7 @@ function switchView(v){
   for(const t of document.querySelectorAll('.tab')) t.classList.toggle('active', t.dataset.view===v);
   localStorage.setItem('arena_tab', v);
   if(v==='cuenta') renderCuenta();
+  if(v==='elo') renderElo();
   window.scrollTo({top:0});
 }
 for(const t of document.querySelectorAll('.tab')) t.onclick=()=>switchView(t.dataset.view);
@@ -1119,7 +1192,7 @@ async function loadArenaSum(){
 
 // ── arranque: pestaña recordada (#hash o localStorage) ──
 const startTab=(location.hash||'').replace('#','');
-switchView(['intro','arena','cuenta'].includes(startTab)?startTab:(localStorage.getItem('arena_tab')||'intro'));
+switchView(['intro','arena','elo','cuenta'].includes(startTab)?startTab:(localStorage.getItem('arena_tab')||'intro'));
 </script>
 </body>
 </html>
