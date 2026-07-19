@@ -367,6 +367,17 @@
   .audit-ico { font-size:16px; line-height:1.2; flex-shrink:0; }
   .audit-txt { font-size:13px; word-break:break-word; }
   .audit-meta { font-size:11px; color:var(--gray-600,#6b7280); margin-top:2px; }
+  .store-bar { height:10px; background:var(--gray-200,#e5e7eb); border-radius:99px; overflow:hidden; margin:4px 0 6px; }
+  .store-fill { height:100%; width:0%; background:linear-gradient(90deg,#22c55e,#16a34a); border-radius:99px; transition:width .4s ease; }
+  .store-fill.hot { background:linear-gradient(90deg,#f59e0b,#ef4444); }
+  .art-row { display:flex; gap:10px; padding:9px 12px; border:1px solid var(--gray-200,#e5e7eb); border-radius:10px; margin-bottom:7px; align-items:center; }
+  .art-ico { font-size:18px; line-height:1.2; flex-shrink:0; }
+  .art-info { flex:1; min-width:0; }
+  .art-name { font-size:13px; font-weight:600; word-break:break-all; }
+  .art-meta { font-size:11px; color:var(--gray-600,#6b7280); margin-top:2px; }
+  .art-btns { display:flex; gap:6px; flex-shrink:0; }
+  .art-btns .btn { padding:6px 10px; font-size:12px; }
+  .plus-badge { display:inline-block; font-size:10px; font-weight:700; background:#fef3c7; color:#92400e; border:1px solid #fcd34d; padding:1px 7px; border-radius:99px; margin-left:6px; vertical-align:middle; }
   .key-new { font-family:ui-monospace,Menlo,monospace; font-size:13px; word-break:break-all; padding:12px; border-radius:10px; border:1px dashed var(--gray-600,#6b7280); margin:10px 0; user-select:all; }
 </style>
 </head>
@@ -524,6 +535,23 @@
       </div>
     </div>
 
+    <!-- Archivos del agente (R3, cara humana) -->
+    <div class="card" id="cardAgentArtifacts">
+      <div class="card-header">
+        <h2>Archivos de tu agente 📁<span class="plus-badge" id="artPlusBadge" style="display:none">PLUS ⚡</span></h2>
+        <p>Tu agente guarda aquí sus entregas (reportes, imágenes, PDFs — hasta 20MB cada uno). Tú ves todo y puedes descargar o borrar: tu bóveda es de <strong id="artMaxLabel">1 GB</strong>.</p>
+      </div>
+      <div class="card-body">
+        <div class="store-bar"><div class="store-fill" id="storeFill"></div></div>
+        <div class="key-meta" id="storeText">Bóveda: cargando…</div>
+        <div id="artList" style="margin-top:10px"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="loadAgentArtifacts()">↻ Actualizar</button>
+        </div>
+        <div class="msg err" id="artMsgErr"></div>
+      </div>
+    </div>
+
     <!-- Export data -->
     <div class="card">
       <div class="card-header">
@@ -584,6 +612,7 @@ window.onload = async () => {
   await loadMe();
   loadAgentKeys();
   loadAgentAudit();
+  loadAgentArtifacts();
 };
 
 function showScreen(id) {
@@ -867,6 +896,85 @@ async function loadAgentAudit() {
 function copyNewKey() {
   const v = document.getElementById("newKeyValue").textContent;
   navigator.clipboard.writeText(v).then(() => toast("Copiada 📋")).catch(() => toast("No se pudo copiar"));
+}
+
+// ── Archivos del agente (R3): ver, descargar (link firmado) y borrar ───────
+function fmtBytes(b) {
+  if (b == null || isNaN(b)) return "0 B";
+  const u = ["B", "KB", "MB", "GB"]; let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return (i >= 2 ? b.toFixed(1) : Math.round(b)) + " " + u[i];
+}
+
+function artIcon(mime) {
+  if ((mime || "").startsWith("image/")) return "🖼️";
+  if ((mime || "").startsWith("video/")) return "🎬";
+  if ((mime || "").startsWith("audio/")) return "🎵";
+  if (mime === "application/pdf") return "📕";
+  if ((mime || "").startsWith("text/")) return "📄";
+  if ((mime || "").includes("zip") || (mime || "").includes("compressed")) return "🗜️";
+  return "📦";
+}
+
+function renderStorage(st) {
+  const fill = document.getElementById("storeFill");
+  const txt = document.getElementById("storeText");
+  if (!st || st.max_bytes == null) { if (txt) txt.textContent = "Bóveda: sin datos aún"; return; }
+  if (txt) txt.textContent = `Bóveda: ${fmtBytes(st.used_bytes)} de ${fmtBytes(st.max_bytes)}${st.plus ? " (Plus ⚡)" : ""}`;
+  const pct = Math.max(0, Math.min(100, (st.used_bytes / st.max_bytes) * 100));
+  if (fill) { fill.style.width = pct.toFixed(1) + "%"; fill.classList.toggle("hot", pct >= 85); }
+  const badge = document.getElementById("artPlusBadge"); if (badge) badge.style.display = st.plus ? "inline-block" : "none";
+  const lbl = document.getElementById("artMaxLabel"); if (lbl) lbl.textContent = fmtBytes(st.max_bytes);
+}
+
+async function loadAgentArtifacts() {
+  const list = document.getElementById("artList");
+  if (!list) return;
+  list.innerHTML = '<div class="key-meta">Cargando…</div>';
+  keysMsg(document.getElementById("artMsgErr"));
+  try {
+    const r = await fetch(`${API}/agents/me/artifacts`, { headers: { Authorization: "Bearer " + token } });
+    if (r.status === 404) { list.innerHTML = '<div class="key-meta">Disponible cuando se despliegue la nueva versión del cerebro 🚧</div>'; return; }
+    const d = await r.json();
+    if (!r.ok || !d.success) { list.innerHTML = ""; return keysMsg(document.getElementById("artMsgErr"), (d.error && d.error.message) || "No se pudieron cargar los archivos."); }
+    renderStorage(d.storage);
+    const arts = d.artifacts || [];
+    if (!arts.length) { list.innerHTML = '<div class="key-meta">Tu agente aún no ha subido archivos. Cuando entregue algo, aparecerá aquí 🦞</div>'; return; }
+    list.innerHTML = arts.map(a => `<div class="art-row">
+      <div class="art-ico">${artIcon(a.mime)}</div>
+      <div class="art-info">
+        <div class="art-name">${esc(a.filename)}</div>
+        <div class="art-meta">${fmtBytes(a.size)} · ${esc(a.mime || "binario")} · ${auditWhen(a.created_at)}</div>
+      </div>
+      <div class="art-btns">
+        <button class="btn btn-ghost" onclick="downloadArtifact('${a.artifact_id}')">⬇</button>
+        <button class="btn btn-ghost" onclick="deleteArtifact('${a.artifact_id}', '${esc(a.filename).replace(/'/g, "\\'")}')">🗑</button>
+      </div>
+    </div>`).join("");
+  } catch { list.innerHTML = ""; keysMsg(document.getElementById("artMsgErr"), "Error de red cargando los archivos."); }
+}
+
+async function downloadArtifact(id) {
+  keysMsg(document.getElementById("artMsgErr"));
+  toast("Generando link… ⏳");
+  try {
+    const r = await fetch(`${API}/agents/me/artifacts/${id}/link`, { method: "POST", headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (!r.ok || !d.success || !d.url) return keysMsg(document.getElementById("artMsgErr"), (d.error && d.error.message) || "No se pudo generar el link.");
+    window.open(d.url, "_blank", "noopener");
+    toast("Descargando ⬇");
+  } catch { keysMsg(document.getElementById("artMsgErr"), "Error de red generando el link."); }
+}
+
+async function deleteArtifact(id, name) {
+  if (!confirm(`¿Borrar "${name}"? Se libera espacio de tu bóveda y no se puede deshacer.`)) return;
+  try {
+    const r = await fetch(`${API}/agents/me/artifacts/${id}`, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (!r.ok || !d.success) return keysMsg(document.getElementById("artMsgErr"), (d.error && d.error.message) || "No se pudo borrar.");
+    toast("Archivo borrado ✓");
+    await loadAgentArtifacts();
+  } catch { keysMsg(document.getElementById("artMsgErr"), "Error de red borrando el archivo."); }
 }
 </script>
 </body>
