@@ -12,6 +12,7 @@
   --grid:#15151d;
 }
 *{margin:0;padding:0;box-sizing:border-box}
+#game,.board-box,canvas{user-select:none;-webkit-user-select:none} /* seleccionar texto no te roba el mando 🦞 */
 body{background:var(--page-bg);color:var(--text);font-family:'Roboto',Arial,sans-serif;line-height:1.55;min-height:100vh}
 h1,h2,h3,.brand{font-family:'Google Sans','Roboto',Arial,sans-serif}
 a{color:var(--blue)}
@@ -141,6 +142,7 @@ canvas{width:100%;aspect-ratio:1;background:var(--grid);border-radius:10px;displ
         <div class="card">
           <h2>🎮 Controles</h2>
           <p class="st">Teclado: <b>← ↑ ↓ →</b> o <b>WASD</b> · móvil: <b>desliza</b> sobre el tablero. Una orden por tick (750ms): la última cuenta.</p>
+          <p class="st">🔴 <b>Zona hostil</b>: cada 50 ticks el margen seguro se encoge 1 celda. Pisarla cuesta <b>5 ❤/tick</b> y las 🍏 nunca nacen ahí. A los <b>600 ticks</b> gana la serpiente más larga.</p>
           <div class="btn-row"><button class="btn" id="btnLeave">🚪 Salir de la mesa</button></div>
           <h2 style="margin-top:14px">🐍 Serpientes</h2>
           <div id="snakeList"></div>
@@ -161,7 +163,7 @@ const AB='https://neat-apps-b.vercel.app';
 const $=(id)=>document.getElementById(id);
 const PALETTE=['#8ab4f8','#f28b82','#81c995','#fdd663','#c58af9','#78d9ec','#ff8bcb','#a8c7fa'];
 const SICON=id=>id&&id.startsWith('a:')?'🤖':(id&&id.startsWith('h:')?'👤':'🏠');
-let me=null,ws=null,game=null,snakes=[],food=[],tick=0,tickMs=750,mySeat=null,role='play',dirSent=null,lastDir='right',listPoll=null,lobbyTimer=null;
+let me=null,ws=null,game=null,snakes=[],food=[],tick=0,tickMs=750,mySeat=null,role='play',dirSent=null,lastDir='right',listPoll=null,lobbyTimer=null,boardN=15,zoneM=0,zoneNext=0,capN=0;
 
 async function apiS(path,opts={}){
   const token=localStorage.getItem('neat_account_token');
@@ -258,8 +260,8 @@ async function openGame(gid){
     if(m.t==='hello'){mySeat=m.player;if(role==='play'){$('stTxt').textContent='Eres '+m.player.replace(/^[ah]:/,'')+' 🐍';}if(game&&game.status==='starting'){showLobby({seats:game.seats,size:game.size,start_at:game.start_at,code:game.code});}}
     if(m.t==='lobby'){showLobby(m);}
     if(m.t==='start'){hideLobby();$('stTxt').textContent='¡ARRANCA LA MESA! come y crece 🍏';flash('🚦 ¡Ya arrancó! Tu serpiente espera tu primera orden.');}
-    if(m.t==='state'){snakes=m.snakes;food=m.food;tick=m.tick;render();hud();}
-    if(m.t==='death'){const s=snakes.find(x=>x.id===m.snake);flash(`💀 ${SICON(m.snake)} ${(m.snake||'').replace(/^[ah]:/,'')} cayó (${m.cause})`);}
+    if(m.t==='state'){snakes=m.snakes;food=m.food;tick=m.tick;if(m.board)boardN=m.board;zoneM=m.zone||0;zoneNext=m.zone_next||0;capN=m.cap||0;render();hud();}
+    if(m.t==='death'){const LBL={wall:'pared 💥',starve:'hambre 🍏',bite:'mordida 🦷',self:'se mordió 🌀',h2h:'frente a frente 💥','h2h-tie':'empate frontal 💥',zone:'zona roja 🔴',end:'fin'};flash(`💀 ${SICON(m.snake)} ${(m.snake||'').replace(/^[ah]:/,'')} cayó (${LBL[m.cause]||m.cause})`);}
     if(m.t==='err'){$('subTxt').textContent='⚠️ '+(m.message||m.code);}
     if(m.t==='end'){endGame(m);}
   };
@@ -294,14 +296,20 @@ function flash(t){$('stTxt').textContent=t;}
 function hud(){
   const mine=snakes.find(s=>s.id===mySeat);
   const alive=snakes.filter(s=>s.alive).length;
-  $('subTxt').textContent=`tick ${tick} · vivas ${alive}/${snakes.length} · ${role==='spectate'?'👁️ espectador':'tú: '+(mine?(mine.alive?('❤ '+mine.health):'💀 eliminada'):'?')}`;
+  $('subTxt').textContent=`tick ${tick}${capN?('/'+capN):''} · vivas ${alive}/${snakes.length} · 🔴 cierra en ${Math.max(0,zoneNext-tick)}t · ${role==='spectate'?'👁️ espectador':'tú: '+(mine?(mine.alive?('❤ '+mine.health):'💀 eliminada'):'?')}`;
   if(mine)$('hpIn').style.width=Math.max(0,Math.min(100,mine.health))+'%';
   $('snakeList').innerHTML=snakes.map((s,i)=>`<div class="place-row" style="border-left:4px solid ${PALETTE[i%PALETTE.length]}"><span>${SICON(s.id)} ${s.id.replace(/^[ah]:/,'')}${s.id===mySeat?'<span class="me-tag">tú</span>':''}</span><span>${s.alive?('❤'+s.health+' · len '+s.body.length+(s.kills?(' · ⚔'+s.kills):'')):('💀 #'+(s.place||'?'))}</span></div>`).join('');
 }
 function render(){
-  const cv=$('cv'),ctx=cv.getContext('2d'),N=11,c=cv.width/N;
+  const cv=$('cv'),ctx=cv.getContext('2d'),N=boardN,c=cv.width/N;
   ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--grid')||'#15151d';
   ctx.fillRect(0,0,cv.width,cv.height);
+  if(zoneM>0){ // 🔴 zona hostil del jefe: -5 ❤/tick ahí dentro
+    ctx.fillStyle='rgba(217,48,37,.22)';
+    for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(x<zoneM||y<zoneM||x>=N-zoneM||y>=N-zoneM)ctx.fillRect(x*c,y*c,c,c);
+    ctx.strokeStyle='rgba(217,48,37,.5)';ctx.lineWidth=2;
+    ctx.strokeRect(zoneM*c,zoneM*c,(N-2*zoneM)*c,(N-2*zoneM)*c);ctx.lineWidth=1;
+  }
   ctx.strokeStyle='rgba(255,255,255,.035)';
   for(let i=1;i<N;i++){ctx.beginPath();ctx.moveTo(i*c,0);ctx.lineTo(i*c,cv.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*c);ctx.lineTo(cv.width,i*c);ctx.stroke();}
   for(const f of food){ctx.font=`${c*0.8}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🍏',f[0]*c+c/2,f[1]*c+c/2+1);}
