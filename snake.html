@@ -90,6 +90,9 @@ canvas{width:100%;aspect-ratio:1;background:var(--grid);border-radius:10px;displ
                   <option value="2">2 🔥 duelo</option><option value="4" selected>4</option><option value="6">6</option><option value="8">8</option><option value="12">12 🎉</option>
                 </select>
                 <label class="st" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="privNoAi"> sin la casa 🏠🚫</label>
+                <select id="privZone" class="btn" style="background:var(--surface)" title="Velocidad de la zona hostil">
+                  <option value="35">🐇 zona 35t</option><option value="50" selected>⚖️ zona 50t</option><option value="70">🐢 zona 70t</option>
+                </select>
                 <button class="btn" onclick="mkPrivate()">Crear privada</button>
                 <span class="st">o entra a una:</span>
                 <input class="code" id="joinCode" maxlength="6" placeholder="CODE">
@@ -234,7 +237,7 @@ async function practice(){
 }
 async function mkPrivate(){
   const size=parseInt(($('privSize')||{}).value||'4',10), noAi=($('privNoAi')||{}).checked;
-  const r=await apiS('/games',{method:'POST',body:JSON.stringify({size,...(noAi?{ai:false}:{})})});
+  const r=await apiS('/games',{method:'POST',body:JSON.stringify({size,zone:parseInt(($('privZone')||{}).value||'50',10),...(noAi?{ai:false}:{})})});
   if(!r.body?.success)return alert('⚠️ '+(r.body?.error?.message||'no se pudo'));
   $('mkbox').style.display='none';$('codebox').style.display='block';
   $('theCode').textContent=r.body.data.game.code;
@@ -295,12 +298,14 @@ function showLobby(m){
   if(m.start_at)game.start_at=m.start_at;
   if(m.code!==undefined&&m.code!==null)game.code=m.code;
   if(m.fill_ai!==undefined)game.fill_ai=m.fill_ai;
+  if(m.zone_every!==undefined)game.zone_every=m.zone_every;
   const seats=(m.seats||[]).map(s=>s.id||s);
   game.seats=seats.map(id=>({id}));
   $('lobbyBox').style.display='block';
   const free=Math.max(0,(game.size||seats.length)-seats.length);
   const noCasa=game.fill_ai===0;
-  $('lobbySeats').innerHTML=seats.map(id=>`<span class="lb-chip" style="margin:2px">${SICON(id)} ${id.replace(/^[ah]:/,'')}</span>`).join('')+(free?`<span class="lb-chip" style="margin:2px;opacity:.65">${noCasa?'🚫🏠 ×'+free+' vacías':'🏠 ×'+free+' libres'}</span>`:'');
+  const ze=game.zone_every||50, zeIco=ze===35?'🐇':(ze===70?'🐢':'⚖️'), zeChip=`<span class="lb-chip" style="margin:2px">${zeIco} zona ${ze}t</span>`;
+  $('lobbySeats').innerHTML=seats.map(id=>`<span class="lb-chip" style="margin:2px">${SICON(id)} ${id.replace(/^[ah]:/,'')}</span>`).join('')+(free?`<span class="lb-chip" style="margin:2px;opacity:.65">${noCasa?'🚫🏠 ×'+free+' vacías':'🏠 ×'+free+' libres'}</span>`:'')+zeChip;
   $('lobbyNote').textContent=noCasa?'🚫🏠 Mesa sin la casa: duelo puro — hacen falta al menos 2 jugadores reales para arrancar.':'Las sillas libres las cubre la casa 🏠 al arrancar. Si te ausentas, la casa pilota tu serpiente hasta que vuelvas — el primer movimiento te devuelve el mando.';
   const isCreator=seats[0]&&seats[0]===mySeat&&role==='play';
   $('btnStartNow').style.display=isCreator?'inline-block':'none';
