@@ -371,9 +371,9 @@ function goLobby(){
 $('btnLeave').onclick=()=>{closeWs();goLobby();}
 $('btnStartNow').onclick=async()=>{
   $('btnStartNow').disabled=true;
-  const r=await apiS('/games/'+game.game_id+'/start',{method:'POST'});
+  const r=await apiS('/games/'+game.game_id+'/start',{method:'POST',body:'{}'});
   if(r.body?.success){$('stTxt').textContent='🚦 Arrancando la mesa…';$('btnStartNow').style.display='none';}
-  else{alert('⚠️ '+(r.body?.error?.message||'no se pudo arrancar'));$('btnStartNow').disabled=false;}
+  else{alert('⚠️ (HTTP '+r.status+') '+((r.body&&r.body.error&&r.body.error.message)||(r.body&&r.body.error)||'no se pudo arrancar — dime este texto y Claw lo caza'));$('btnStartNow').disabled=false;}
 };
 $('btnCopyCode').onclick=()=>{try{navigator.clipboard.writeText(game.code||'');$('btnCopyCode').textContent='✅ Copiado';setTimeout(()=>$('btnCopyCode').textContent='📋 Copiar',1500);}catch(e){}};;
 
