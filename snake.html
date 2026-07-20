@@ -79,6 +79,7 @@ canvas{width:100%;aspect-ratio:1;background:var(--grid);border-radius:10px;displ
               <button class="btn" onclick="queue(6)">Mesa de 6</button>
               <button class="btn" onclick="queue(8)">Mesa de 8</button>
               <button class="btn" onclick="practice()">🎯 Práctica (vs la casa)</button>
+              <button class="btn" onclick="survival()" title="Tú solo contra la zona — aguanta lo máximo. Récord personal, sin ELO">🕐 Supervivencia</button>
             </div>
           </div>
           <div class="card">
@@ -223,7 +224,7 @@ function gameRow(g,eye){
   const seats=(g.seats||[]).map(s=>SICON(s.id)+' '+s.id.replace(/^[ah]:/,'')).join(' · ');
   const mid=fin&&g.placements?(' · ganó '+SICON(g.placements.find(p=>p.place===1)?.player)+' '+(g.placements.find(p=>p.place===1)?.player||'').replace(/^[ah]:/,'')):(g.status==='active'?' · ¡EN VIVO!':' · arranca pronto');
   // mesa terminada → directo al 🎞️ replay (re-simulación local, verificada exacta); viva/esperando → mesa
-  return `<div class="arena-item" onclick="${fin?`openReplay('${g.game_id}')`:`openGame('${g.game_id}')`}"><span>${fin?'🎞️ ':(eye?'👁️ ':'')}${seats}</span><span class="st">${fin?'replay':g.status}${mid}</span></div>`;
+  return `<div class="arena-item" onclick="${fin?`openReplay('${g.game_id}')`:`openGame('${g.game_id}')`}"><span>${g.mode==='survival'?'🕐 ':''}${fin?'🎞️ ':(eye?'👁️ ':'')}${seats}</span><span class="st">${fin?'replay':g.status}${mid}</span></div>`;
 }
 async function queue(size){
   const r=await apiS('/queue',{method:'POST',body:JSON.stringify({size})});
@@ -235,6 +236,13 @@ async function practice(){
   if(!r.body?.success)return alert('⚠️ '+(r.body?.error?.message||'no se pudo'));
   openGame(r.body.data.game.game_id);
 }
+async function survival(){ // 🕐 modo del jefe: tú solo contra la zona (usa la velocidad elegida en el selector)
+  const zone=parseInt(($('privZone')||{}).value||'50',10);
+  const r=await apiS('/games',{method:'POST',body:JSON.stringify({mode:'survival',zone})});
+  if(!r.body?.success)return alert('⚠️ '+(r.body?.error?.message||'no se pudo'));
+  openGame(r.body.data.game.game_id);
+}
+function survivalRetry(){$('endOverlay').style.display='none';survival();}
 async function mkPrivate(){
   const size=parseInt(($('privSize')||{}).value||'4',10), noAi=($('privNoAi')||{}).checked;
   const r=await apiS('/games',{method:'POST',body:JSON.stringify({size,zone:parseInt(($('privZone')||{}).value||'50',10),...(noAi?{ai:false}:{})})});
@@ -387,6 +395,12 @@ document.addEventListener('touchend',e=>{
 });
 function endGame(m){
   game.status='finished';render();
+  if(m.survival){ // 🕐 supervivencia: score = ticks con vida (+ récord)
+    const sv=m.survival;
+    $('endOverlay').innerHTML=`<div class="card"><h2>${sv.record?'🏆 ¡NUEVO RÉCORD!':'🕐 Fin de la racha'}</h2><p style="font-size:30px;margin:8px 0"><b>${sv.score}</b> <span class="st">ticks con vida</span></p><p class="st">Tu récord personal: <b>${sv.best}</b>t · zona ${(game.zone_every||50)}t</p><div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn primary" onclick="survivalRetry()">🕐 Otra vez</button><button class="btn" onclick="goLobby()">Volver al lobby</button></div><p class="note">🎞️ Grabada — replay exacto desde el historial</p></div>`;
+    $('endOverlay').style.display='flex';
+    closeWs();return;
+  }
   const names={};
   (m.placements||[]).forEach(p=>names[p.player]=p);
   const rows=(m.placements||[]).sort((a,b)=>a.place-b.place).map(p=>{
@@ -422,7 +436,7 @@ function rHash(str){let h=2166136261>>>0;for(const c of str){h^=c.charCodeAt(0);
 function rRng(seed){let a=rHash(seed);return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
 const rZone=(G)=>Math.floor(G.tick/G.zoneEvery);
 const rRed=(G,x,y)=>{const m=rZone(G);return m>0&&(x<m||y<m||x>=G.w-m||y>=G.h-m);};
-function rCreate(ids,{seed,w=15,h=15,zoneEvery=50,capTicks=600}={}){
+function rCreate(ids,{seed,w=15,h=15,zoneEvery=50,capTicks=600,mode='vs'}={}){
   const rng=rRng(seed),n=ids.length,cx=(w/2)|0,cy=(h/2)|0,rad=Math.max(2,Math.min(w,h)/3|0);
   const snakes=ids.map((id,i)=>{
     const ang=(2*Math.PI*i)/n+rng()*0.3;
@@ -431,7 +445,7 @@ function rCreate(ids,{seed,w=15,h=15,zoneEvery=50,capTicks=600}={}){
     const[dx,dy]=RDIRS[dir];
     return{id,body:[[x,y],[x-dx,y-dy],[x-2*dx,y-2*dy]].map(([a,b])=>[Math.max(0,Math.min(w-1,a)),Math.max(0,Math.min(h-1,b))]),dir,health:100,alive:true,place:null,kills:0,cause:null};
   });
-  const G={w,h,zoneEvery,capTicks,tick:0,status:'active',snakes,food:[],rng};
+  const G={w,h,zoneEvery,capTicks,mode,tick:0,status:'active',snakes,food:[],rng};
   return rSpawn(G),rSpawn(G),G;
 }
 const rCellEq=(a,b)=>a[0]===b[0]&&a[1]===b[1];
@@ -476,9 +490,10 @@ function rTick(G,dirs){
   for(const s of alive)if(s.alive)s.body=s._nb;
   const aliveNow=G.snakes.filter(s=>s.alive).length;
   for(const s of G.snakes)if(!s.alive&&s.place===null)s.place=aliveNow+1;
-  const target=Math.max(1,Math.ceil(aliveNow/2));
+  const target=G.mode==='survival'?2:Math.max(1,Math.ceil(aliveNow/2));
   while(G.food.length<target){const before=G.food.length;rSpawn(G);if(G.food.length===before)break;}
-  if(aliveNow<=1||G.tick>=G.capTicks){
+  const tableOver=G.mode==='survival'?aliveNow<1:aliveNow<=1;
+  if(tableOver||G.tick>=G.capTicks){
     const sur=G.snakes.filter(s=>s.alive).sort((a,b)=>b.body.length-a.body.length||b.health-a.health||a.id.localeCompare(b.id));
     let p=1;for(const s of sur){s.alive=false;s.cause='end';s.place=p++;}
     G.status='finished';
@@ -494,7 +509,7 @@ async function openReplay(gid){
   closeWs();rpStop();
   game=r.body.data.game;
   role='spectate';mySeat=(D.ids.includes('h:'+me))?('h:'+me):(D.ids.includes('a:'+me)?('a:'+me):null);
-  rp={D,tape:D.transcript,zoneEvery:D.zone_every||50,g:rCreate(D.ids,{seed:D.seed,zoneEvery:D.zone_every||50,capTicks:D.cap||600}),p:0};
+  rp={D,tape:D.transcript,zoneEvery:D.zone_every||50,mode:D.mode||'vs',g:rCreate(D.ids,{seed:D.seed,zoneEvery:D.zone_every||50,capTicks:D.cap||600,mode:D.mode||'vs'}),p:0};
   if(listPoll){clearInterval(listPoll);listPoll=null;}
   $('lobby').style.display='none';$('game').style.display='block';$('lobbyBox').style.display='none';$('endOverlay').style.display='none';
   $('replayBar').style.display='block';$('specNote').style.display='none';
@@ -505,7 +520,7 @@ async function openReplay(gid){
 function rpGo(n){
   if(!rp)return;
   n=Math.max(0,Math.min(rp.D.ticks,n|0));
-  if(n<rp.g.tick){rp.g=rCreate(rp.D.ids,{seed:rp.D.seed,zoneEvery:rp.zoneEvery,capTicks:rp.D.cap||600});rp.p=0;}
+  if(n<rp.g.tick){rp.g=rCreate(rp.D.ids,{seed:rp.D.seed,zoneEvery:rp.zoneEvery,capTicks:rp.D.cap||600,mode:rp.mode});rp.p=0;}
   while(rp.g.status==='active'&&rp.g.tick<n){
     const aliveNow=rp.g.snakes.filter(s=>s.alive),dirs=new Map();
     for(const s of aliveNow)dirs.set(s.id,RCH[rp.tape[rp.p++]]||'up');
@@ -517,7 +532,7 @@ function rpGo(n){
   $('hpIn').style.width='0%';
   $('rpSlider').value=rp.g.tick;
   let info=`tick ${rp.g.tick}/${rp.D.ticks} · 🔴 margen ${zoneM}`;
-  if(rp.g.tick>=rp.D.ticks){const w=(rp.D.placements||[]).find(p=>p.place===1);if(w)info+=` · 🏆 ${SICON(w.player)} ${w.player.replace(/^[ah]:/,'')} (len ${w.len})`;info+=' — fin del reel';}
+  if(rp.g.tick>=rp.D.ticks){if(rp.mode==='survival'){info+=` · 🕐 ${rp.D.ticks} ticks con vida`;}else{const w=(rp.D.placements||[]).find(p=>p.place===1);if(w)info+=` · 🏆 ${SICON(w.player)} ${w.player.replace(/^[ah]:/,'')} (len ${w.len})`;}info+=' — fin del reel';}
   $('rpInfo').textContent=info;
 }
 function rpScrub(v){rpGo(parseInt(v,10));}
