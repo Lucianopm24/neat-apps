@@ -142,6 +142,17 @@ canvas{width:100%;aspect-ratio:1;background:var(--grid);border-radius:10px;displ
           <div class="status" id="stTxt">Conectando…</div>
           <div class="sub" id="subTxt"></div>
           <div class="hp"><div id="hpIn" style="width:100%"></div></div>
+          <div id="replayBar" style="display:none;margin:10px 0;text-align:center">
+            <div class="btn-row" style="justify-content:center;gap:6px">
+              <button class="btn" onclick="rpGo(0)">⏮</button>
+              <button class="btn" id="rpPlayBtn" onclick="rpToggle()">▶️</button>
+              <input type="range" id="rpSlider" min="0" max="0" value="0" style="flex:1" oninput="rpScrub(this.value)">
+              <select id="rpSpeedSel" class="btn" style="background:var(--surface)" onchange="rpSpeed=parseFloat(this.value);if(rpTimer){rpStop();rpPlay();}">
+                <option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option>
+              </select>
+            </div>
+            <div class="sub" id="rpInfo"></div>
+          </div>
         </div>
         <div class="card">
           <h2>🎮 Controles</h2>
@@ -208,7 +219,8 @@ function gameRow(g,eye){
   const fin=g.status==='finished';
   const seats=(g.seats||[]).map(s=>SICON(s.id)+' '+s.id.replace(/^[ah]:/,'')).join(' · ');
   const mid=fin&&g.placements?(' · ganó '+SICON(g.placements.find(p=>p.place===1)?.player)+' '+(g.placements.find(p=>p.place===1)?.player||'').replace(/^[ah]:/,'')):(g.status==='active'?' · ¡EN VIVO!':' · arranca pronto');
-  return `<div class="arena-item" onclick="openGame('${g.game_id}')"><span>${eye?'👁️ ':''}${seats}</span><span class="st">${g.status}${mid}</span></div>`;
+  // mesa terminada → directo al 🎞️ replay (re-simulación local, verificada exacta); viva/esperando → mesa
+  return `<div class="arena-item" onclick="${fin?`openReplay('${g.game_id}')`:`openGame('${g.game_id}')`}"><span>${fin?'🎞️ ':(eye?'👁️ ':'')}${seats}</span><span class="st">${fin?'replay':g.status}${mid}</span></div>`;
 }
 async function queue(size){
   const r=await apiS('/queue',{method:'POST',body:JSON.stringify({size})});
@@ -378,7 +390,7 @@ function endGame(m){
     return `<div class="place-row" style="border-left:4px solid ${PALETTE[(i<0?0:i)%PALETTE.length]}"><span>${p.place===1?'🏆':('#'+p.place)} ${SICON(p.player)} ${p.player.replace(/^[ah]:/,'')}${p.player===mySeat?'<span class="me-tag">tú</span>':''}</span><span class="k">${e?(`${e.before}→${e.after} (${e.delta>=0?'+':''}${e.delta})`):''}</span></div>`;
   }).join('');
   const mineP=(m.placements||[]).find(p=>p.player===mySeat);
-  $('endOverlay').innerHTML=`<div class="card"><h2>${mineP?['','🏆 ¡GANASTE!','🥈 ¡Segunda!','🥉 ¡Tercera!'][mineP.place]||('Puesto #'+mineP.place):'🏁 Fin de la mesa'}</h2>${rows}<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn primary" onclick="revancha()">⚡ Revancha (cola)</button><button class="btn" onclick="goLobby()">Volver al lobby</button></div><p class="note">La mesa quedó grabada con su transcript — replay en camino (S4 🦞)</p></div>`;
+  $('endOverlay').innerHTML=`<div class="card"><h2>${mineP?['','🏆 ¡GANASTE!','🥈 ¡Segunda!','🥉 ¡Tercera!'][mineP.place]||('Puesto #'+mineP.place):'🏁 Fin de la mesa'}</h2>${rows}<div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn primary" onclick="revancha()">⚡ Revancha (cola)</button><button class="btn" onclick="goLobby()">Volver al lobby</button></div><p class="note">🎞️ Mesa grabada — revívela con el replay desde el historial (re-simulación exacta)</p></div>`;
   $('endOverlay').style.display='flex';
   closeWs();
 }
@@ -398,6 +410,124 @@ $('btnStartNow').onclick=async()=>{
 $('btnCopyCode').onclick=()=>{try{navigator.clipboard.writeText(game.code||'');$('btnCopyCode').textContent='✅ Copiado';setTimeout(()=>$('btnCopyCode').textContent='📋 Copiar',1500);}catch(e){}};;
 
 boot().then(tryJoinUrl);
+
+// ═══════════ 🎞️ REPLAYER (engine inline idéntico al worker/src/snake.js — mismo determinismo) ═══════════
+const RDIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},ROPP={up:'down',down:'up',left:'right',right:'left'};
+function rHash(str){let h=2166136261>>>0;for(const c of str){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+function rRng(seed){let a=rHash(seed);return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+const rZone=(G)=>Math.floor(G.tick/G.zoneEvery);
+const rRed=(G,x,y)=>{const m=rZone(G);return m>0&&(x<m||y<m||x>=G.w-m||y>=G.h-m);};
+function rCreate(ids,{seed,w=15,h=15,zoneEvery=50,capTicks=600}={}){
+  const rng=rRng(seed),n=ids.length,cx=(w/2)|0,cy=(h/2)|0,rad=Math.max(2,Math.min(w,h)/3|0);
+  const snakes=ids.map((id,i)=>{
+    const ang=(2*Math.PI*i)/n+rng()*0.3;
+    const x=Math.max(1,Math.min(w-2,Math.round(cx+rad*Math.cos(ang)))),y=Math.max(1,Math.min(h-2,Math.round(cy+rad*Math.sin(ang))));
+    const axis=rng()<0.5?'x':'y',dir=axis==='x'?(x>cx?'left':'right'):(y>cy?'up':'down');
+    const[dx,dy]=RDIRS[dir];
+    return{id,body:[[x,y],[x-dx,y-dy],[x-2*dx,y-2*dy]].map(([a,b])=>[Math.max(0,Math.min(w-1,a)),Math.max(0,Math.min(h-1,b))]),dir,health:100,alive:true,place:null,kills:0,cause:null};
+  });
+  const G={w,h,zoneEvery,capTicks,tick:0,status:'active',snakes,food:[],rng};
+  return rSpawn(G),rSpawn(G),G;
+}
+const rCellEq=(a,b)=>a[0]===b[0]&&a[1]===b[1];
+function rSpawn(G){
+  const occ=new Set();
+  for(const s of G.snakes)for(const c of s.body)occ.add(c[0]+','+c[1]);
+  for(const f of G.food)occ.add(f[0]+','+f[1]);
+  const out=[];
+  for(let y=0;y<G.h;y++)for(let x=0;x<G.w;x++)if(!occ.has(x+','+y))out.push([x,y]);
+  const f=out.filter(([x,y])=>!rRed(G,x,y));if(f.length)G.food.push(f[(G.rng()*f.length)|0]);
+}
+function rTick(G,dirs){
+  if(G.status!=='active')return;
+  G.tick++;
+  const alive=G.snakes.filter(s=>s.alive);
+  for(const s of alive){let d=dirs.get(s.id)||s.dir;if(!RDIRS[d]||d===ROPP[s.dir])d=s.dir;s.dir=d;}
+  for(const s of alive){const[dx,dy]=RDIRS[s.dir];s._nh=[s.body[0][0]+dx,s.body[0][1]+dy];}
+  const eaten=[];
+  for(const s of alive){const fi=G.food.findIndex(f=>rCellEq(f,s._nh));s._eat=fi>=0;if(s._eat)eaten.push(fi);}
+  G.food=G.food.filter((_,i)=>!eaten.includes(i));
+  for(const s of alive){s._red=rRed(G,s._nh[0],s._nh[1]);s.health-=s._red?5:1;if(s._eat)s.health=100;}
+  for(const s of alive)s._nb=s._eat?[s._nh,...s.body]:[s._nh,...s.body.slice(0,-1)];
+  const die=(s,cause)=>{s.alive=false;s.cause=cause;};
+  for(const s of alive){
+    if(!s.alive)continue;const[x,y]=s._nh;
+    if(x<0||y<0||x>=G.w||y>=G.h){die(s,'wall');continue;}
+    if(s.health<=0){die(s,s._red?'zone':'starve');continue;}
+    let bit=false;
+    for(const t of alive){for(let i=1;i<t._nb.length;i++)if(rCellEq(t._nb[i],s._nh)){die(s,t.id===s.id?'self':'bite');if(t.id!==s.id)t.kills++;bit=true;break;}if(bit)break;}
+  }
+  const heads=new Map();
+  for(const s of alive){if(!s.alive)continue;const k=s._nh.join(',');(heads.get(k)||heads.set(k,[]).get(k)).push(s);}
+  for(const grp of heads.values()){
+    if(grp.length<2)continue;
+    const maxLen=Math.max(...grp.map(s=>s._nb.length));
+    for(const s of grp)if(s.alive&&s._nb.length<maxLen)die(s,'h2h');
+    const tops=grp.filter(s=>s.alive&&s._nb.length===maxLen);
+    if(tops.length>1)for(const s of tops)die(s,'h2h-tie');
+    const winner=grp.find(s=>s.alive&&s._nb.length===maxLen);
+    if(winner)winner.kills+=grp.filter(s=>!s.alive).length;
+  }
+  for(const s of alive)if(s.alive)s.body=s._nb;
+  const aliveNow=G.snakes.filter(s=>s.alive).length;
+  for(const s of G.snakes)if(!s.alive&&s.place===null)s.place=aliveNow+1;
+  const target=Math.max(1,Math.ceil(aliveNow/2));
+  while(G.food.length<target){const before=G.food.length;rSpawn(G);if(G.food.length===before)break;}
+  if(aliveNow<=1||G.tick>=G.capTicks){
+    const sur=G.snakes.filter(s=>s.alive).sort((a,b)=>b.body.length-a.body.length||b.health-a.health||a.id.localeCompare(b.id));
+    let p=1;for(const s of sur){s.alive=false;s.cause='end';s.place=p++;}
+    G.status='finished';
+  }
+}
+// ── control del replayer ──
+const RCH={u:'up',d:'down',l:'left',r:'right'};
+let rp=null,rpTimer=null,rpSpeed=1;
+async function openReplay(gid){
+  const r=await apiS('/games/'+gid+'?replay=1');
+  if(!r.body?.success)return alert('⚠️ '+(r.body?.error?.message||'sin replay'));
+  const D=r.body.data.replay;
+  closeWs();rpStop();
+  game=r.body.data.game;
+  role='spectate';mySeat=(D.ids.includes('h:'+me))?('h:'+me):(D.ids.includes('a:'+me)?('a:'+me):null);
+  rp={D,tape:D.transcript,zoneEvery:D.zone_every||50,g:rCreate(D.ids,{seed:D.seed,zoneEvery:D.zone_every||50,capTicks:D.cap||600}),p:0};
+  if(listPoll){clearInterval(listPoll);listPoll=null;}
+  $('lobby').style.display='none';$('game').style.display='block';$('lobbyBox').style.display='none';$('endOverlay').style.display='none';
+  $('replayBar').style.display='block';$('specNote').style.display='none';
+  $('stTxt').textContent='🎞️ Replay · mesa '+(game.code||'');
+  $('rpSlider').max=D.ticks;$('rpSlider').value=0;$('rpPlayBtn').textContent='▶️';
+  rpGo(0);
+}
+function rpGo(n){
+  if(!rp)return;
+  n=Math.max(0,Math.min(rp.D.ticks,n|0));
+  if(n<rp.g.tick){rp.g=rCreate(rp.D.ids,{seed:rp.D.seed,zoneEvery:rp.zoneEvery,capTicks:rp.D.cap||600});rp.p=0;}
+  while(rp.g.status==='active'&&rp.g.tick<n){
+    const aliveNow=rp.g.snakes.filter(s=>s.alive),dirs=new Map();
+    for(const s of aliveNow)dirs.set(s.id,RCH[rp.tape[rp.p++]]||'up');
+    rp.p+=rp.D.ids.length-aliveNow.length;
+    rTick(rp.g,dirs);
+  }
+  snakes=rp.g.snakes;food=rp.g.food;tick=rp.g.tick;boardN=rp.g.w;zoneM=rZone(rp.g);zoneNext=(zoneM+1)*rp.zoneEvery;capN=rp.g.capTicks;
+  render();hud();
+  $('hpIn').style.width='0%';
+  $('rpSlider').value=rp.g.tick;
+  let info=`tick ${rp.g.tick}/${rp.D.ticks} · 🔴 margen ${zoneM}`;
+  if(rp.g.tick>=rp.D.ticks){const w=(rp.D.placements||[]).find(p=>p.place===1);if(w)info+=` · 🏆 ${SICON(w.player)} ${w.player.replace(/^[ah]:/,'')} (len ${w.len})`;info+=' — fin del reel';}
+  $('rpInfo').textContent=info;
+}
+function rpScrub(v){rpGo(parseInt(v,10));}
+function rpPlay(){
+  if(!rp||rpTimer)return;
+  if(rp.g.tick>=rp.D.ticks)rpGo(0);
+  rpTimer=setInterval(()=>{
+    if(rp.g.tick>=rp.D.ticks){rpStop();return;}
+    rpGo(rp.g.tick+1);
+  },Math.max(60,(rp.D.tick_ms||750)/rpSpeed/4));
+  $('rpPlayBtn').textContent='⏸';
+}
+function rpStop(){if(rpTimer){clearInterval(rpTimer);rpTimer=null;}const b=$('rpPlayBtn');if(b)b.textContent='▶️';}
+function rpToggle(){if(!rp)return;if(rpTimer)rpStop();else rpPlay();}
+
 </script>
 </body>
 </html>
