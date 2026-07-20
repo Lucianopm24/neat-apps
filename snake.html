@@ -280,8 +280,13 @@ function showLobby(m){
   $('btnStartNow').style.display=isCreator?'inline-block':'none';
   if(game.code){$('lobbyCodeRow').style.display='block';$('lobbyCode').textContent=game.code;}
   if(lobbyTimer)clearInterval(lobbyTimer);
-  const cd=()=>{const ms=(game.start_at||0)-Date.now();$('lobbyCd').textContent=ms>0?('Arranca en '+Math.ceil(ms/1000)+'s…'):'arrancando…';if(ms<=0&&lobbyTimer){clearInterval(lobbyTimer);lobbyTimer=null;}};
-  cd();lobbyTimer=setInterval(cd,500);
+  if(game.start_at){
+    const cd=()=>{const ms=(game.start_at||0)-Date.now();$('lobbyCd').textContent=ms>0?('Arranca en '+Math.ceil(ms/1000)+'s…'):'arrancando…';if(ms<=0&&lobbyTimer){clearInterval(lobbyTimer);lobbyTimer=null;}};
+    cd();lobbyTimer=setInterval(cd,500);
+  }else{
+    lobbyTimer=null;
+    $('lobbyCd').textContent='⏳ Sin cronómetro: el creador la arranca cuando quiera 🚦';
+  }
 }
 function hideLobby(){$('lobbyBox').style.display='none';if(lobbyTimer){clearInterval(lobbyTimer);lobbyTimer=null;}}
 function closeWs(){if(ws){try{ws.close();}catch(e){}ws=null;}}
