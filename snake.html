@@ -167,7 +167,7 @@ const AB='https://neat-apps-b.vercel.app';
 const $=(id)=>document.getElementById(id);
 const PALETTE=['#8ab4f8','#f28b82','#81c995','#fdd663','#c58af9','#78d9ec','#ff8bcb','#a8c7fa'];
 const SICON=id=>id&&id.startsWith('a:')?'🤖':(id&&id.startsWith('h:')?'👤':'🏠');
-let me=null,ws=null,game=null,snakes=[],food=[],tick=0,tickMs=750,mySeat=null,role='play',dirSent=null,lastDir='right',listPoll=null,lobbyTimer=null,boardN=15,zoneM=0,zoneNext=0,capN=0;
+let me=null,ws=null,game=null,snakes=[],food=[],tick=0,tickMs=750,mySeat=null,role='play',dirSent=null,lastDir='right',listPoll=null,lobbyTimer=null,boardN=11,zoneM=0,zoneNext=0,capN=0;
 
 async function apiS(path,opts={}){
   const token=localStorage.getItem('neat_account_token');
@@ -304,7 +304,7 @@ function flash(t){$('stTxt').textContent=t;}
 function hud(){
   const mine=snakes.find(s=>s.id===mySeat);
   const alive=snakes.filter(s=>s.alive).length;
-  $('subTxt').textContent=`tick ${tick}${capN?('/'+capN):''} · vivas ${alive}/${snakes.length} · 🔴 cierra en ${Math.max(0,zoneNext-tick)}t · ${role==='spectate'?'👁️ espectador':'tú: '+(mine?(mine.alive?('❤ '+mine.health):'💀 eliminada'):'?')}`;
+  $('subTxt').textContent=`tick ${tick}${capN?('/'+capN):''} · vivas ${alive}/${snakes.length} · ${zoneNext?('🔴 cierra en '+Math.max(0,zoneNext-tick)+'t'):''} · ${role==='spectate'?'👁️ espectador':'tú: '+(mine?(mine.alive?('❤ '+mine.health):'💀 eliminada'):'?')}`;
   if(mine)$('hpIn').style.width=Math.max(0,Math.min(100,mine.health))+'%';
   $('snakeList').innerHTML=snakes.map((s,i)=>`<div class="place-row" style="border-left:4px solid ${PALETTE[i%PALETTE.length]}"><span>${SICON(s.id)} ${s.id.replace(/^[ah]:/,'')}${s.id===mySeat?'<span class="me-tag">tú</span>':''}</span><span>${s.alive?('❤'+s.health+' · len '+s.body.length+(s.kills?(' · ⚔'+s.kills):'')):('💀 #'+(s.place||'?'))}</span></div>`).join('');
 }
