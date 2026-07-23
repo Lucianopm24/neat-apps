@@ -121,7 +121,7 @@ button{cursor:pointer;font-family:inherit;}
 <div class="top-bar">
   <div class="top-logo">Neat <span>ID</span></div>
   <div class="top-actions" id="top-actions">
-    <button class="btn btn-outline btn-sm" onclick="window.location.href='https://neat.qzz.io'">← Neat</button>
+    <button class="btn btn-outline btn-sm" onclick="window.location.href='https://neat.blue'">← Neat</button>
   </div>
 </div>
 
@@ -258,7 +258,7 @@ function updateTopBar() {
       <button class="btn btn-outline btn-sm" onclick="logout()">Salir</button>
     `;
   } else {
-    el.innerHTML = `<button class="btn btn-outline btn-sm" onclick="window.location.href='https://neat.qzz.io'">← Neat</button>`;
+    el.innerHTML = `<button class="btn btn-outline btn-sm" onclick="window.location.href='https://neat.blue'">← Neat</button>`;
   }
 }
 
@@ -349,7 +349,7 @@ async function render() {
         <span class="profile-name">${esc(profileData.username)}</span>
         ${verifiedHTML}${plusHTML}
       </div>
-      <div class="profile-handle">@${esc(profileData.username)} · neat.qzz.io</div>
+      <div class="profile-handle">@${esc(profileData.username)} · neat.blue</div>
       ${profileData.bio ? `<div class="profile-bio">${esc(profileData.bio)}</div>` : ''}
       ${profileData.hasCustomWeb && profileData.neatPlus ? `<a href="/u/${esc(profileData.username)}/web" class="web-link" target="_blank">🌐 Ver mi página</a>` : ''}
       ${profileData.profileViews !== undefined ? `<div style="font-size:12px;color:var(--text3);margin-top:10px">👁 ${profileData.profileViews.toLocaleString()} visitas al perfil</div>` : ''}

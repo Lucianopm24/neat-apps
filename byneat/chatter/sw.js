@@ -46,7 +46,7 @@ self.addEventListener("push", e => {
 self.addEventListener("notificationclick", e => {
   e.notification.close();
   const chatId = e.notification.data?.chatId;
-  const url = `https://neat.qzz.io/byneat/chatter/${chatId ? "?chat=" + chatId : ""}`;
+  const url = `https://neat.blue/byneat/chatter/${chatId ? "?chat=" + chatId : ""}`;
   e.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
       for (const client of list) {

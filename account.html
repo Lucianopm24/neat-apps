@@ -509,14 +509,14 @@
         </div>
         <div id="newKeyBox" style="display:none">
           <div class="key-new" id="newKeyValue"></div>
-          <div class="field-hint">⚠️ Se muestra <strong>una sola vez</strong>. Cópiala y dásela a tu agente junto a <a href="https://agents.neat.qzz.io/docs.md" target="_blank" rel="noopener">agents.neat.qzz.io/docs.md</a>. Si la pierdes, revócala y crea otra.</div>
+          <div class="field-hint">⚠️ Se muestra <strong>una sola vez</strong>. Cópiala y dásela a tu agente junto a <a href="https://agents.neat.blue/docs.md" target="_blank" rel="noopener">agents.neat.blue/docs.md</a>. Si la pierdes, revócala y crea otra.</div>
           <div class="btn-row">
             <button class="btn btn-ghost" onclick="copyNewKey()">📋 Copiar key</button>
           </div>
         </div>
         <div class="msg ok" id="keysMsgOk"></div>
         <div class="msg err" id="keysMsgErr"></div>
-        <div class="field-hint" style="margin-top:8px">Para agentes y curiosos: <a href="https://agents.neat.qzz.io" target="_blank" rel="noopener">agents.neat.qzz.io</a> — incluye <code>llms.txt</code> y quickstart en markdown.</div>
+        <div class="field-hint" style="margin-top:8px">Para agentes y curiosos: <a href="https://agents.neat.blue" target="_blank" rel="noopener">agents.neat.blue</a> — incluye <code>llms.txt</code> y quickstart en markdown.</div>
       </div>
     </div>
 
@@ -802,7 +802,7 @@ function toast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-// ── API Keys para agentes (agents.neat.qzz.io) ───────────────────────────────
+// ── API Keys para agentes (agents.neat.blue) ───────────────────────────────
 function keysMsg(el, text) { el.textContent = text || ""; el.classList.toggle("visible", !!text); }
 
 async function loadAgentKeys() {

@@ -421,7 +421,7 @@
                                     <span class="text-sm font-medium dark:text-gray-200">Verificación de email obligatoria</span>
                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#7c6af7]/15 text-[#7c6af7]">NEAT PLUS</span>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Los usuarios deben verificar su correo antes de poder iniciar sesión. Los usuarios con <code class="text-xs">@neat.qzz.io</code> lo verifican iniciando sesión con Neat.</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Los usuarios deben verificar su correo antes de poder iniciar sesión. Los usuarios con <code class="text-xs">@neat.blue</code> lo verifican iniciando sesión con Neat.</p>
                                 <p id="email-verif-error" class="text-[#d93025] text-xs mt-2 hidden"></p>
                                 <p id="email-verif-saved" class="text-xs text-[#0d652d] dark:text-[#81c995] mt-2 hidden"></p>
                             </div>
@@ -1403,7 +1403,7 @@
                 const users = data.users || data;
                 document.getElementById('users-empty').classList.toggle('hidden', users.length > 0);
                 tbody.innerHTML = users.map(u => {
-                    const isNeatEmail = (u.email || '').endsWith('@neat.qzz.io');
+                    const isNeatEmail = (u.email || '').endsWith('@neat.blue');
                     const verified = !!u.emailVerified;
                     let verifCell;
                     if (verified) {
