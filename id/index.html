@@ -297,7 +297,7 @@
         <div id="manage-forgot-wrap" class="hidden space-y-4">
             <button onclick="showManageLoginForm()" class="text-xs text-gray-400 flex items-center gap-1">← Volver</button>
             <h2 class="font-google text-base text-[#1f1f1f] dark:text-[#e3e3e3]">Recuperar contraseña</h2>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Si usas <strong>@neat.qzz.io</strong>, entra con Neat — no necesitas correo de recuperación.</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Si usas <strong>@neat.blue</strong>, entra con Neat — no necesitas correo de recuperación.</p>
             <input type="email" id="manage-forgot-email" class="input-field" placeholder="Tu correo electrónico">
             <p id="manage-forgot-error" class="text-[#d93025] text-xs hidden"></p>
             <p id="manage-forgot-ok" class="text-xs text-green-600 dark:text-green-400 hidden">Si ese correo tiene una cuenta, recibirás un enlace en los próximos minutos.</p>
@@ -437,7 +437,7 @@
 
     <script>
         const API_BASE = "https://neat-apps-b.vercel.app";
-        const NEAT_OAUTH_URL = "https://neat.qzz.io/oauth.html";
+        const NEAT_OAUTH_URL = "https://neat.blue/oauth.html";
         const PAGE_ORIGIN = location.origin + location.pathname;
 
         // ── Params de entrada (del tenant) ──────────────────────────────────
@@ -872,7 +872,7 @@
             pendingVerifyEmail = email;
             const isNeat = method === 'neat';
             document.getElementById('verify-email-msg').innerText = isNeat
-                ? `Tu cuenta usa una dirección @neat.qzz.io.`
+                ? `Tu cuenta usa una dirección @neat.blue.`
                 : `Enviamos un enlace de verificación a ${email}.`;
             document.getElementById('verify-email-neat-info').classList.toggle('hidden', !isNeat);
             document.getElementById('verify-neat-addr').innerText = email;

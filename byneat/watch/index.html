@@ -486,7 +486,7 @@
         <label>Usuario</label>
         <input id="reg-user" type="text" placeholder="tu usuario" oninput="updateEmailPreview()" autocomplete="username">
       </div>
-      <div class="auth-email-preview">Tu email: <span id="email-preview">usuario@neat.qzz.io</span></div>
+      <div class="auth-email-preview">Tu email: <span id="email-preview">usuario@neat.blue</span></div>
       <div class="auth-field">
         <label>Contraseña</label>
         <input id="reg-pass" type="password" placeholder="mín. 6 caracteres" autocomplete="new-password">
@@ -838,7 +838,7 @@ function switchTab(tab) {
 
 function updateEmailPreview() {
   const u = document.getElementById("reg-user").value || "usuario";
-  document.getElementById("email-preview").textContent = `${u.toLowerCase()}@neat.qzz.io`;
+  document.getElementById("email-preview").textContent = `${u.toLowerCase()}@neat.blue`;
 }
 
 async function doLogin() {
